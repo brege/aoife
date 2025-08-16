@@ -1,0 +1,98 @@
+/* Base container */
+.cover-reel-container {
+  display: grid;
+  gap: 16px;
+  padding: 20px;
+  margin: 0 auto;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Building mode - compact for selection */
+.cover-reel-container.building {
+  grid-template-columns: repeat(2, 1fr);
+  max-width: 400px;
+}
+
+/* Display mode - adaptive layout */
+.cover-reel-container.display {
+  /* Mobile: 2x2 grid */
+  grid-template-columns: repeat(2, 1fr);
+  max-width: 400px;
+}
+
+/* Desktop display mode */
+@media (min-width: 768px) {
+  .cover-reel-container.display.movie,
+  .cover-reel-container.display.tv {
+    /* Movies/TV: 4x1 horizontal like Letterboxd */
+    grid-template-columns: repeat(4, 1fr);
+    max-width: 800px;
+  }
+  
+  .cover-reel-container.display.album {
+    /* Albums: keep 2x2 for square aspect ratio */
+    grid-template-columns: repeat(2, 1fr);
+    max-width: 400px;
+  }
+}
+
+.cover-reel-item {
+  position: relative;
+  width: 100%;
+}
+
+/* Media type aspect ratios */
+.movie .cover-reel-item,
+.tv .cover-reel-item {
+  aspect-ratio: 2/3; /* Standard movie poster */
+}
+
+.album .cover-reel-item {
+  aspect-ratio: 1/1; /* Square album covers */
+}
+
+.book .cover-reel-item {
+  aspect-ratio: 2/3; /* Book covers similar to movie posters */
+}
+
+.main-poster-wrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.cover-reel-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.cover-reel-add {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #2c3e50;
+  border-radius: 8px;
+  font-size: 36px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  border: 2px dashed #445566;
+}
+
+/* Add button inherits aspect ratio from media type */
+.movie .cover-reel-add,
+.tv .cover-reel-add,
+.book .cover-reel-add {
+  aspect-ratio: 2/3;
+}
+
+.album .cover-reel-add {
+  aspect-ratio: 1/1;
+}
+
+.cover-reel-add:hover {
+  background-color: #3a4f66;
+}

@@ -1,0 +1,23 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+build/
+
+# Environment variables
+.env
+
+# Logs
+*.log
+
+# Neovim swap files
+*.swp
+*.swo
+
+# Temporary files
+tmp/
+
+# Keepsakes
+*.old
+*.bak

@@ -1,0 +1,103 @@
+.custom-form-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: flex-end; 
+  z-index: 1000;
+}
+
+.custom-form-container {
+  width: 100%;
+  max-width: 400px; 
+  background-color: #1f2933;
+  border-radius: 12px;
+  padding: 10px;
+}
+
+.custom-movie-form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 20px;
+  background-color: #1f2933;
+  border-radius: 12px; 
+  box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.5);
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+}
+
+.custom-movie-form h3 {
+  margin: 0;
+  color: #ffffff;
+}
+
+.custom-movie-form input {
+  padding: 10px;
+  border: none;
+  border-radius: 8px;
+  background-color: #2c3e50;
+  color: #ffffff;
+}
+
+.custom-movie-form input::placeholder {
+  color: #bdc3c7;
+}
+
+.form-buttons {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.custom-movie-form button {
+  padding: 10px 15px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.custom-movie-form button[type="submit"] {
+  background-color: #27ae60;
+  color: #ffffff;
+}
+
+.custom-movie-form button[type="submit"]:hover {
+  background-color: #2ecc71;
+}
+
+.custom-movie-form button[type="button"] {
+  background-color: #e74c3c;
+  color: #ffffff;
+}
+
+.custom-movie-form button[type="button"]:hover {
+  background-color: #c0392b;
+}
+
+.add-custom-button {
+  background-color: #2c3e50; 
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 10px 15px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  display: block; /* Make it a block-level element */
+  margin: 10px auto; /* Add margin and center horizontally */
+  width: fit-content; /* Adjust width to fit content */
+}
+
+.add-custom-button:hover,
+.add-custom-button:active {
+  background-color: #00d474; /* Theme green hover and active color */
+}
+
