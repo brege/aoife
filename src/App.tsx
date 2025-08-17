@@ -1,7 +1,7 @@
-import MovieSearch from './components/movie-search'
+import MediaSearch from './components/media-search'
 
 function App() {
-  return <MovieSearch />;
+  return <MediaSearch />;
 }
 
 export default App

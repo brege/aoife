@@ -1,7 +1,7 @@
 import React from 'react';
 import './cover-reel.css';
 import CloseIcon from './close-icon';
-import { Movie } from '../types/media';
+import { Movie, MediaType } from '../types/media';
 
 interface CoverReelProps {
 	movies: Movie[];
@@ -9,7 +9,7 @@ interface CoverReelProps {
 	onRemoveMovie: (movieId: number) => void;
 	onPosterClick: (movie: Movie) => void;
 	mode?: 'building' | 'display';
-	mediaType?: 'movie' | 'tv' | 'album' | 'book';
+	mediaType?: MediaType;
 }
 
 const CoverReel: React.FC<CoverReelProps> = ({ 
@@ -18,7 +18,7 @@ const CoverReel: React.FC<CoverReelProps> = ({
 	onRemoveMovie, 
 	onPosterClick, 
 	mode = 'building',
-	mediaType = 'movie' 
+	mediaType = 'movies' 
 }) => {
 	const containerClass = `cover-reel-container ${mode} ${mediaType}`;
 	

@@ -23,17 +23,22 @@
 
 /* Desktop display mode */
 @media (min-width: 768px) {
-  .cover-reel-container.display.movie,
-  .cover-reel-container.display.tv {
-    /* Movies/TV: 4x1 horizontal like Letterboxd */
+  .cover-reel-container.display.movies {
+    /* Movies: 4x1 horizontal like Letterboxd */
     grid-template-columns: repeat(4, 1fr);
     max-width: 800px;
   }
   
-  .cover-reel-container.display.album {
+  .cover-reel-container.display.music {
     /* Albums: keep 2x2 for square aspect ratio */
     grid-template-columns: repeat(2, 1fr);
     max-width: 400px;
+  }
+  
+  .cover-reel-container.display.books {
+    /* Books: 4x1 horizontal like movies */
+    grid-template-columns: repeat(4, 1fr);
+    max-width: 800px;
   }
 }
 
@@ -43,16 +48,15 @@
 }
 
 /* Media type aspect ratios */
-.movie .cover-reel-item,
-.tv .cover-reel-item {
+.movies .cover-reel-item {
   aspect-ratio: 2/3; /* Standard movie poster */
 }
 
-.album .cover-reel-item {
+.music .cover-reel-item {
   aspect-ratio: 1/1; /* Square album covers */
 }
 
-.book .cover-reel-item {
+.books .cover-reel-item {
   aspect-ratio: 2/3; /* Book covers similar to movie posters */
 }
 
@@ -83,13 +87,12 @@
 }
 
 /* Add button inherits aspect ratio from media type */
-.movie .cover-reel-add,
-.tv .cover-reel-add,
-.book .cover-reel-add {
+.movies .cover-reel-add,
+.books .cover-reel-add {
   aspect-ratio: 2/3;
 }
 
-.album .cover-reel-add {
+.music .cover-reel-add {
   aspect-ratio: 1/1;
 }
 

@@ -7,19 +7,16 @@
   background-color: rgba(0, 0, 0, 0.5);
   display: flex;
   justify-content: center;
-  align-items: flex-end; 
+  align-items: center; 
   z-index: 1000;
 }
 
 .custom-form-container {
   width: 100%;
-  max-width: 400px; 
-  background-color: #1f2933;
-  border-radius: 12px;
-  padding: 10px;
+  max-width: 400px;
 }
 
-.custom-movie-form {
+.custom-media-form {
   width: 100%;
   display: flex;
   flex-direction: column;
@@ -27,19 +24,15 @@
   padding: 20px;
   background-color: #1f2933;
   border-radius: 12px; 
-  box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.5);
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
 }
 
-.custom-movie-form h3 {
+.custom-media-form h3 {
   margin: 0;
   color: #ffffff;
 }
 
-.custom-movie-form input {
+.custom-media-form input {
   padding: 10px;
   border: none;
   border-radius: 8px;
@@ -47,7 +40,7 @@
   color: #ffffff;
 }
 
-.custom-movie-form input::placeholder {
+.custom-media-form input::placeholder {
   color: #bdc3c7;
 }
 
@@ -57,7 +50,7 @@
   gap: 10px;
 }
 
-.custom-movie-form button {
+.custom-media-form button {
   padding: 10px 15px;
   border: none;
   border-radius: 8px;
@@ -65,21 +58,21 @@
   transition: background-color 0.3s ease;
 }
 
-.custom-movie-form button[type="submit"] {
+.custom-media-form button[type="submit"] {
   background-color: #27ae60;
   color: #ffffff;
 }
 
-.custom-movie-form button[type="submit"]:hover {
+.custom-media-form button[type="submit"]:hover {
   background-color: #2ecc71;
 }
 
-.custom-movie-form button[type="button"] {
+.custom-media-form button[type="button"] {
   background-color: #e74c3c;
   color: #ffffff;
 }
 
-.custom-movie-form button[type="button"]:hover {
+.custom-media-form button[type="button"]:hover {
   background-color: #c0392b;
 }
 

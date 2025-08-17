@@ -1,21 +1,21 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import '../styles/global.css';
-import './movie-search.css';
+import './media-search.css';
 import Header from './header';
 import GridConstructor from './grid-constructor';
-import CustomMovieForm from './custom-movie-form';
+import CustomMediaForm from './custom-media-form';
 import CloseIcon from './close-icon';
 import useEscapeKey from '../hooks/useEscapeKey';
 import CoverReel from './cover-reel';
 import { Movie, MediaType } from '../types/media';
 
-const MovieSearch: React.FC = () => {
+const MediaSearch: React.FC = () => {
   const [selectedMediaType, setSelectedMediaType] = useState<MediaType>('movies');
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<Movie[]>([]);
-  const [selectedMovies, setSelectedMovies] = useState<Movie[]>([]);
-  const [coverReelMovies, setCoverReelMovies] = useState<Movie[]>([]);
+  const [selectedMedia, setSelectedMedia] = useState<Movie[]>([]);
+  const [coverReelMedia, setCoverReelMedia] = useState<Movie[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [alternatePosterPaths, setAlternatePosterPaths] = useState<string[]>([]);
@@ -26,10 +26,10 @@ const MovieSearch: React.FC = () => {
   const API_BASE_URL = 'https://api.themoviedb.org/3';
 
   useEffect(() => {
-    const storedMovies = localStorage.getItem('selectedMovies');
-    if (storedMovies) {
-      const parsedMovies = JSON.parse(storedMovies);
-      setSelectedMovies(parsedMovies.length > 0 ? parsedMovies[0] : []);
+    const storedMedia = localStorage.getItem('selectedMedia');
+    if (storedMedia) {
+      const parsedMedia = JSON.parse(storedMedia);
+      setSelectedMedia(parsedMedia.length > 0 ? parsedMedia[0] : []);
     }
   }, []);
 
@@ -84,10 +84,10 @@ const MovieSearch: React.FC = () => {
   }
   useEscapeKey(closeSearchResults);
 
-  const closeCustomMovieForm = () => {
-    setShowCustomMovieForm(false);
+  const closeCustomMediaForm = () => {
+    setShowCustomMediaForm(false);
   }
-  useEscapeKey(closeCustomMovieForm);
+  useEscapeKey(closeCustomMediaForm);
 
   const fetchAlternatePosterPaths = useCallback(async (movieId: number) => {
     try {
@@ -104,28 +104,28 @@ const MovieSearch: React.FC = () => {
   }, [API_KEY]);
 
   const handleAddToCoverReel = () => {
-    if (selectedMovies.length > 0) {
-      setCoverReelMovies((prevReel) => [...prevReel, selectedMovies[0]]);
+    if (selectedMedia.length > 0) {
+      setCoverReelMedia((prevReel) => [...prevReel, selectedMedia[0]]);
     }
   };
 
-  const handleAddMovie = (movie: Movie) => {
-    setSelectedMovies([movie]);
+  const handleAddMedia = (media: Movie) => {
+    setSelectedMedia([media]);
     setSearchResults([]);
     setSearchQuery('');
-    localStorage.setItem('selectedMovies', JSON.stringify([movie]));
+    localStorage.setItem('selectedMedia', JSON.stringify([media]));
   };
 
-  const handleRemoveMovie = (movieId: number) => {
-    const updatedMovies = selectedMovies.filter((movie) => movie.id !== movieId);
-    setSelectedMovies(updatedMovies);
-    localStorage.setItem('selectedMovies', JSON.stringify(updatedMovies));
+  const handleRemoveMedia = (mediaId: number) => {
+    const updatedMedia = selectedMedia.filter((media) => media.id !== mediaId);
+    setSelectedMedia(updatedMedia);
+    localStorage.setItem('selectedMedia', JSON.stringify(updatedMedia));
   };
 
   const handlePosterClick = async () => {
-    if (selectedMovies.length > 0) {
+    if (selectedMedia.length > 0) {
       try {
-        await fetchAlternatePosterPaths(selectedMovies[0].id);
+        await fetchAlternatePosterPaths(selectedMedia[0].id);
         setShowPosterGrid(true);
       } catch (error) {
         console.error('Error handling poster click:', error);
@@ -138,17 +138,17 @@ const MovieSearch: React.FC = () => {
   };
 
   const handleSelectAlternatePoster = (path: string) => {
-    const updatedMovies = [...selectedMovies];
-    updatedMovies[0] = { ...updatedMovies[0], poster_path: path };
-    setSelectedMovies(updatedMovies);
-    localStorage.setItem('selectedMovies', JSON.stringify(updatedMovies));
+    const updatedMedia = [...selectedMedia];
+    updatedMedia[0] = { ...updatedMedia[0], poster_path: path };
+    setSelectedMedia(updatedMedia);
+    localStorage.setItem('selectedMedia', JSON.stringify(updatedMedia));
     setShowPosterGrid(false);
   };
 
-  const handleReelPosterClick = async (movie: Movie) => { // ADD THIS
-    setSelectedMovies([movie]);
+  const handleReelPosterClick = async (media: Movie) => {
+    setSelectedMedia([media]);
     try {
-      await fetchAlternatePosterPaths(movie.id);
+      await fetchAlternatePosterPaths(media.id);
       setShowPosterGrid(true);
     } catch (error) {
       console.error('Error handling reel poster click:', error);
@@ -156,18 +156,18 @@ const MovieSearch: React.FC = () => {
   };
 
 
-  const [showCustomMovieForm, setShowCustomMovieForm] = useState(false);
-  const handleAddCustomMovie = (movie: { title: string; year: string; posterUrl: string }) => {
-    const newMovie: Movie = {
+  const [showCustomMediaForm, setShowCustomMediaForm] = useState(false);
+  const handleAddCustomMedia = (media: { title: string; year: string; posterUrl: string }) => {
+    const newMedia: Movie = {
       id: Date.now(),
-      title: movie.title,
-      release_date: `${movie.year}-01-01`,
-      poster_path: movie.posterUrl,
+      title: media.title,
+      release_date: `${media.year}-01-01`,
+      poster_path: media.posterUrl,
       isCustom: true,
     };
-    setSelectedMovies([newMovie]);
-    localStorage.setItem('selectedMovies', JSON.stringify([newMovie]));
-    setShowCustomMovieForm(false);
+    setSelectedMedia([newMedia]);
+    localStorage.setItem('selectedMedia', JSON.stringify([newMedia]));
+    setShowCustomMediaForm(false);
   };
 
   return (
@@ -178,16 +178,16 @@ const MovieSearch: React.FC = () => {
         onMediaTypeChange={setSelectedMediaType}
       />
 
-      {coverReelMovies.length > 0 || selectedMovies.length > 0 ? (
+      {coverReelMedia.length > 0 || selectedMedia.length > 0 ? (
         <CoverReel
-          movies={coverReelMovies}
+          movies={coverReelMedia}
           onAddMovie={handleAddToCoverReel}
-          onRemoveMovie={(movieId) => {
-            setCoverReelMovies((prevReel) => prevReel.filter((movie) => movie.id !== movieId));
+          onRemoveMovie={(mediaId) => {
+            setCoverReelMedia((prevReel) => prevReel.filter((media) => media.id !== mediaId));
           }}
           onPosterClick={handleReelPosterClick}
           mode="display"
-          mediaType="movie"
+          mediaType={selectedMediaType}
         />
       ) : null}
 
@@ -195,8 +195,8 @@ const MovieSearch: React.FC = () => {
         <div className="search-content">
           <div className="search-module">
             <GridConstructor
-              selectedMovies={selectedMovies}
-              onRemoveMovie={handleRemoveMovie}
+              selectedMovies={selectedMedia}
+              onRemoveMovie={handleRemoveMedia}
               onPosterClick={handlePosterClick}
               showPosterGrid={showPosterGrid}
               alternatePosterPaths={alternatePosterPaths}
@@ -210,7 +210,7 @@ const MovieSearch: React.FC = () => {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search for a movie..."
+                placeholder={`Search for ${selectedMediaType === 'movies' ? 'a movie' : selectedMediaType === 'music' ? 'an album' : 'a book'}...`}
                 className="search-input"
               />
               <button type="submit" className="search-button" disabled={isLoading}>
@@ -263,25 +263,26 @@ const MovieSearch: React.FC = () => {
                       )}
                     </div>
                   </div>
-                  <button className="add-button" onClick={() => handleAddMovie(movie)}>Add</button>
+                  <button className="add-button" onClick={() => handleAddMedia(movie)}>Add</button>
                 </div>
               ))}
             </div>
           )}
         </div>
-        {!selectedMovies.length && !searchResults.length && (
-          <button onClick={() => setShowCustomMovieForm(true)} className="add-custom-button">
-            Add Custom Movie
+        {!selectedMedia.length && !searchResults.length && (
+          <button onClick={() => setShowCustomMediaForm(true)} className="add-custom-button">
+            Add Custom {selectedMediaType === 'movies' ? 'Movie' : selectedMediaType === 'music' ? 'Album' : 'Book'}
           </button>
         )}
       </div>
 
-      {showCustomMovieForm && (
-        <div className="custom-form-overlay" onClick={closeCustomMovieForm}>
+      {showCustomMediaForm && (
+        <div className="custom-form-overlay" onClick={closeCustomMediaForm}>
           <div className="custom-form-container" onClick={(e) => e.stopPropagation()}>
-            <CustomMovieForm
-              onAddCustomMovie={handleAddCustomMovie}
-              onCancel={closeCustomMovieForm}
+            <CustomMediaForm
+              mediaType={selectedMediaType}
+              onAddCustomMedia={handleAddCustomMedia}
+              onCancel={closeCustomMediaForm}
             />
           </div>
         </div>
@@ -290,5 +291,5 @@ const MovieSearch: React.FC = () => {
   );
 };
 
-export default MovieSearch;
+export default MediaSearch;
 
