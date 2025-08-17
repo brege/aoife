@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import './custom-media-form.css';
 import { MediaType } from '../types/media';
+import logger from '../utils/logger';
 
 interface CustomMediaFormProps {
   mediaType: MediaType;
@@ -30,6 +31,19 @@ const CustomMediaForm: React.FC<CustomMediaFormProps> = ({ mediaType, onAddCusto
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    logger.info(`CUSTOM: Adding custom ${mediaType.slice(0, -1)}`, {
+      context: 'CustomMediaForm.handleSubmit',
+      action: 'custom_media_add',
+      mediaType,
+      media: {
+        title,
+        year,
+        posterUrl
+      },
+      timestamp: Date.now()
+    });
+    
     onAddCustomMedia({ title, year, posterUrl });
     setTitle('');
     setYear('');

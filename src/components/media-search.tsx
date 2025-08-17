@@ -9,8 +9,17 @@ import CloseIcon from './close-icon';
 import useEscapeKey from '../hooks/useEscapeKey';
 import CoverReel from './cover-reel';
 import { Movie, MediaType } from '../types/media';
+import logger from '../utils/logger';
 
 const MediaSearch: React.FC = () => {
+  // Enable debug logging to track button click issues
+  useEffect(() => {
+    logger.setDebugMode(true);
+    logger.info('MediaSearch component initialized', {
+      context: 'MediaSearch'
+    });
+  }, []);
+
   const [selectedMediaType, setSelectedMediaType] = useState<MediaType>('movies');
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<Movie[]>([]);
@@ -29,9 +38,10 @@ const MediaSearch: React.FC = () => {
     const storedMedia = localStorage.getItem('selectedMedia');
     if (storedMedia) {
       const parsedMedia = JSON.parse(storedMedia);
-      setSelectedMedia(parsedMedia.length > 0 ? parsedMedia[0] : []);
+      setSelectedMedia(Array.isArray(parsedMedia) ? parsedMedia : []);
     }
   }, []);
+
 
   const fetchMovieDetails = useCallback(async (movieId: number) => {
     try {
@@ -42,7 +52,11 @@ const MediaSearch: React.FC = () => {
       });
       return response.data;
     } catch (error) {
-      console.error(`Error fetching details for movie ${movieId}:`, error);
+      logger.error(`Failed to fetch movie details for ID ${movieId}`, {
+        context: 'MediaSearch.fetchMovieDetails',
+        movieId,
+        error: error instanceof Error ? error.message : String(error)
+      });
       return null;
     }
   }, [API_KEY, API_BASE_URL]);
@@ -50,6 +64,7 @@ const MediaSearch: React.FC = () => {
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!searchQuery.trim()) return;
+
 
     setIsLoading(true);
     setError('');
@@ -63,6 +78,10 @@ const MediaSearch: React.FC = () => {
       });
 
       // Fetch movie details including imdb_id for each search result
+      logger.debug(`Found ${response.data.results.length} search results`, {
+        context: 'MediaSearch.handleSearch'
+      });
+      
       const moviesWithImdb = await Promise.all(
         response.data.results.map(async (movie: Movie) => {
           const details = await fetchMovieDetails(movie.id);
@@ -70,16 +89,36 @@ const MediaSearch: React.FC = () => {
         })
       );
 
+      logger.info(`SEARCH: Found ${moviesWithImdb.length} results for "${searchQuery}"`, {
+        context: 'MediaSearch.handleSearch',
+        action: 'search_results',
+        query: searchQuery,
+        resultsCount: moviesWithImdb.length,
+        results: moviesWithImdb.map(m => ({ 
+          id: m.id, 
+          title: m.title, 
+          year: m.release_date ? new Date(m.release_date).getFullYear() : 'N/A'
+        })),
+        timestamp: Date.now()
+      });
+
       setSearchResults(moviesWithImdb);
     } catch (err) {
       setError('An error occurred while searching for movies.');
-      console.error(err);
+      logger.error('Search request failed', {
+        context: 'MediaSearch.handleSearch',
+        query: searchQuery,
+        error: err instanceof Error ? err.message : String(err)
+      });
     } finally {
       setIsLoading(false);
     }
   };
 
   const closeSearchResults = () => {
+    logger.debug('Closing search results', {
+      context: 'MediaSearch.closeSearchResults'
+    });
     setSearchResults([]);
   }
   useEscapeKey(closeSearchResults);
@@ -99,47 +138,117 @@ const MediaSearch: React.FC = () => {
       const posters = response.data.posters.map((poster: { file_path: string }) => poster.file_path);
       setAlternatePosterPaths(posters);
     } catch (error) {
-      console.error('Error fetching alternate posters:', error);
+      logger.error('Failed to fetch alternate poster paths', {
+        context: 'MediaSearch.fetchAlternatePosterPaths',
+        movieId,
+        error: error instanceof Error ? error.message : String(error)
+      });
     }
   }, [API_KEY]);
 
   const handleAddToCoverReel = () => {
     if (selectedMedia.length > 0) {
+      logger.info(`REEL: Added "${selectedMedia[0].title}" to cover reel`, {
+        context: 'MediaSearch.handleAddToCoverReel',
+        action: 'reel_media_added',
+        media: {
+          id: selectedMedia[0].id,
+          title: selectedMedia[0].title
+        },
+        timestamp: Date.now()
+      });
       setCoverReelMedia((prevReel) => [...prevReel, selectedMedia[0]]);
     }
   };
 
   const handleAddMedia = (media: Movie) => {
+    const currentCount = Array.isArray(selectedMedia) ? selectedMedia.length : 0;
+    
+    // Update state
     setSelectedMedia([media]);
     setSearchResults([]);
     setSearchQuery('');
     localStorage.setItem('selectedMedia', JSON.stringify([media]));
+    
+    logger.info(`GRID: Added "${media.title}" (${currentCount} → 1)`, {
+      context: 'MediaSearch.handleAddMedia',
+      action: 'media_added',
+      media: {
+        id: media.id,
+        title: media.title,
+        year: media.release_date ? new Date(media.release_date).getFullYear() : 'N/A'
+      },
+      gridCount: 1,
+      timestamp: Date.now()
+    });
   };
 
   const handleRemoveMedia = (mediaId: number) => {
+    const mediaToRemove = selectedMedia.find(m => m.id === mediaId);
+    const currentCount = Array.isArray(selectedMedia) ? selectedMedia.length : 0;
+    
     const updatedMedia = selectedMedia.filter((media) => media.id !== mediaId);
     setSelectedMedia(updatedMedia);
     localStorage.setItem('selectedMedia', JSON.stringify(updatedMedia));
+    
+    logger.info(`GRID: Removed "${mediaToRemove?.title || 'unknown'}" (${currentCount} → ${updatedMedia.length})`, {
+      context: 'MediaSearch.handleRemoveMedia',
+      action: 'media_removed',
+      mediaId,
+      gridCount: updatedMedia.length,
+      timestamp: Date.now()
+    });
   };
 
   const handlePosterClick = async () => {
     if (selectedMedia.length > 0) {
       try {
+        logger.info(`POSTER: Opening alternate poster grid`, {
+          context: 'MediaSearch.handlePosterClick',
+          action: 'poster_grid_open',
+          movie: {
+            id: selectedMedia[0].id,
+            title: selectedMedia[0].title
+          },
+          timestamp: Date.now()
+        });
+        
         await fetchAlternatePosterPaths(selectedMedia[0].id);
         setShowPosterGrid(true);
       } catch (error) {
-        console.error('Error handling poster click:', error);
+        logger.error('Failed to handle poster click', {
+          context: 'MediaSearch.handlePosterClick',
+          mediaId: selectedMedia[0]?.id,
+          error: error instanceof Error ? error.message : String(error)
+        });
       }
     }
   };
 
   const handleClosePosterGrid = () => {
+    logger.info(`POSTER: Closing alternate poster grid`, {
+      context: 'MediaSearch.handleClosePosterGrid',
+      action: 'poster_grid_close',
+      timestamp: Date.now()
+    });
     setShowPosterGrid(false);
   };
 
   const handleSelectAlternatePoster = (path: string) => {
     const updatedMedia = [...selectedMedia];
     updatedMedia[0] = { ...updatedMedia[0], poster_path: path };
+    
+    logger.info(`POSTER: Applied alternate poster`, {
+      context: 'MediaSearch.handleSelectAlternatePoster',
+      action: 'poster_applied',
+      movie: {
+        id: updatedMedia[0].id,
+        title: updatedMedia[0].title
+      },
+      posterPath: path,
+      timestamp: Date.now()
+    });
+    
     setSelectedMedia(updatedMedia);
     localStorage.setItem('selectedMedia', JSON.stringify(updatedMedia));
     setShowPosterGrid(false);
@@ -151,7 +260,11 @@ const MediaSearch: React.FC = () => {
       await fetchAlternatePosterPaths(media.id);
       setShowPosterGrid(true);
     } catch (error) {
-      console.error('Error handling reel poster click:', error);
+      logger.error('Failed to handle reel poster click', {
+        context: 'MediaSearch.handleReelPosterClick',
+        mediaId: media.id,
+        error: error instanceof Error ? error.message : String(error)
+      });
     }
   };
 
@@ -183,6 +296,13 @@ const MediaSearch: React.FC = () => {
           movies={coverReelMedia}
           onAddMovie={handleAddToCoverReel}
           onRemoveMovie={(mediaId) => {
+            const mediaToRemove = coverReelMedia.find(m => m.id === mediaId);
+            logger.info(`REEL: Removed "${mediaToRemove?.title || 'unknown'}" from cover reel`, {
+              context: 'MediaSearch.CoverReel.onRemoveMovie',
+              action: 'reel_media_removed',
+              mediaId,
+              timestamp: Date.now()
+            });
             setCoverReelMedia((prevReel) => prevReel.filter((media) => media.id !== mediaId));
           }}
           onPosterClick={handleReelPosterClick}
@@ -209,11 +329,25 @@ const MediaSearch: React.FC = () => {
                 ref={searchInputRef}
                 type="text"
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                }}
                 placeholder={`Search for ${selectedMediaType === 'movies' ? 'a movie' : selectedMediaType === 'music' ? 'an album' : 'a book'}...`}
                 className="search-input"
               />
-              <button type="submit" className="search-button" disabled={isLoading}>
+              <button 
+                type="submit" 
+                className="search-button" 
+                disabled={isLoading}
+                onClick={() => {
+                  logger.info(`SEARCH: Searching for "${searchQuery}"`, {
+                    context: 'MediaSearch.SearchButton',
+                    action: 'search_submit',
+                    query: searchQuery,
+                    timestamp: Date.now()
+                  });
+                }}
+              >
                 {isLoading ? 'Searching...' : 'Search'}
               </button>
             </form>
@@ -263,7 +397,28 @@ const MediaSearch: React.FC = () => {
                       )}
                     </div>
                   </div>
-                  <button className="add-button" onClick={() => handleAddMedia(movie)}>Add</button>
+                  <button 
+                    className="add-button" 
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      
+                      logger.info(`ADD: Adding "${movie.title}" to grid`, {
+                        context: 'MediaSearch.AddButton',
+                        action: 'add_media',
+                        movie: {
+                          id: movie.id,
+                          title: movie.title,
+                          year: movie.release_date ? new Date(movie.release_date).getFullYear() : 'N/A'
+                        },
+                        timestamp: Date.now()
+                      });
+                      
+                      handleAddMedia(movie);
+                    }}
+                  >
+                    Add
+                  </button>
                 </div>
               ))}
             </div>

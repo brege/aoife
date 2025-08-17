@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import './header.css';
 import { MediaType } from '../types/media';
+import logger from '../utils/logger';
 
 interface HeaderProps {
   selectedMediaType?: MediaType;
@@ -42,9 +43,25 @@ const Header: React.FC<HeaderProps> = ({
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) =>
     setTitle(e.target.value);
 
-  const handleTitleBlur = () => setIsEditing(false);
+  const handleTitleBlur = () => {
+    setIsEditing(false);
+    logger.info(`HEADER: Title changed to "${title}"`, {
+      context: 'Header.handleTitleBlur',
+      action: 'title_change',
+      newTitle: title,
+      timestamp: Date.now()
+    });
+  };
 
   const handleMediaTypeSelect = (type: MediaType) => {
+    logger.info(`HEADER: Media type changed to "${type}"`, {
+      context: 'Header.handleMediaTypeSelect',
+      action: 'media_type_change',
+      previousType: selectedMediaType,
+      newType: type,
+      timestamp: Date.now()
+    });
+    
     onMediaTypeChange?.(type);
     setIsMediaMenuOpen(false);
   };

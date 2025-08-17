@@ -50,8 +50,46 @@ Nothing is ever perfect--you have to be militant with MusicBrainz Piccard and Be
 4. **Custom Entry Extension**  
    Adapt the existing “add a movie” custom input form so that it also works for books and albums, ensuring manual creation is first‑class across types.  
 
+#### Summary
+
+The project's near‑term path is clear: add support for books and music, use their differences to drive real architectural improvements, and maintain the flexibility of custom media creation. Once these steps are complete, the foundation will be strong enough to revisit secondary categories like TV shows or games without risking brittle code or wasted design effort.
+
 ---
 
-#### Summary
-The project’s near‑term path is clear: add support for books and music, use their differences to drive real architectural improvements, and maintain the flexibility of custom media creation. Once these steps are complete, the foundation will be strong enough to revisit secondary categories like TV shows or games without risking brittle code or wasted design effort.  
+### Logging & API Foundation
 
+- [x] Port `oshea`'s centralized logging system
+- [x] Browser→server log streaming via Vite middleware
+- [x] Real-time terminal visibility of user actions
+
+Track events, not keystrokes.
+
+- [x] Poster selection changes (different poster chosen)
+- [x] Hamburger menu selections  
+- [x] Header bar title changes (if user modifies **aoife**)
+- [ ] Grid operations (add/remove items) 
+- [ ] Any UI state changes affecting user experience
+
+The important patterns to follow from **oshea**, in addition to the centralized logging system,
+is to use the formatters and build on the output adapter.  There are several reasons to do this:
+
+- **It provides communication in text visual changes from the UI.**
+- **It provides a foundation for automated testing.**
+- **It allows the tool to be separated into client/server components.**
+
+The other end of this spectrum is to be able to use the server as a terminal to control the app.
+
+#### API Layer
+
+- [ ] Enable programmatic control via terminal commands
+- [ ] Design endpoints for search/add/remove/list operations
+
+These two items are the critical hinge in which integration and end-to-end testing can be built on,
+providing a foundation for automated testing and CI integration
+
+#### Summary
+
+The original plan was to unify the grid structure to a generalized, user-configurable system,
+but communicating what i'm seeing, what firefox is reporting, the uselessness of the terminal 
+output from the Vite server, and the lack of a way to programatically control the app for direct
+feedback are impossible without an API and logger.

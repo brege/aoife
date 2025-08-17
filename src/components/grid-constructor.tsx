@@ -2,6 +2,7 @@ import React from 'react';
 import './grid-constructor.css';
 import CloseIcon from './close-icon';
 import { Movie } from '../types/media';
+import logger from '../utils/logger';
 
 interface GridConstructorProps {
   selectedMovies: Movie[];
@@ -77,7 +78,20 @@ const GridConstructor: React.FC<GridConstructorProps> = ({
                 alt={`Alternate poster ${index + 1}`}
                 className="alternate-poster"
                 title={`Alternate Poster ${index + 1}`}
-                onClick={() => onSelectAlternatePoster(path)}
+                onClick={() => {
+                  logger.info(`POSTER: Selected alternate poster ${index + 1}`, {
+                    context: 'GridConstructor.onSelectAlternatePoster',
+                    action: 'poster_change',
+                    movie: selectedMovies[0] ? {
+                      id: selectedMovies[0].id,
+                      title: selectedMovies[0].title
+                    } : null,
+                    posterIndex: index + 1,
+                    posterPath: path,
+                    timestamp: Date.now()
+                  });
+                  onSelectAlternatePoster(path);
+                }}
               />
             ))}
           </div>
