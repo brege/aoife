@@ -1,3 +1,5 @@
+export type MediaType = 'movies' | 'books' | 'music';
+
 export interface Movie {
   id: number;
   title: string;

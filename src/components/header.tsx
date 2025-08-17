@@ -1,7 +1,16 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import './header.css';
+import { MediaType } from '../types/media';
 
-const Header: React.FC = () => {
+interface HeaderProps {
+  selectedMediaType?: MediaType;
+  onMediaTypeChange?: (type: MediaType) => void;
+}
+
+const Header: React.FC<HeaderProps> = ({ 
+  selectedMediaType = 'movies', 
+  onMediaTypeChange 
+}) => {
   const [title, setTitle] = useState('Aoife');
   const [isEditing, setIsEditing] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -41,7 +50,17 @@ const Header: React.FC = () => {
         )}
       </div>
       <div className="header-right">
-        {/* Future: Add media type selector, settings, etc */}
+        <div className="media-type-selector">
+          {(['movies', 'books', 'music'] as MediaType[]).map((type) => (
+            <button
+              key={type}
+              className={`media-type-button ${selectedMediaType === type ? 'active' : ''}`}
+              onClick={() => onMediaTypeChange?.(type)}
+            >
+              {type.charAt(0).toUpperCase() + type.slice(1)}
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   );

@@ -165,3 +165,31 @@
   }
 }
 
+/* Media Type Selector */
+.media-type-selector {
+  display: flex;
+  gap: 8px;
+}
+
+.media-type-button {
+  background-color: transparent;
+  color: var(--text-color-light);
+  border: 1px solid var(--text-color-light);
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.media-type-button:hover {
+  background-color: var(--hover-bg-color);
+}
+
+.media-type-button.active {
+  background-color: var(--text-color-green);
+  color: #000;
+  border-color: var(--text-color-green);
+}
+

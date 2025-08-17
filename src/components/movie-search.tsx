@@ -8,9 +8,10 @@ import CustomMovieForm from './custom-movie-form';
 import CloseIcon from './close-icon';
 import useEscapeKey from '../hooks/useEscapeKey';
 import CoverReel from './cover-reel';
-import { Movie } from '../types/media';
+import { Movie, MediaType } from '../types/media';
 
 const MovieSearch: React.FC = () => {
+  const [selectedMediaType, setSelectedMediaType] = useState<MediaType>('movies');
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<Movie[]>([]);
   const [selectedMovies, setSelectedMovies] = useState<Movie[]>([]);
@@ -172,7 +173,10 @@ const MovieSearch: React.FC = () => {
   return (
     <div className="container">
 
-      <Header />
+      <Header 
+        selectedMediaType={selectedMediaType}
+        onMediaTypeChange={setSelectedMediaType}
+      />
 
       {coverReelMovies.length > 0 || selectedMovies.length > 0 ? (
         <CoverReel
