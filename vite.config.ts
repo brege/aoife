@@ -8,6 +8,43 @@ export default defineConfig({
     {
       name: 'log-interceptor',
       configureServer(server) {
+        // CLI API endpoints - use /cli prefix to avoid conflicts with TMDB proxy
+        server.middlewares.use('/cli', (req, res, next) => {
+          const url = new URL(req.url || '', 'http://localhost');
+          const path = url.pathname.replace('/cli', '');
+          
+          if (path === '/search' && req.method === 'GET') {
+            const query = url.searchParams.get('q');
+            if (!query) {
+              res.writeHead(400, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({ error: 'Query parameter "q" is required' }));
+              return;
+            }
+            console.log(`[CLI] Search request: "${query}"`);
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ message: `Search for "${query}" - integration pending` }));
+          } else if (path === '/add' && req.method === 'POST') {
+            let body = '';
+            req.on('data', chunk => { body += chunk.toString(); });
+            req.on('end', () => {
+              console.log(`[CLI] Add request: ${body}`);
+              res.writeHead(200, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({ status: 'received', message: 'Add integration pending' }));
+            });
+          } else if (path.startsWith('/remove/') && req.method === 'DELETE') {
+            const id = path.replace('/remove/', '');
+            console.log(`[CLI] Remove request: ${id}`);
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ status: 'received', id, message: 'Remove integration pending' }));
+          } else if (path === '/grid' && req.method === 'GET') {
+            console.log(`[CLI] Grid state request`);
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ message: 'Grid state integration pending' }));
+          } else {
+            next();
+          }
+        });
+
         server.middlewares.use('/api/log', (req, res, next) => {
           if (req.method === 'POST') {
             let body = '';

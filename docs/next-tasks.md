@@ -67,7 +67,7 @@ Track events, not keystrokes.
 - [x] Poster selection changes (different poster chosen)
 - [x] Hamburger menu selections  
 - [x] Header bar title changes (if user modifies **aoife**)
-- [ ] Grid operations (add/remove items) 
+- [x] Grid operations (add/remove items) 
 - [ ] Any UI state changes affecting user experience
 
 The important patterns to follow from **oshea**, in addition to the centralized logging system,
@@ -93,3 +93,23 @@ The original plan was to unify the grid structure to a generalized, user-configu
 but communicating what i'm seeing, what firefox is reporting, the uselessness of the terminal 
 output from the Vite server, and the lack of a way to programatically control the app for direct
 feedback are impossible without an API and logger.
+
+#### Architectural Note -- An Argument for Making a CLI Layer for a React App
+
+The CLI API layer implementation (Vite middleware at `/cli/*` endpoints) represents an unconventional architectural pattern: React applications that expose native programmatic control interfaces for development and testing. This approach fills a gap in the React ecosystem where most apps are purely GUI-first with no direct state manipulation capabilities.
+
+Unlike existing solutions (Storybook's component isolation, Cypress/Playwright's browser automation, or Next.js API routes), this pattern provides live app introspection and direct state control without browser overhead. The bidirectional CLI ↔ GUI communication enables hybrid workflows where developers can mix interactive UI usage with scripted automation.
+
+This architectural pattern has immediate cross-project value for **oshea** development. The middleware techniques, state bridging patterns, and logging integration being developed here will directly inform adding a React frontend to the CLI tool. Rather than treating CLI and GUI as separate paradigms, this creates a unified vocabulary where applications are transparent and controllable by design - establishing foundational patterns that transcend individual projects and enable systematic, reproducible development workflows.
+
+Three Main Benefits:
+
+1. **Quicker, more familiar, reproducible development**  
+   Affords a more rapid development process with Claude.
+   It is impossible to communicate GUI behavior and differentiate logic faults of data with output changes in CSS formatting at times.
+
+2. **End-to-end testing**  
+   This makes End-to-end testing possible for the React frontend and the CLI backend.  This allows me to *forward propagate* a familiar testing architecture from **oshea** into **aoife**.
+   
+3. **React Frontend for oshea**  
+   Greater value add is for **oshea**'s next phase of development, as I will be able to bolt on a React frontend, effectively *backward propagating* a web UI for doctype building and iteration (oshea's broader v1.0 to v2.0 goal).
