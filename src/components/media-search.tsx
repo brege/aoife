@@ -7,6 +7,7 @@ import GridConstructor from './grid-constructor';
 import CustomMediaForm from './custom-media-form';
 import CloseIcon from './close-icon';
 import useEscapeKey from '../hooks/useEscapeKey';
+import { useCliBridge } from '../hooks/useCliBridge';
 import CoverReel from './cover-reel';
 import { Movie, MediaType } from '../types/media';
 import logger from '../utils/logger';
@@ -41,7 +42,6 @@ const MediaSearch: React.FC = () => {
       setSelectedMedia(Array.isArray(parsedMedia) ? parsedMedia : []);
     }
   }, []);
-
 
   const fetchMovieDetails = useCallback(async (movieId: number) => {
     try {
@@ -282,6 +282,78 @@ const MediaSearch: React.FC = () => {
     localStorage.setItem('selectedMedia', JSON.stringify([newMedia]));
     setShowCustomMediaForm(false);
   };
+
+  // CLI Bridge handlers - must be after all function declarations
+  const handleCliSearch = useCallback(async (query: string) => {
+    setSearchQuery(query);
+    setIsLoading(true);
+    setError('');
+
+    try {
+      const response = await axios.get(`${API_BASE_URL}/search/movie`, {
+        params: {
+          api_key: API_KEY,
+          query: query,
+        },
+      });
+
+      const moviesWithImdb = await Promise.all(
+        response.data.results.map(async (movie: Movie) => {
+          const details = await fetchMovieDetails(movie.id);
+          return { ...movie, imdb_id: details?.imdb_id || null };
+        })
+      );
+
+      logger.info(`CLI-SEARCH: Found ${moviesWithImdb.length} results for "${query}"`, {
+        context: 'MediaSearch.handleCliSearch',
+        action: 'cli_search_results',
+        query: query,
+        resultsCount: moviesWithImdb.length,
+        timestamp: Date.now()
+      });
+
+      setSearchResults(moviesWithImdb);
+    } catch (err) {
+      setError('CLI search failed');
+      logger.error('CLI search request failed', {
+        context: 'MediaSearch.handleCliSearch',
+        query: query,
+        error: err instanceof Error ? err.message : String(err)
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [API_KEY, fetchMovieDetails]);
+
+  const handleCliAddMedia = useCallback((media: Movie) => {
+    handleAddMedia(media);
+    logger.info(`CLI-ADD: Added media "${media.title}"`, {
+      context: 'MediaSearch.handleCliAddMedia',
+      action: 'cli_add_media',
+      media: { id: media.id, title: media.title }
+    });
+  }, []);
+
+  const handleCliRemoveMedia = useCallback((id: string | number) => {
+    handleRemoveMedia(Number(id));
+    logger.info(`CLI-REMOVE: Removed media with ID ${id}`, {
+      context: 'MediaSearch.handleCliRemoveMedia',
+      action: 'cli_remove_media',
+      mediaId: id
+    });
+  }, []);
+
+  const handleCliGetGridState = useCallback(() => {
+    return selectedMedia;
+  }, [selectedMedia]);
+
+  // Initialize CLI bridge
+  useCliBridge({
+    onSearch: handleCliSearch,
+    onAddMedia: handleCliAddMedia,
+    onRemoveMedia: handleCliRemoveMedia,
+    onGetGridState: handleCliGetGridState
+  });
 
   return (
     <div className="container">

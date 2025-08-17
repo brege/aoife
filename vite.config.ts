@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import { WebSocketServer } from 'ws'
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -8,6 +9,25 @@ export default defineConfig({
     {
       name: 'log-interceptor',
       configureServer(server) {
+        // WebSocket server for CLI ↔ React communication
+        const wss = new WebSocketServer({ port: 8080 });
+        let reactClient = null;
+        
+        wss.on('connection', (ws) => {
+          console.log('[WS] React client connected');
+          reactClient = ws;
+          
+          ws.on('message', (data) => {
+            const message = JSON.parse(data.toString());
+            console.log('[WS] Message from React:', message.type);
+          });
+          
+          ws.on('close', () => {
+            console.log('[WS] React client disconnected');
+            reactClient = null;
+          });
+        });
+
         // CLI API endpoints - use /cli prefix to avoid conflicts with TMDB proxy
         server.middlewares.use('/cli', (req, res, next) => {
           const url = new URL(req.url || '', 'http://localhost');
@@ -20,26 +40,57 @@ export default defineConfig({
               res.end(JSON.stringify({ error: 'Query parameter "q" is required' }));
               return;
             }
-            console.log(`[CLI] Search request: "${query}"`);
-            res.writeHead(200, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ message: `Search for "${query}" - integration pending` }));
+            
+            if (reactClient) {
+              console.log(`[CLI] Sending search request to React: "${query}"`);
+              reactClient.send(JSON.stringify({ type: 'SEARCH', query }));
+              res.writeHead(200, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({ status: 'sent', query, message: 'Search request sent to React app' }));
+            } else {
+              res.writeHead(503, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({ error: 'React app not connected' }));
+            }
           } else if (path === '/add' && req.method === 'POST') {
             let body = '';
             req.on('data', chunk => { body += chunk.toString(); });
             req.on('end', () => {
-              console.log(`[CLI] Add request: ${body}`);
-              res.writeHead(200, { 'Content-Type': 'application/json' });
-              res.end(JSON.stringify({ status: 'received', message: 'Add integration pending' }));
+              try {
+                const mediaItem = JSON.parse(body);
+                if (reactClient) {
+                  console.log(`[CLI] Sending add request to React:`, mediaItem.title || mediaItem.id);
+                  reactClient.send(JSON.stringify({ type: 'ADD_MEDIA', media: mediaItem }));
+                  res.writeHead(200, { 'Content-Type': 'application/json' });
+                  res.end(JSON.stringify({ status: 'sent', item: mediaItem }));
+                } else {
+                  res.writeHead(503, { 'Content-Type': 'application/json' });
+                  res.end(JSON.stringify({ error: 'React app not connected' }));
+                }
+              } catch (error) {
+                res.writeHead(400, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: 'Invalid JSON body' }));
+              }
             });
           } else if (path.startsWith('/remove/') && req.method === 'DELETE') {
             const id = path.replace('/remove/', '');
-            console.log(`[CLI] Remove request: ${id}`);
-            res.writeHead(200, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ status: 'received', id, message: 'Remove integration pending' }));
+            if (reactClient) {
+              console.log(`[CLI] Sending remove request to React: ${id}`);
+              reactClient.send(JSON.stringify({ type: 'REMOVE_MEDIA', id }));
+              res.writeHead(200, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({ status: 'sent', id }));
+            } else {
+              res.writeHead(503, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({ error: 'React app not connected' }));
+            }
           } else if (path === '/grid' && req.method === 'GET') {
-            console.log(`[CLI] Grid state request`);
-            res.writeHead(200, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ message: 'Grid state integration pending' }));
+            if (reactClient) {
+              console.log(`[CLI] Requesting grid state from React`);
+              reactClient.send(JSON.stringify({ type: 'GET_GRID_STATE' }));
+              res.writeHead(200, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({ status: 'requested', message: 'Grid state request sent to React app' }));
+            } else {
+              res.writeHead(503, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({ error: 'React app not connected' }));
+            }
           } else {
             next();
           }
