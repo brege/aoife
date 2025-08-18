@@ -3,12 +3,11 @@ import axios from 'axios';
 import '../styles/global.css';
 import './media-search.css';
 import Header from './header';
-import GridConstructor from './grid-constructor';
+import Grid2x2 from './grid-2x2';
 import CustomMediaForm from './custom-media-form';
 import CloseIcon from './close-icon';
 import useEscapeKey from '../hooks/useEscapeKey';
 import { useCliBridge } from '../hooks/useCliBridge';
-import CoverReel from './cover-reel';
 import { Movie, MediaType } from '../types/media';
 import logger from '../utils/logger';
 
@@ -24,22 +23,23 @@ const MediaSearch: React.FC = () => {
   const [selectedMediaType, setSelectedMediaType] = useState<MediaType>('movies');
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<Movie[]>([]);
-  const [selectedMedia, setSelectedMedia] = useState<Movie[]>([]);
-  const [coverReelMedia, setCoverReelMedia] = useState<Movie[]>([]);
+  const [gridMovies, setGridMovies] = useState<Movie[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [alternatePosterPaths, setAlternatePosterPaths] = useState<string[]>([]);
   const [showPosterGrid, setShowPosterGrid] = useState(false);
+  const [activePosterMovieId, setActivePosterMovieId] = useState<number | null>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   const API_KEY = import.meta.env.VITE_TMDB_API_KEY;
   const API_BASE_URL = 'https://api.themoviedb.org/3';
 
   useEffect(() => {
-    const storedMedia = localStorage.getItem('selectedMedia');
-    if (storedMedia) {
-      const parsedMedia = JSON.parse(storedMedia);
-      setSelectedMedia(Array.isArray(parsedMedia) ? parsedMedia : []);
+    // Load grid data from localStorage
+    const storedGrid = localStorage.getItem('gridMovies');
+    if (storedGrid) {
+      const parsedGrid = JSON.parse(storedGrid);
+      setGridMovies(Array.isArray(parsedGrid) ? parsedGrid : []);
     }
   }, []);
 
@@ -146,84 +146,67 @@ const MediaSearch: React.FC = () => {
     }
   }, [API_KEY]);
 
-  const handleAddToCoverReel = () => {
-    if (selectedMedia.length > 0) {
-      logger.info(`REEL: Added "${selectedMedia[0].title}" to cover reel`, {
-        context: 'MediaSearch.handleAddToCoverReel',
-        action: 'reel_media_added',
-        media: {
-          id: selectedMedia[0].id,
-          title: selectedMedia[0].title
-        },
-        timestamp: Date.now()
-      });
-      setCoverReelMedia((prevReel) => [...prevReel, selectedMedia[0]]);
-    }
-  };
 
   const handleAddMedia = (media: Movie) => {
-    const currentCount = Array.isArray(selectedMedia) ? selectedMedia.length : 0;
-    
-    // Update state
-    setSelectedMedia([media]);
+    // Only add if grid isn't full (max 4 items)
+    if (gridMovies.length >= 4) {
+      logger.warn('Cannot add media: grid is full (4/4)', {
+        context: 'MediaSearch.handleAddMedia',
+        action: 'add_rejected_full_grid'
+      });
+      return;
+    }
+
+    const updatedGrid = [...gridMovies, media];
+    setGridMovies(updatedGrid);
     setSearchResults([]);
     setSearchQuery('');
-    localStorage.setItem('selectedMedia', JSON.stringify([media]));
+    localStorage.setItem('gridMovies', JSON.stringify(updatedGrid));
     
-    logger.info(`GRID: Added "${media.title}" (${currentCount} → 1)`, {
+    logger.info(`GRID: Added "${media.title}" to position ${gridMovies.length}`, {
       context: 'MediaSearch.handleAddMedia',
-      action: 'media_added',
+      action: 'grid_media_added',
       media: {
         id: media.id,
         title: media.title,
         year: media.release_date ? new Date(media.release_date).getFullYear() : 'N/A'
       },
-      gridCount: 1,
+      position: gridMovies.length,
+      gridPosition: `(${Math.floor(gridMovies.length / 2)}, ${gridMovies.length % 2})`,
+      gridCount: updatedGrid.length,
+      gridLayout: updatedGrid.map((m, i) => ({ 
+        position: i, 
+        title: m.title,
+        matrixPos: `(${Math.floor(i / 2)}, ${i % 2})`
+      })),
       timestamp: Date.now()
     });
   };
 
   const handleRemoveMedia = (mediaId: number) => {
-    const mediaToRemove = selectedMedia.find(m => m.id === mediaId);
-    const currentCount = Array.isArray(selectedMedia) ? selectedMedia.length : 0;
+    const mediaToRemove = gridMovies.find(m => m.id === mediaId);
+    const removedPosition = gridMovies.findIndex(m => m.id === mediaId);
     
-    const updatedMedia = selectedMedia.filter((media) => media.id !== mediaId);
-    setSelectedMedia(updatedMedia);
-    localStorage.setItem('selectedMedia', JSON.stringify(updatedMedia));
+    const updatedGrid = gridMovies.filter((media) => media.id !== mediaId);
+    setGridMovies(updatedGrid);
+    localStorage.setItem('gridMovies', JSON.stringify(updatedGrid));
     
-    logger.info(`GRID: Removed "${mediaToRemove?.title || 'unknown'}" (${currentCount} → ${updatedMedia.length})`, {
+    logger.info(`GRID: Removed "${mediaToRemove?.title || 'unknown'}" from position ${removedPosition}`, {
       context: 'MediaSearch.handleRemoveMedia',
-      action: 'media_removed',
+      action: 'grid_media_removed',
       mediaId,
-      gridCount: updatedMedia.length,
+      position: removedPosition,
+      gridPosition: `(${Math.floor(removedPosition / 2)}, ${removedPosition % 2})`,
+      gridCount: updatedGrid.length,
+      gridLayout: updatedGrid.map((m, i) => ({ 
+        position: i, 
+        title: m.title,
+        matrixPos: `(${Math.floor(i / 2)}, ${i % 2})`
+      })),
       timestamp: Date.now()
     });
   };
 
-  const handlePosterClick = async () => {
-    if (selectedMedia.length > 0) {
-      try {
-        logger.info(`POSTER: Opening alternate poster grid`, {
-          context: 'MediaSearch.handlePosterClick',
-          action: 'poster_grid_open',
-          movie: {
-            id: selectedMedia[0].id,
-            title: selectedMedia[0].title
-          },
-          timestamp: Date.now()
-        });
-        
-        await fetchAlternatePosterPaths(selectedMedia[0].id);
-        setShowPosterGrid(true);
-      } catch (error) {
-        logger.error('Failed to handle poster click', {
-          context: 'MediaSearch.handlePosterClick',
-          mediaId: selectedMedia[0]?.id,
-          error: error instanceof Error ? error.message : String(error)
-        });
-      }
-    }
-  };
 
   const handleClosePosterGrid = () => {
     logger.info(`POSTER: Closing alternate poster grid`, {
@@ -232,41 +215,37 @@ const MediaSearch: React.FC = () => {
       timestamp: Date.now()
     });
     setShowPosterGrid(false);
+    setActivePosterMovieId(null);
   };
 
   const handleSelectAlternatePoster = (path: string) => {
-    const updatedMedia = [...selectedMedia];
-    updatedMedia[0] = { ...updatedMedia[0], poster_path: path };
+    if (!activePosterMovieId) return;
     
-    logger.info(`POSTER: Applied alternate poster`, {
+    const updatedGrid = [...gridMovies];
+    const movieIndex = updatedGrid.findIndex(m => m.id === activePosterMovieId);
+    
+    if (movieIndex === -1) return;
+    
+    updatedGrid[movieIndex] = { ...updatedGrid[movieIndex], poster_path: path };
+    
+    logger.info(`POSTER: Applied alternate poster to "${updatedGrid[movieIndex].title}"`, {
       context: 'MediaSearch.handleSelectAlternatePoster',
       action: 'poster_applied',
-      movie: {
-        id: updatedMedia[0].id,
-        title: updatedMedia[0].title
+      media: {
+        id: updatedGrid[movieIndex].id,
+        title: updatedGrid[movieIndex].title
       },
+      position: movieIndex,
       posterPath: path,
       timestamp: Date.now()
     });
     
-    setSelectedMedia(updatedMedia);
-    localStorage.setItem('selectedMedia', JSON.stringify(updatedMedia));
+    setGridMovies(updatedGrid);
+    localStorage.setItem('gridMovies', JSON.stringify(updatedGrid));
     setShowPosterGrid(false);
+    setActivePosterMovieId(null);
   };
 
-  const handleReelPosterClick = async (media: Movie) => {
-    setSelectedMedia([media]);
-    try {
-      await fetchAlternatePosterPaths(media.id);
-      setShowPosterGrid(true);
-    } catch (error) {
-      logger.error('Failed to handle reel poster click', {
-        context: 'MediaSearch.handleReelPosterClick',
-        mediaId: media.id,
-        error: error instanceof Error ? error.message : String(error)
-      });
-    }
-  };
 
 
   const [showCustomMediaForm, setShowCustomMediaForm] = useState(false);
@@ -278,8 +257,9 @@ const MediaSearch: React.FC = () => {
       poster_path: media.posterUrl,
       isCustom: true,
     };
-    setSelectedMedia([newMedia]);
-    localStorage.setItem('selectedMedia', JSON.stringify([newMedia]));
+    const updatedGrid = [...gridMovies, newMedia];
+    setGridMovies(updatedGrid);
+    localStorage.setItem('gridMovies', JSON.stringify(updatedGrid));
     setShowCustomMediaForm(false);
   };
 
@@ -343,16 +323,109 @@ const MediaSearch: React.FC = () => {
     });
   }, []);
 
+  const handleCliClearGrid = useCallback(() => {
+    setGridMovies([]);
+    localStorage.removeItem('gridMovies');
+    logger.info('CLI-CLEAR: Grid cleared via CLI command', {
+      context: 'MediaSearch.handleCliClearGrid',
+      action: 'cli_grid_cleared',
+      timestamp: Date.now()
+    });
+  }, []);
+
+  const handleCliAddFirstResult = useCallback(async (query: string) => {
+    // Search and add first result
+    setSearchQuery(query);
+    setIsLoading(true);
+    setError('');
+
+    try {
+      const response = await axios.get(`${API_BASE_URL}/search/movie`, {
+        params: {
+          api_key: API_KEY,
+          query: query,
+        },
+      });
+
+      if (response.data.results && response.data.results.length > 0) {
+        const firstResult = response.data.results[0];
+        const details = await fetchMovieDetails(firstResult.id);
+        const movieWithImdb = { ...firstResult, imdb_id: details?.imdb_id || null };
+        
+        // Add to grid
+        handleAddMedia(movieWithImdb);
+        
+        logger.info(`CLI-ADD-FIRST: Added first result "${movieWithImdb.title}" for query "${query}"`, {
+          context: 'MediaSearch.handleCliAddFirstResult',
+          action: 'cli_add_first_result',
+          query: query,
+          media: { id: movieWithImdb.id, title: movieWithImdb.title },
+          timestamp: Date.now()
+        });
+      } else {
+        logger.warn(`CLI-ADD-FIRST: No results found for query "${query}"`, {
+          context: 'MediaSearch.handleCliAddFirstResult',
+          query: query
+        });
+      }
+    } catch (err) {
+      logger.error('CLI add first result failed', {
+        context: 'MediaSearch.handleCliAddFirstResult',
+        query: query,
+        error: err instanceof Error ? err.message : String(err)
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [API_KEY, fetchMovieDetails, handleAddMedia]);
+
   const handleCliGetGridState = useCallback(() => {
-    return selectedMedia;
-  }, [selectedMedia]);
+    const gridState = {
+      count: gridMovies.length,
+      maxCapacity: 4,
+      positions: gridMovies.map((movie, index) => ({
+        position: index,
+        matrixPosition: `(${Math.floor(index / 2)}, ${index % 2})`,
+        movie: {
+          id: movie.id,
+          title: movie.title,
+          year: movie.release_date ? new Date(movie.release_date).getFullYear() : 'N/A'
+        }
+      })),
+      emptyPositions: Array.from({ length: 4 - gridMovies.length }, (_, i) => ({
+        position: gridMovies.length + i,
+        matrixPosition: `(${Math.floor((gridMovies.length + i) / 2)}, ${(gridMovies.length + i) % 2})`
+      })),
+      layout: [
+        [
+          gridMovies[0] ? { id: gridMovies[0].id, title: gridMovies[0].title } : null,
+          gridMovies[1] ? { id: gridMovies[1].id, title: gridMovies[1].title } : null
+        ],
+        [
+          gridMovies[2] ? { id: gridMovies[2].id, title: gridMovies[2].title } : null,
+          gridMovies[3] ? { id: gridMovies[3].id, title: gridMovies[3].title } : null
+        ]
+      ]
+    };
+    
+    logger.info(`CLI-GRID: Grid state requested - ${gridMovies.length}/4 positions filled`, {
+      context: 'MediaSearch.handleCliGetGridState',
+      action: 'cli_grid_state',
+      gridState,
+      timestamp: Date.now()
+    });
+    
+    return gridState;
+  }, [gridMovies]);
 
   // Initialize CLI bridge
   useCliBridge({
     onSearch: handleCliSearch,
     onAddMedia: handleCliAddMedia,
     onRemoveMedia: handleCliRemoveMedia,
-    onGetGridState: handleCliGetGridState
+    onGetGridState: handleCliGetGridState,
+    onClearGrid: handleCliClearGrid,
+    onAddFirstResult: handleCliAddFirstResult
   });
 
   return (
@@ -363,33 +436,24 @@ const MediaSearch: React.FC = () => {
         onMediaTypeChange={setSelectedMediaType}
       />
 
-      {coverReelMedia.length > 0 || selectedMedia.length > 0 ? (
-        <CoverReel
-          movies={coverReelMedia}
-          onAddMovie={handleAddToCoverReel}
-          onRemoveMovie={(mediaId) => {
-            const mediaToRemove = coverReelMedia.find(m => m.id === mediaId);
-            logger.info(`REEL: Removed "${mediaToRemove?.title || 'unknown'}" from cover reel`, {
-              context: 'MediaSearch.CoverReel.onRemoveMovie',
-              action: 'reel_media_removed',
-              mediaId,
-              timestamp: Date.now()
-            });
-            setCoverReelMedia((prevReel) => prevReel.filter((media) => media.id !== mediaId));
-          }}
-          onPosterClick={handleReelPosterClick}
-          mode="display"
-          mediaType={selectedMediaType}
-        />
-      ) : null}
-
       <div className="search-section">
         <div className="search-content">
           <div className="search-module">
-            <GridConstructor
-              selectedMovies={selectedMedia}
-              onRemoveMovie={handleRemoveMedia}
-              onPosterClick={handlePosterClick}
+            <Grid2x2
+              movies={gridMovies}
+              onRemoveMedia={handleRemoveMedia}
+              onPosterClick={(movie) => {
+                logger.info(`GRID: Opening alternate poster grid for "${movie.title}"`, {
+                  context: 'MediaSearch.Grid2x2.onPosterClick',
+                  action: 'poster_grid_open',
+                  movie: { id: movie.id, title: movie.title },
+                  timestamp: Date.now()
+                });
+                // Track which movie the poster grid is for
+                setActivePosterMovieId(movie.id);
+                fetchAlternatePosterPaths(movie.id);
+                setShowPosterGrid(true);
+              }}
               showPosterGrid={showPosterGrid}
               alternatePosterPaths={alternatePosterPaths}
               onSelectAlternatePoster={handleSelectAlternatePoster}
@@ -496,7 +560,7 @@ const MediaSearch: React.FC = () => {
             </div>
           )}
         </div>
-        {!selectedMedia.length && !searchResults.length && (
+        {gridMovies.length < 4 && !searchResults.length && (
           <button onClick={() => setShowCustomMediaForm(true)} className="add-custom-button">
             Add Custom {selectedMediaType === 'movies' ? 'Movie' : selectedMediaType === 'music' ? 'Album' : 'Book'}
           </button>
@@ -514,6 +578,22 @@ const MediaSearch: React.FC = () => {
           </div>
         </div>
       )}
+      
+      <button 
+        onClick={() => {
+          setGridMovies([]);
+          localStorage.removeItem('gridMovies');
+          logger.info('CLEAR: Grid cleared and localStorage wiped', {
+            context: 'MediaSearch.clearGrid',
+            action: 'grid_cleared',
+            timestamp: Date.now()
+          });
+        }}
+        className="clear-grid-button"
+        title="Clear grid and localStorage"
+      >
+        Clear
+      </button>
     </div>
   );
 };

@@ -11,7 +11,7 @@ export default defineConfig({
       configureServer(server) {
         // WebSocket server for CLI ↔ React communication
         const wss = new WebSocketServer({ port: 8080 });
-        let reactClient = null;
+        let reactClient: any = null;
         
         wss.on('connection', (ws) => {
           console.log('[WS] React client connected');
@@ -70,6 +70,17 @@ export default defineConfig({
                 res.end(JSON.stringify({ error: 'Invalid JSON body' }));
               }
             });
+          } else if (path.startsWith('/add-first/') && req.method === 'POST') {
+            const query = path.replace('/add-first/', '');
+            if (reactClient) {
+              console.log(`[CLI] Adding first search result for: "${query}"`);
+              reactClient.send(JSON.stringify({ type: 'ADD_FIRST_RESULT', query: decodeURIComponent(query) }));
+              res.writeHead(200, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({ status: 'sent', query: decodeURIComponent(query) }));
+            } else {
+              res.writeHead(503, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({ error: 'React app not connected' }));
+            }
           } else if (path.startsWith('/remove/') && req.method === 'DELETE') {
             const id = path.replace('/remove/', '');
             if (reactClient) {
@@ -87,6 +98,16 @@ export default defineConfig({
               reactClient.send(JSON.stringify({ type: 'GET_GRID_STATE' }));
               res.writeHead(200, { 'Content-Type': 'application/json' });
               res.end(JSON.stringify({ status: 'requested', message: 'Grid state request sent to React app' }));
+            } else {
+              res.writeHead(503, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({ error: 'React app not connected' }));
+            }
+          } else if (path === '/clear' && req.method === 'DELETE') {
+            if (reactClient) {
+              console.log(`[CLI] Clearing grid via React`);
+              reactClient.send(JSON.stringify({ type: 'CLEAR_GRID' }));
+              res.writeHead(200, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({ status: 'cleared', message: 'Grid clear request sent to React app' }));
             } else {
               res.writeHead(503, { 'Content-Type': 'application/json' });
               res.end(JSON.stringify({ error: 'React app not connected' }));
@@ -136,7 +157,7 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, ''),
         configure: (proxy, _options) => {
-          proxy.on('proxyReq', (proxyReq, req, _res) => {
+          proxy.on('proxyReq', (_proxyReq, req, _res) => {
             console.log('[PROXY REQUEST]', req.method, req.url);
           });
           proxy.on('proxyRes', (proxyRes, req, _res) => {

@@ -113,3 +113,29 @@ Three Main Benefits:
    
 3. **React Frontend for oshea**  
    Greater value add is for **oshea**'s next phase of development, as I will be able to bolt on a React frontend, effectively *backward propagating* a web UI for doctype building and iteration (oshea's broader v1.0 to v2.0 goal).
+
+
+### Graphical User Interface
+
+Grid Evolution Sequence...
+
+Stage 1: 1x1           Stage 2: 1x2           Stage 3: 2x2 (3 items)
+┌─────┐               ┌─────┬─────┐          ┌─────┬─────┐
+│ [0] │               │ [0] │ [1] │          │ [0] │ [1] │
+└─────┘               └─────┴─────┘          ├─────┼─────┤
+                                             │ [2] │  ?  │
+                                             └─────┴─────┘
+
+Stage 4: 2x2 (full)
+┌─────┬─────┐
+│ [0] │ [1] │
+├─────┼─────┤
+│ [2] │ [3] │
+└─────┴─────┘
+
+Matrix Indexing.
+- Position [0] = (0,0) = top-left
+- Position [1] = (0,1) = top-right
+- Position [2] = (1,0) = bottom-left
+- Position [3] = (1,1) = bottom-right
+

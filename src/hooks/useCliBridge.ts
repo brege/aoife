@@ -1,10 +1,9 @@
 import { useEffect, useRef } from 'react';
 import { Movie } from '../types/media';
-import { MediaServiceFactory } from '../services/media-service-factory';
 import logger from '../utils/logger';
 
 interface CliMessage {
-  type: 'SEARCH' | 'ADD_MEDIA' | 'REMOVE_MEDIA' | 'GET_GRID_STATE';
+  type: 'SEARCH' | 'ADD_MEDIA' | 'REMOVE_MEDIA' | 'GET_GRID_STATE' | 'CLEAR_GRID' | 'ADD_FIRST_RESULT';
   query?: string;
   media?: Movie;
   id?: string | number;
@@ -14,14 +13,24 @@ interface CliBridgeProps {
   onSearch: (query: string) => Promise<void>;
   onAddMedia: (media: Movie) => void;
   onRemoveMedia: (id: string | number) => void;
-  onGetGridState: () => Movie[];
+  onGetGridState: () => any;
+  onClearGrid: () => void;
+  onAddFirstResult: (query: string) => Promise<void>;
 }
 
 export function useCliBridge(props: CliBridgeProps) {
-  const { onSearch, onAddMedia, onRemoveMedia, onGetGridState } = props;
   const wsRef = useRef<WebSocket | null>(null);
+  const propsRef = useRef(props);
+  
+  // Update props ref without triggering reconnection
+  propsRef.current = props;
 
   useEffect(() => {
+    // Only connect if not already connected
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      return;
+    }
+    
     // Connect to WebSocket server
     const ws = new WebSocket('ws://localhost:8080');
     wsRef.current = ws;
@@ -43,28 +52,38 @@ export function useCliBridge(props: CliBridgeProps) {
         switch (message.type) {
           case 'SEARCH':
             if (message.query) {
-              await onSearch(message.query);
+              await propsRef.current.onSearch(message.query);
             }
             break;
           
           case 'ADD_MEDIA':
             if (message.media) {
-              onAddMedia(message.media);
+              propsRef.current.onAddMedia(message.media);
             }
             break;
           
           case 'REMOVE_MEDIA':
             if (message.id !== undefined) {
-              onRemoveMedia(message.id);
+              propsRef.current.onRemoveMedia(message.id);
             }
             break;
           
           case 'GET_GRID_STATE':
-            const currentState = onGetGridState();
-            logger.info(`[CLI-Bridge] Current grid state: ${currentState.length} items`, {
+            const currentState = propsRef.current.onGetGridState();
+            logger.info(`[CLI-Bridge] Current grid state received`, {
               context: 'useCliBridge',
-              gridState: currentState.map(item => ({ id: item.id, title: item.title }))
+              gridState: currentState
             });
+            break;
+          
+          case 'CLEAR_GRID':
+            propsRef.current.onClearGrid();
+            break;
+          
+          case 'ADD_FIRST_RESULT':
+            if (message.query) {
+              await propsRef.current.onAddFirstResult(message.query);
+            }
             break;
         }
       } catch (error) {
@@ -93,7 +112,7 @@ export function useCliBridge(props: CliBridgeProps) {
         ws.close();
       }
     };
-  }, [onSearch, onAddMedia, onRemoveMedia, onGetGridState]);
+  }, []); // Empty dependency array to prevent reconnections
 
   return {
     isConnected: wsRef.current?.readyState === WebSocket.OPEN

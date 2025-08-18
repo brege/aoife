@@ -96,7 +96,7 @@ function formatContext(context: string | undefined, config: LoggerConfig = logge
 }
 
 // Enhanced message formatter for browser environment
-function enhanceMessage(message: string, options: LoggerOptions, level: LogLevel, config: LoggerConfig): Partial<LoggerMeta> {
+function enhanceMessage(message: string, _options: LoggerOptions, level: LogLevel, config: LoggerConfig): Partial<LoggerMeta> {
   const enhanced: Partial<LoggerMeta> = {};
 
   if (config.showCaller) {

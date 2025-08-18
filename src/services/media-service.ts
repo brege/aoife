@@ -1,4 +1,4 @@
-import { MediaItem } from '../types/media';
+// Media service interfaces
 
 export interface MediaSearchResult {
   id: string | number;
