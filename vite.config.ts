@@ -112,6 +112,26 @@ export default defineConfig({
               res.writeHead(503, { 'Content-Type': 'application/json' });
               res.end(JSON.stringify({ error: 'React app not connected' }));
             }
+          } else if (path === '/menu' && req.method === 'GET') {
+            if (reactClient) {
+              console.log(`[CLI] Requesting menu state from React`);
+              reactClient.send(JSON.stringify({ type: 'GET_MENU_STATE' }));
+              res.writeHead(200, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({ status: 'requested', message: 'Menu state request sent to React app' }));
+            } else {
+              res.writeHead(503, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({ error: 'React app not connected' }));
+            }
+          } else if (path === '/menu/clear' && req.method === 'POST') {
+            if (reactClient) {
+              console.log(`[CLI] Triggering menu clear action`);
+              reactClient.send(JSON.stringify({ type: 'MENU_CLEAR_GRID' }));
+              res.writeHead(200, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({ status: 'sent', message: 'Menu clear action sent to React app' }));
+            } else {
+              res.writeHead(503, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({ error: 'React app not connected' }));
+            }
           } else {
             next();
           }

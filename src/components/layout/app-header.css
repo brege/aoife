@@ -1,0 +1,28 @@
+/* App Header Component - Integrated Layout */
+
+.app-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px var(--spacing-xl);
+  width: 100%;
+  box-sizing: border-box;
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: var(--z-header);
+  background-color: var(--bg-secondary);
+  height: 56px; /* Fixed header height for consistent positioning */
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+}
+
+/* Hamburger menu is now properly contained within header layout */

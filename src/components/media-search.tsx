@@ -2,10 +2,10 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import '../styles/global.css';
 import './media-search.css';
-import Header from './header';
 import Grid2x2 from './grid-2x2';
 import CustomMediaForm from './custom-media-form';
 import CloseIcon from './close-icon';
+import AppHeader from './layout/app-header';
 import useEscapeKey from '../hooks/useEscapeKey';
 import { useCliBridge } from '../hooks/useCliBridge';
 import { Movie, MediaType } from '../types/media';
@@ -333,6 +333,66 @@ const MediaSearch: React.FC = () => {
     });
   }, []);
 
+  const handleClearGrid = useCallback(() => {
+    setGridMovies([]);
+    localStorage.removeItem('gridMovies');
+    logger.info('CLEAR: Grid cleared via hamburger menu', {
+      context: 'MediaSearch.handleClearGrid',
+      action: 'grid_cleared_menu',
+      timestamp: Date.now()
+    });
+  }, []);
+
+  const handleGetMenuState = useCallback(() => {
+    const menuState = {
+      sections: [
+        {
+          name: 'Grid Options',
+          options: [
+            {
+              name: 'Clear Grid',
+              type: 'action',
+              enabled: gridMovies.length > 0,
+              description: 'Remove all items from grid and clear localStorage'
+            }
+          ]
+        },
+        {
+          name: 'Layout Configuration',
+          options: [
+            {
+              name: 'Adaptive Grid',
+              type: 'feature',
+              enabled: false,
+              description: 'Dynamic grid sizing based on screen dimensions'
+            }
+          ]
+        }
+      ],
+      currentGridCount: gridMovies.length,
+      maxGridCapacity: 4
+    };
+    
+    logger.info('MENU: State requested via CLI', {
+      context: 'MediaSearch.handleGetMenuState',
+      action: 'menu_state_requested',
+      menuState,
+      timestamp: Date.now()
+    });
+    
+    return menuState;
+  }, [gridMovies.length]);
+
+  const handleMenuClearGrid = useCallback(() => {
+    setGridMovies([]);
+    localStorage.removeItem('gridMovies');
+    logger.info('CLI-MENU-CLEAR: Grid cleared via CLI menu command', {
+      context: 'MediaSearch.handleMenuClearGrid',
+      action: 'cli_menu_clear_grid',
+      timestamp: Date.now()
+    });
+  }, []);
+
   const handleCliAddFirstResult = useCallback(async (query: string) => {
     // Search and add first result
     setSearchQuery(query);
@@ -425,15 +485,17 @@ const MediaSearch: React.FC = () => {
     onRemoveMedia: handleCliRemoveMedia,
     onGetGridState: handleCliGetGridState,
     onClearGrid: handleCliClearGrid,
-    onAddFirstResult: handleCliAddFirstResult
+    onAddFirstResult: handleCliAddFirstResult,
+    onGetMenuState: handleGetMenuState,
+    onMenuClearGrid: handleMenuClearGrid
   });
 
   return (
     <div className="container">
-
-      <Header 
+      <AppHeader 
         selectedMediaType={selectedMediaType}
         onMediaTypeChange={setSelectedMediaType}
+        onClearGrid={handleClearGrid}
       />
 
       <div className="search-section">
@@ -578,22 +640,6 @@ const MediaSearch: React.FC = () => {
           </div>
         </div>
       )}
-      
-      <button 
-        onClick={() => {
-          setGridMovies([]);
-          localStorage.removeItem('gridMovies');
-          logger.info('CLEAR: Grid cleared and localStorage wiped', {
-            context: 'MediaSearch.clearGrid',
-            action: 'grid_cleared',
-            timestamp: Date.now()
-          });
-        }}
-        className="clear-grid-button"
-        title="Clear grid and localStorage"
-      >
-        Clear
-      </button>
     </div>
   );
 };

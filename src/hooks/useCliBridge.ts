@@ -3,7 +3,7 @@ import { Movie } from '../types/media';
 import logger from '../utils/logger';
 
 interface CliMessage {
-  type: 'SEARCH' | 'ADD_MEDIA' | 'REMOVE_MEDIA' | 'GET_GRID_STATE' | 'CLEAR_GRID' | 'ADD_FIRST_RESULT';
+  type: 'SEARCH' | 'ADD_MEDIA' | 'REMOVE_MEDIA' | 'GET_GRID_STATE' | 'CLEAR_GRID' | 'ADD_FIRST_RESULT' | 'GET_MENU_STATE' | 'MENU_CLEAR_GRID';
   query?: string;
   media?: Movie;
   id?: string | number;
@@ -16,6 +16,8 @@ interface CliBridgeProps {
   onGetGridState: () => any;
   onClearGrid: () => void;
   onAddFirstResult: (query: string) => Promise<void>;
+  onGetMenuState: () => any;
+  onMenuClearGrid: () => void;
 }
 
 export function useCliBridge(props: CliBridgeProps) {
@@ -84,6 +86,18 @@ export function useCliBridge(props: CliBridgeProps) {
             if (message.query) {
               await propsRef.current.onAddFirstResult(message.query);
             }
+            break;
+          
+          case 'GET_MENU_STATE':
+            const menuState = propsRef.current.onGetMenuState();
+            logger.info('[CLI-Bridge] Menu state requested', {
+              context: 'useCliBridge',
+              menuState
+            });
+            break;
+          
+          case 'MENU_CLEAR_GRID':
+            propsRef.current.onMenuClearGrid();
             break;
         }
       } catch (error) {
