@@ -10,7 +10,9 @@ export default defineConfig({
       name: 'log-interceptor',
       configureServer(server) {
         // WebSocket server for CLI ↔ React communication
-        const wsPort = Number(process.env.VITE_WS_PORT || process.env.WS_PORT || 8080);
+        const wsPort = Number(
+          process.env.VITE_WS_PORT || process.env.WS_PORT || 8080,
+        );
         const wss = new WebSocketServer({ port: wsPort });
         let reactClient: WebSocket | null = null;
 

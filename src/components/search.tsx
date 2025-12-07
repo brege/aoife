@@ -14,95 +14,7 @@ import Grid2x2, { type GridLayoutMode } from './grid';
 import AppHeader from './header';
 
 const GRID_STORAGE_KEY = 'gridItems';
-const LEGACY_GRID_STORAGE_KEY = 'gridMovies';
 const GRID_CAPACITY = 4;
-const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p';
-
-type LegacyMovie = {
-  id: number;
-  title: string;
-  release_date?: string;
-  poster_path?: string | null;
-  isCustom?: boolean;
-  imdb_id?: string | null;
-  metadata?: Record<string, unknown>;
-};
-
-const buildLegacyPosterUrl = (
-  posterPath?: string | null,
-  size: 'w185' | 'w500' = 'w500',
-) => {
-  if (!posterPath) return null;
-  if (posterPath.startsWith('http')) return posterPath;
-  return `${TMDB_IMAGE_BASE}/${size}${posterPath}`;
-};
-
-const normalizeStoredMedia = (stored: unknown): MediaItem | null => {
-  if (!stored || typeof stored !== 'object') {
-    return null;
-  }
-
-  const data = stored as Record<string, unknown>;
-
-  if ('coverUrl' in data || 'coverThumbnailUrl' in data) {
-    const media = data as unknown as MediaItem;
-    return {
-      ...media,
-      type: media.type || 'movies',
-    };
-  }
-
-  const hasMetadata =
-    typeof data.metadata === 'object' &&
-    data.metadata !== null &&
-    'poster_path' in (data.metadata as Record<string, unknown>);
-
-  if ('poster_path' in data || hasMetadata) {
-    const legacy = data as LegacyMovie;
-    const releaseYear = legacy.release_date
-      ? new Date(legacy.release_date).getFullYear()
-      : undefined;
-    const posterPath =
-      legacy.poster_path ||
-      (legacy.metadata?.poster_path as string | undefined);
-    return {
-      id: legacy.id,
-      type: 'movies',
-      title: legacy.title,
-      subtitle: releaseYear ? releaseYear.toString() : undefined,
-      year: releaseYear,
-      coverUrl: legacy.isCustom
-        ? posterPath || null
-        : buildLegacyPosterUrl(posterPath, 'w500'),
-      coverThumbnailUrl: legacy.isCustom
-        ? posterPath || null
-        : buildLegacyPosterUrl(posterPath, 'w185'),
-      metadata: {
-        ...(legacy.metadata || {}),
-        release_date: legacy.release_date || legacy.metadata?.release_date,
-        poster_path: posterPath,
-        imdb_id: legacy.imdb_id || legacy.metadata?.imdb_id,
-      },
-      customEntry: legacy.isCustom ?? false,
-    };
-  }
-
-  return null;
-};
-
-const ensureMediaItem = (media: MediaItem | LegacyMovie): MediaItem => {
-  if ('coverUrl' in media || 'coverThumbnailUrl' in media) {
-    return {
-      ...media,
-      type: media.type || 'movies',
-    };
-  }
-  const normalized = normalizeStoredMedia(media);
-  if (!normalized) {
-    throw new Error('Unsupported media payload');
-  }
-  return normalized;
-};
 
 const formatSearchSummary = (
   values: MediaSearchValues,
@@ -147,17 +59,12 @@ const MediaSearch: React.FC = () => {
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    const stored =
-      localStorage.getItem(GRID_STORAGE_KEY) ??
-      localStorage.getItem(LEGACY_GRID_STORAGE_KEY);
+    const stored = localStorage.getItem(GRID_STORAGE_KEY);
     if (!stored) return;
     try {
-      const parsed = JSON.parse(stored);
+      const parsed = JSON.parse(stored) as MediaItem[];
       if (Array.isArray(parsed)) {
-        const normalized = parsed
-          .map(normalizeStoredMedia)
-          .filter((item): item is MediaItem => Boolean(item));
-        setGridItems(normalized);
+        setGridItems(parsed);
       }
     } catch (storageError) {
       logger.error('Failed to parse stored grid items', {
@@ -252,7 +159,7 @@ const MediaSearch: React.FC = () => {
   };
 
   const handleAddMedia = useCallback(
-    (media: MediaItem | LegacyMovie) => {
+    (media: MediaItem) => {
       if (gridItems.length >= GRID_CAPACITY) {
         logger.warn('Cannot add media: grid is full (4/4)', {
           context: 'MediaSearch.handleAddMedia',
@@ -261,22 +168,21 @@ const MediaSearch: React.FC = () => {
         return;
       }
 
-      const normalized = ensureMediaItem(media);
-      const updatedGrid = [...gridItems, normalized];
+      const updatedGrid = [...gridItems, media];
       setGridItems(updatedGrid);
       setSearchResults([]);
       setSearchValues(provider.defaultSearchValues);
       persistGrid(updatedGrid);
 
       logger.info(
-        `GRID: Added "${normalized.title}" to position ${gridItems.length}`,
+        `GRID: Added "${media.title}" to position ${gridItems.length}`,
         {
           context: 'MediaSearch.handleAddMedia',
           action: 'grid_media_added',
           media: {
-            id: normalized.id,
-            title: normalized.title,
-            year: normalized.year,
+            id: media.id,
+            title: media.title,
+            year: media.year,
           },
           position: gridItems.length,
           gridCount: updatedGrid.length,

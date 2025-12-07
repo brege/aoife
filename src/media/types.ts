@@ -1,5 +1,7 @@
 export type MediaType = 'movies' | 'books' | 'music';
 
+export const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p';
+
 export interface MediaSearchField {
   id: string;
   label: string;

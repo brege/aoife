@@ -1,8 +1,6 @@
 import axios from 'axios';
 import { type MediaSearchResult, MediaService } from './service';
-import type { MediaSearchValues } from './types';
-
-const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p';
+import { type MediaSearchValues, TMDB_IMAGE_BASE } from './types';
 
 type TmdbMovieResult = {
   id: number;

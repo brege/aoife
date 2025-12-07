@@ -1,4 +1,5 @@
-/* Adaptive Grid Component */
+/* Grid Component - CSS Custom Properties Approach */
+
 .grid-2x2 {
   position: relative;
   width: 100%;
@@ -6,112 +7,63 @@
   margin: 0 auto;
 }
 
+/* Base variables - overridden by layout modes and breakpoints */
 .grid-container {
+  --columns: 2;
+  --poster-width: 164px;
+  --gap: var(--spacing-lg);
+
   display: grid;
-  gap: var(--spacing-lg);
+  grid-template-columns: repeat(var(--columns), var(--poster-width));
+  gap: var(--gap);
   justify-content: center;
   align-content: center;
   width: 100%;
   min-height: 200px;
-  --poster-width: 164px;
 }
 
-/* Dynamic grid layouts based on item count */
-/* Empty state: single placeholder */
-.grid-container.layout-0 {
-  grid-template-columns: var(--poster-width);
-  grid-template-rows: auto;
+/* Layout modes set variables, not grid definitions */
+.grid-container[data-layout="0"] {
+  --columns: 1;
 }
 
-/* 1 item + placeholder: horizontal layout on desktop, vertical on mobile */
-.grid-container.layout-1 {
-  grid-template-columns: repeat(2, var(--poster-width));
-  grid-template-rows: auto;
+.grid-container[data-layout="1"] {
+  --columns: 2;
 }
 
-/* 2 items + placeholder: use 2x2 grid, items fill first row + first slot of second row */
-.grid-container.layout-2 {
-  grid-template-columns: repeat(2, var(--poster-width));
-  grid-template-rows: repeat(2, auto);
+.grid-container[data-layout="2"],
+.grid-container[data-layout="3"],
+.grid-container[data-layout="4"],
+.grid-container[data-layout="force-2x2"] {
+  --columns: 2;
 }
 
-/* 3 items + placeholder: full 2x2 grid, center-justified */
-.grid-container.layout-3 {
-  grid-template-columns: repeat(2, var(--poster-width));
-  grid-template-rows: repeat(2, auto);
+.grid-container[data-layout="prefer-horizontal"] {
+  --columns: 4;
 }
 
-/* 4 items: full 2x2 grid */
-.grid-container.layout-4 {
-  grid-template-columns: repeat(2, var(--poster-width));
-  grid-template-rows: repeat(2, auto);
+.grid-container[data-layout="vertical-stack"] {
+  --columns: 1;
 }
 
-/* Manual Layout Modes */
-/* Force 2x2 - Always use 2x2 grid regardless of count */
-.grid-container.layout-force-2x2 {
-  grid-template-columns: repeat(2, var(--poster-width));
-  grid-template-rows: repeat(2, auto);
-}
-
-/* Prefer Horizontal - Use horizontal layouts when possible */
-.grid-container.layout-prefer-horizontal {
-  grid-template-columns: repeat(auto-fit, var(--poster-width));
-  grid-template-rows: auto;
-  max-width: calc(4 * var(--poster-width) + 3 * var(--spacing-lg));
-}
-
-/* Vertical Stack - Always single column */
-.grid-container.layout-vertical-stack {
-  grid-template-columns: var(--poster-width);
-  grid-template-rows: repeat(auto-fit, auto);
-  max-width: calc(var(--poster-width) + 2 * var(--spacing-lg));
-}
-
-/* Fit to Screen Mode - Responsive scaling */
-.grid-container.fit-to-screen {
+/* Fit to screen uses fluid sizing */
+.grid-container[data-fit="true"] {
+  --poster-width: clamp(100px, 22vw, 180px);
   width: 100%;
   max-width: 100%;
 }
 
-/* Fit to screen layout overrides */
-.grid-container.fit-to-screen.layout-0 {
-  grid-template-columns: minmax(120px, min(var(--poster-width), 25vw));
+.grid-container[data-fit="true"][data-layout="0"] {
+  --poster-width: clamp(120px, 25vw, 200px);
 }
 
-.grid-container.fit-to-screen.layout-1 {
-  grid-template-columns: repeat(
-      2,
-      minmax(100px, min(var(--poster-width), 22vw))
-    );
+.grid-container[data-fit="true"][data-layout="vertical-stack"] {
+  --poster-width: clamp(120px, 30vw, 200px);
 }
 
-.grid-container.fit-to-screen.layout-2,
-.grid-container.fit-to-screen.layout-3,
-.grid-container.fit-to-screen.layout-4,
-.grid-container.fit-to-screen.layout-force-2x2 {
-  grid-template-columns: repeat(
-      2,
-      minmax(100px, min(var(--poster-width), 22vw))
-    );
-  grid-template-rows: repeat(2, auto);
-}
-
-.grid-container.fit-to-screen.layout-prefer-horizontal {
-  grid-template-columns: repeat(
-      auto-fit,
-      minmax(100px, min(var(--poster-width), 20vw))
-    );
-  grid-template-rows: auto;
-}
-
-.grid-container.fit-to-screen.layout-vertical-stack {
-  grid-template-columns: minmax(120px, min(var(--poster-width), 30vw));
-  grid-template-rows: repeat(auto-fit, auto);
-}
-
+/* Grid items */
 .grid-item {
-  width: var(--poster-width);
+  width: 100%;
   aspect-ratio: 2 / 3;
   position: relative;
   border-radius: var(--border-radius-md);
@@ -125,13 +77,6 @@
   display: block;
   font: inherit;
   color: inherit;
-}
-
-/* Responsive grid items for fit-to-screen */
-.grid-container.fit-to-screen .grid-item {
-  width: 100% !important;
-  min-width: 100px;
-  max-width: var(--poster-width);
 }
 
 .grid-item.filled {
@@ -160,6 +105,7 @@
   transform: translateY(-2px);
 }
 
+/* Poster wrapper and button */
 .poster-wrapper {
   position: relative;
   width: 100%;
@@ -195,6 +141,7 @@
   opacity: 0.9;
 }
 
+/* Placeholder */
 .placeholder-content {
   font-size: 48px;
   color: #666;
@@ -207,13 +154,7 @@
   transform: scale(1.1);
 }
 
-.alternate-poster-button {
-  border: none;
-  background: transparent;
-  padding: 0;
-  cursor: pointer;
-}
-
+/* Close button */
 .close-button {
   position: absolute;
   top: 8px;
@@ -240,6 +181,14 @@
   width: 16px;
   height: 16px;
   color: white;
+}
+
+/* Alternate poster button */
+.alternate-poster-button {
+  border: none;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
 }
 
 /* Poster Grid Overlay */
@@ -300,67 +249,21 @@
   height: 40px;
 }
 
-/* Responsive Adaptive Layouts */
-
-/* Mobile: Single column vertical stack with responsive sizing */
-@media (max-width: 980px) {
+/* Mobile: Single column, fluid sizing */
+@media (max-width: 600px) {
   .grid-2x2 {
     padding: 0 var(--spacing-lg);
-    width: 100%;
   }
 
   .grid-container {
-    gap: var(--spacing-md);
-    width: 100%;
-    max-width: none;
-    margin: 0 auto;
+    --columns: 1;
+    --poster-width: min(60vw, 200px);
+    --gap: var(--spacing-md);
   }
 
-  /* Force mobile responsive width calculation */
-  .grid-container,
-  .grid-container.fit-to-screen {
-    --poster-width: 30vw !important;
-  }
-
-  .grid-container.layout-0 {
-    grid-template-columns: var(--poster-width) !important;
-    grid-template-rows: auto !important;
-    justify-content: center !important;
-  }
-
-  .grid-container.layout-1 {
-    grid-template-columns: var(--poster-width) !important;
-    grid-template-rows: repeat(2, auto) !important;
-  }
-
-  .grid-item {
-    width: 100% !important;
-    min-width: 100px;
-    max-width: 60vw !important;
-  }
-
-  .grid-container.fit-to-screen .grid-item {
-    max-width: 60vw !important;
-  }
-
-  .grid-container.layout-2 {
-    grid-template-columns: var(--poster-width) !important;
-    grid-template-rows: repeat(3, auto) !important;
-  }
-
-  .grid-container.layout-3 {
-    grid-template-columns: var(--poster-width) !important;
-    grid-template-rows: repeat(4, auto) !important;
-  }
-
-  .grid-container.layout-4 {
-    grid-template-columns: var(--poster-width) !important;
-    grid-template-rows: repeat(4, auto) !important;
-  }
-
-  .grid-container.layout-force-2x2 {
-    grid-template-columns: repeat(2, var(--poster-width)) !important;
-    grid-template-rows: repeat(2, auto) !important;
+  .grid-container[data-layout="force-2x2"] {
+    --columns: 2;
+    --poster-width: min(40vw, 140px);
   }
 
   .placeholder-content {
@@ -385,67 +288,10 @@
   }
 }
 
-/* Tablet: Standard 2x2 grid layouts */
-@media (min-width: 768px) and (max-width: 1199px) {
-  .grid-container {
-    --poster-width: 164px;
-  }
-
-  .grid-container.layout-0 {
-    grid-template-columns: var(--poster-width);
-    grid-template-rows: auto;
-  }
-
-  .grid-container.layout-1 {
-    grid-template-columns: repeat(2, var(--poster-width));
-    grid-template-rows: auto;
-  }
-
-  .grid-container.layout-2 {
-    grid-template-columns: repeat(2, var(--poster-width));
-    grid-template-rows: repeat(2, auto);
-  }
-
-  .grid-container.layout-3 {
-    grid-template-columns: repeat(2, var(--poster-width));
-    grid-template-rows: repeat(2, auto);
-  }
-
-  .grid-container.layout-4 {
-    grid-template-columns: repeat(2, var(--poster-width));
-    grid-template-rows: repeat(2, auto);
-  }
-}
-
-/* Desktop: Larger grid layouts with more spacing */
+/* Desktop: Larger sizing */
 @media (min-width: 1200px) {
   .grid-container {
-    gap: var(--spacing-xl);
     --poster-width: 180px;
-  }
-
-  .grid-container.layout-0 {
-    grid-template-columns: var(--poster-width);
-    grid-template-rows: auto;
-  }
-
-  .grid-container.layout-1 {
-    grid-template-columns: repeat(2, var(--poster-width));
-    grid-template-rows: auto;
-  }
-
-  .grid-container.layout-2 {
-    grid-template-columns: repeat(2, var(--poster-width));
-    grid-template-rows: repeat(2, auto);
-  }
-
-  .grid-container.layout-3 {
-    grid-template-columns: repeat(2, var(--poster-width));
-    grid-template-rows: repeat(2, auto);
-  }
-
-  .grid-container.layout-4 {
-    grid-template-columns: repeat(2, var(--poster-width));
-    grid-template-rows: repeat(2, auto);
+    --gap: var(--spacing-xl);
   }
 }

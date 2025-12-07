@@ -1,7 +1,7 @@
 import React, { useRef } from 'react';
 import './grid.css';
 import logger from '../logger';
-import type { MediaItem } from '../media/types';
+import { type MediaItem, TMDB_IMAGE_BASE } from '../media/types';
 import CloseIcon from './close';
 
 export type GridLayoutMode =
@@ -23,8 +23,6 @@ interface Grid2x2Props {
   fitToScreen?: boolean;
   placeholderLabel: string;
 }
-
-const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p';
 
 const getCoverSrc = (media: MediaItem) => {
   if (media.coverUrl) return media.coverUrl;
@@ -52,21 +50,18 @@ const Grid2x2: React.FC<Grid2x2Props> = ({
   const itemCount = items.length;
   const gridContainerRef = useRef<HTMLDivElement>(null);
 
-  const getLayoutClass = () => {
+  const getLayoutValue = (): string => {
     switch (layoutMode) {
       case 'force-2x2':
-        return 'layout-force-2x2';
       case 'prefer-horizontal':
-        return 'layout-prefer-horizontal';
       case 'vertical-stack':
-        return 'layout-vertical-stack';
+        return layoutMode;
       default:
-        return `layout-${Math.min(itemCount, 4)}`;
+        return String(Math.min(itemCount, 4));
     }
   };
 
-  const layoutClass = getLayoutClass();
-  const containerClass = `grid-container ${layoutClass}${fitToScreen ? ' fit-to-screen' : ''}`;
+  const layoutValue = getLayoutValue();
 
   const positionsToRender = React.useMemo(() => {
     if (itemCount === 0) return [0];
@@ -113,11 +108,12 @@ const Grid2x2: React.FC<Grid2x2Props> = ({
           padding: styles.padding,
           margin: styles.margin,
         },
-        cssClasses: containerClass.split(' '),
+        dataLayout: layoutValue,
+        dataFit: fitToScreen,
       },
       layout: {
         mode: layoutMode,
-        class: layoutClass,
+        layoutValue: layoutValue,
         fitToScreen: fitToScreen,
         movieCount: itemCount,
         positions: positionsToRender,
@@ -143,11 +139,10 @@ const Grid2x2: React.FC<Grid2x2Props> = ({
     window.gridDebugInfo = debugInfo;
   }, [
     layoutMode,
-    layoutClass,
+    layoutValue,
     fitToScreen,
     itemCount,
     items,
-    containerClass,
     positionsToRender,
   ]);
 
@@ -285,7 +280,12 @@ const Grid2x2: React.FC<Grid2x2Props> = ({
 
   return (
     <div className="grid-2x2">
-      <div ref={gridContainerRef} className={containerClass}>
+      <div
+        ref={gridContainerRef}
+        className="grid-container"
+        data-layout={layoutValue}
+        data-fit={fitToScreen}
+      >
         {positionsToRender.map((position) => renderGridItem(position))}
       </div>
 
