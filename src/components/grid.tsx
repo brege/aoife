@@ -167,10 +167,20 @@ const Grid2x2: React.FC<Grid2x2Props> = ({
                 onLoad={(e) => {
                   const img = e.target as HTMLImageElement;
                   setTimeout(() => {
-                    const rect = img.getBoundingClientRect();
                     const itemElement = img.closest(
                       '.grid-item',
                     ) as HTMLElement;
+
+                    // For books, apply actual image aspect ratio
+                    if (item.type === 'books' && itemElement) {
+                      const actualRatio = img.naturalWidth / img.naturalHeight;
+                      itemElement.style.setProperty(
+                        '--item-aspect-ratio',
+                        String(actualRatio),
+                      );
+                    }
+
+                    const rect = img.getBoundingClientRect();
                     const itemRect = itemElement?.getBoundingClientRect();
                     const itemStyles = itemElement
                       ? getComputedStyle(itemElement)

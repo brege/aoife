@@ -64,7 +64,7 @@
 /* Grid items */
 .grid-item {
   width: 100%;
-  aspect-ratio: 2 / 3;
+  aspect-ratio: var(--item-aspect-ratio, 2 / 3);
   position: relative;
   border-radius: var(--border-radius-md);
   overflow: hidden;
