@@ -13,7 +13,7 @@ A clean, responsive media collection tool for creating year-in-review, favorite 
 
 | Desktop | Mobile |
 |:------- |:------ |
-| <img src="docs/img/films-set-in-michigan.png" alt="Films Set in Michigan" width="400"/> | <img src="docs/img/mobile-summer-2025-films.png" alt="Mobile Summer 2025 Films" width="300"/> |
+| <img src="docs/img/desktop.png" alt="Films Set in Michigan" width="400"/> | <img src="docs/img/mobile.png" alt="Mobile Summer 2025 Films" width="300"/> |
 
 
 ## Installation
