@@ -7,7 +7,9 @@
     "dev": "vite --host",
     "build": "tsc -b && vite build",
     "lint": "biome check --write",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test:measure": "cypress run --config-file tools/cypress.config.js --spec tools/cypress/e2e/quick-measure.cy.js",
+    "test:measure:open": "cypress open --config-file tools/cypress.config.js"
   },
   "dependencies": {
     "@types/ws": "^8.18.1",

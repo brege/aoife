@@ -1,0 +1,36 @@
+{
+  "timestamp": "2025-12-07T04:44:32.962Z",
+  "viewport": {
+    "width": 980,
+    "height": 1835
+  },
+  "container": {
+    "width": 327,
+    "height": 441,
+    "computedStyle": "294px",
+    "className": "grid-container layout-0 fit-to-screen",
+    "posterWidth": "30vw",
+    "gap": "12px",
+    "allStyles": {
+      "width": "327px",
+      "maxWidth": "100%",
+      "minWidth": "0px"
+    }
+  },
+  "posters": [],
+  "gridItems": [
+    {
+      "index": 0,
+      "width": 294,
+      "height": 441,
+      "computedWidth": "294px",
+      "computedMaxWidth": "588px"
+    }
+  ],
+  "analysis": {
+    "expectedPosterWidth30vw": 294,
+    "expectedPosterWidthOptimal": 466,
+    "actualPosterWidth": 0,
+    "problem": "CSS --poster-width not scaling to 30vw"
+  }
+}

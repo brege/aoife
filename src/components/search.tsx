@@ -2,7 +2,7 @@ import type React from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import '../global.css';
 import './search.css';
-import { useCliBridge, type CliMenuState } from '../cli';
+import { type CliMenuState, useCliBridge } from '../cli';
 import useEscapeKey from '../escape';
 import logger from '../logger';
 import { getMediaService } from '../media/factory';
