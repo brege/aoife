@@ -132,6 +132,85 @@ export default defineConfig({
               res.writeHead(503, { 'Content-Type': 'application/json' });
               res.end(JSON.stringify({ error: 'React app not connected' }));
             }
+          } else if (path === '/debug' && req.method === 'GET') {
+            if (reactClient) {
+              console.log(`[CLI] Requesting debug information from React`);
+              reactClient.send(JSON.stringify({ type: 'GET_DEBUG_INFO' }));
+              res.writeHead(200, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({ status: 'requested', message: 'Debug info request sent to React app' }));
+            } else {
+              res.writeHead(503, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({ error: 'React app not connected' }));
+            }
+          } else if (path === '/viewport' && req.method === 'GET') {
+            // Log viewport request to terminal
+            console.log(`[VIEWPORT] Request from ${req.headers['user-agent']?.includes('Mobile') ? 'mobile' : 'desktop'} device`);
+            
+            // Direct viewport info endpoint - inject script to get measurements
+            res.writeHead(200, { 'Content-Type': 'text/html' });
+            res.end(`
+              <script>
+                const viewport = {
+                  width: window.innerWidth,
+                  height: window.innerHeight,
+                  devicePixelRatio: window.devicePixelRatio,
+                  userAgent: navigator.userAgent.includes('Mobile') ? 'mobile' : 'desktop'
+                };
+                const gridContainer = document.querySelector('.grid-container');
+                const containerInfo = gridContainer ? {
+                  width: gridContainer.getBoundingClientRect().width,
+                  height: gridContainer.getBoundingClientRect().height,
+                  computedStyle: getComputedStyle(gridContainer).gridTemplateColumns,
+                  cssClasses: gridContainer.className
+                } : null;
+                
+                const analysis = {
+                  optimalTwoColumn: Math.floor((viewport.width - 32 - 16) / 2),
+                  actualPosterWidth: 120, // From logs
+                  efficiency: containerInfo ? (containerInfo.width / viewport.width * 100).toFixed(1) + '%' : 'N/A',
+                  spacingWaste: viewport.width - (containerInfo ? containerInfo.width : 0)
+                };
+                
+                // Send measurements to server terminal via fetch
+                fetch('/cli/log-viewport', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    viewport,
+                    container: containerInfo,
+                    analysis
+                  })
+                });
+                
+                document.body.innerHTML = '<pre>Viewport measurements sent to terminal</pre>';
+              </script>
+            `);
+          } else if (path === '/log-viewport' && req.method === 'POST') {
+            let body = '';
+            req.on('data', chunk => { body += chunk.toString(); });
+            req.on('end', () => {
+              try {
+                const data = JSON.parse(body);
+                const v = data.viewport;
+                const c = data.container;
+                const a = data.analysis;
+                
+                console.log(`[VIEWPORT ANALYSIS] ${v.userAgent.toUpperCase()}`);
+                console.log(`  Viewport: ${v.width}x${v.height}px (DPR: ${v.devicePixelRatio})`);
+                console.log(`  Container: ${c?.width || 'N/A'}x${c?.height || 'N/A'}px`);
+                console.log(`  Grid CSS: ${c?.computedStyle || 'N/A'}`);
+                console.log(`  CSS Classes: ${c?.cssClasses || 'N/A'}`);
+                console.log(`  Optimal 2-col width: ${a.optimalTwoColumn}px`);
+                console.log(`  Actual poster width: ${a.actualPosterWidth}px`);
+                console.log(`  Space efficiency: ${a.efficiency}`);
+                console.log(`  Wasted space: ${a.spacingWaste}px`);
+                console.log(`  PROBLEM: Posters are ${a.optimalTwoColumn - a.actualPosterWidth}px smaller than optimal`);
+              } catch (e) {
+                console.log('[VIEWPORT ERROR]', body);
+              }
+              res.writeHead(200, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({ status: 'logged' }));
+            });
           } else {
             next();
           }

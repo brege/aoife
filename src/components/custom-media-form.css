@@ -1,14 +1,15 @@
 .custom-form-overlay {
   position: fixed;
-  top: 0;
+  top: var(--header-height);
   left: 0;
   right: 0;
   bottom: 0;
+  height: calc(100vh - var(--header-height));
   background-color: rgba(0, 0, 0, 0.5);
   display: flex;
   justify-content: center;
   align-items: center; 
-  z-index: 1000;
+  z-index: var(--z-overlay);
 }
 
 .custom-form-container {

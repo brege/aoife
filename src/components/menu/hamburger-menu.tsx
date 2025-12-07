@@ -2,16 +2,30 @@ import React, { useState, useEffect, useRef } from 'react';
 import './hamburger-menu.css';
 import MenuClearGrid from './menu-clear-grid';
 import MenuMediaType from './menu-media-type';
+import MenuGridConfig from './menu-grid-config';
 import { MediaType } from '../../types/media';
+import { GridLayoutMode } from '../grid-2x2';
 import logger from '../../utils/logger';
 
 interface HamburgerMenuProps {
   onClearGrid: () => void;
   selectedMediaType: MediaType;
   onMediaTypeChange: (type: MediaType) => void;
+  gridLayoutMode: GridLayoutMode;
+  onGridLayoutModeChange: (mode: GridLayoutMode) => void;
+  fitToScreen: boolean;
+  onFitToScreenChange: (enabled: boolean) => void;
 }
 
-const HamburgerMenu: React.FC<HamburgerMenuProps> = ({ onClearGrid, selectedMediaType, onMediaTypeChange }) => {
+const HamburgerMenu: React.FC<HamburgerMenuProps> = ({ 
+  onClearGrid, 
+  selectedMediaType, 
+  onMediaTypeChange, 
+  gridLayoutMode, 
+  onGridLayoutModeChange,
+  fitToScreen,
+  onFitToScreenChange
+}) => {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -123,10 +137,13 @@ const HamburgerMenu: React.FC<HamburgerMenuProps> = ({ onClearGrid, selectedMedi
               />
             </div>
 
-          <div className="menu-section">
-            <h4>Layout Configuration</h4>
-            <p className="menu-placeholder">Grid layout options coming soon...</p>
-          </div>
+          <MenuGridConfig 
+            onMenuClose={closeMenu}
+            layoutMode={gridLayoutMode}
+            onLayoutModeChange={onGridLayoutModeChange}
+            fitToScreen={fitToScreen}
+            onFitToScreenChange={onFitToScreenChange}
+          />
         </div>
       )}
     </div>

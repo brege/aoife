@@ -1,4 +1,4 @@
-/* Grid 2x2 Component */
+/* Adaptive Grid Component */
 .grid-2x2 {
   position: relative;
   width: 100%;
@@ -6,28 +6,118 @@
   margin: 0 auto;
 }
 
+
 .grid-container {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
+  display: grid;
+  gap: var(--spacing-lg);
+  justify-content: center;
+  align-content: center;
   width: 100%;
+  min-height: 200px;
+  --poster-width: 164px;
 }
 
-.grid-row {
-  display: flex;
-  gap: 16px;
+/* Dynamic grid layouts based on item count */
+/* Empty state: single placeholder */
+.grid-container.layout-0 {
+  grid-template-columns: var(--poster-width);
+  grid-template-rows: auto;
+}
+
+/* 1 item + placeholder: horizontal layout on desktop, vertical on mobile */
+.grid-container.layout-1 {
+  grid-template-columns: repeat(2, var(--poster-width));
+  grid-template-rows: auto;
+}
+
+/* 2 items + placeholder: use 2x2 grid, items fill first row + first slot of second row */
+.grid-container.layout-2 {
+  grid-template-columns: repeat(2, var(--poster-width));
+  grid-template-rows: repeat(2, auto);
+}
+
+/* 3 items + placeholder: full 2x2 grid, center-justified */
+.grid-container.layout-3 {
+  grid-template-columns: repeat(2, var(--poster-width));
+  grid-template-rows: repeat(2, auto);
+}
+
+/* 4 items: full 2x2 grid */
+.grid-container.layout-4 {
+  grid-template-columns: repeat(2, var(--poster-width));
+  grid-template-rows: repeat(2, auto);
+}
+
+/* Manual Layout Modes */
+/* Force 2x2 - Always use 2x2 grid regardless of count */
+.grid-container.layout-force-2x2 {
+  grid-template-columns: repeat(2, var(--poster-width));
+  grid-template-rows: repeat(2, auto);
+}
+
+/* Prefer Horizontal - Use horizontal layouts when possible */
+.grid-container.layout-prefer-horizontal {
+  grid-template-columns: repeat(auto-fit, var(--poster-width));
+  grid-template-rows: auto;
+  max-width: calc(4 * var(--poster-width) + 3 * var(--spacing-lg));
+}
+
+/* Vertical Stack - Always single column */
+.grid-container.layout-vertical-stack {
+  grid-template-columns: var(--poster-width);
+  grid-template-rows: repeat(auto-fit, auto);
+  max-width: calc(var(--poster-width) + 2 * var(--spacing-lg));
+}
+
+/* Fit to Screen Mode - Responsive scaling */
+.grid-container.fit-to-screen {
   width: 100%;
+  max-width: 100%;
+}
+
+/* Fit to screen layout overrides */
+.grid-container.fit-to-screen.layout-0 {
+  grid-template-columns: minmax(120px, min(var(--poster-width), 25vw));
+}
+
+.grid-container.fit-to-screen.layout-1 {
+  grid-template-columns: repeat(2, minmax(100px, min(var(--poster-width), 22vw)));
+}
+
+.grid-container.fit-to-screen.layout-2,
+.grid-container.fit-to-screen.layout-3,
+.grid-container.fit-to-screen.layout-4,
+.grid-container.fit-to-screen.layout-force-2x2 {
+  grid-template-columns: repeat(2, minmax(100px, min(var(--poster-width), 22vw)));
+  grid-template-rows: repeat(2, auto);
+}
+
+.grid-container.fit-to-screen.layout-prefer-horizontal {
+  grid-template-columns: repeat(auto-fit, minmax(100px, min(var(--poster-width), 20vw)));
+  grid-template-rows: auto;
+}
+
+.grid-container.fit-to-screen.layout-vertical-stack {
+  grid-template-columns: minmax(120px, min(var(--poster-width), 30vw));
+  grid-template-rows: repeat(auto-fit, auto);
 }
 
 .grid-item {
-  flex: 0 0 auto;
-  width: 164px;
+  width: var(--poster-width);
   aspect-ratio: 2/3;
   position: relative;
-  border-radius: 8px;
+  border-radius: var(--border-radius-md);
   overflow: hidden;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
 }
+
+/* Responsive grid items for fit-to-screen */
+.grid-container.fit-to-screen .grid-item {
+  width: 100% !important;
+  min-width: 100px;
+  max-width: var(--poster-width);
+}
+
 
 .grid-item.filled {
   background-color: #1a1a1a;
@@ -116,17 +206,18 @@
 /* Poster Grid Overlay */
 .poster-grid-overlay {
   position: fixed;
-  top: 0;
+  top: var(--header-height);
   left: 0;
   width: 100vw;
-  height: 100vh;
+  height: calc(100vh - var(--header-height));
   background: rgba(0, 0, 0, 0.95);
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  z-index: 1000;
+  justify-content: flex-start;
+  z-index: var(--z-overlay);
   padding: 20px;
+  overflow-y: auto;
 }
 
 .poster-grid-title {
@@ -170,18 +261,71 @@
   height: 40px;
 }
 
-/* Responsive Design */
-@media (max-width: 768px) {
-  .grid-container {
-    gap: 12px;
+/* Responsive Adaptive Layouts */
+
+/* Mobile: Single column vertical stack with responsive sizing */
+@media (max-width: 980px) {
+  .grid-2x2 {
+    padding: 0 var(--spacing-lg);
+    width: 100%;
   }
   
-  .grid-row {
-    gap: 12px;
+  .grid-container {
+    gap: var(--spacing-md);
+    width: 100%;
+    max-width: none;
+    margin: 0 auto;
+  }
+  
+  /* Force mobile responsive width calculation */
+  .grid-container,
+  .grid-container.fit-to-screen {
+    --poster-width: 30vw !important;
+  }
+  
+  .grid-container.layout-0 {
+    grid-template-columns: var(--poster-width) !important;
+    grid-template-rows: auto !important;
+    justify-content: center !important;
+  }
+  
+  .grid-container.layout-1 {
+    grid-template-columns: var(--poster-width) !important;
+    grid-template-rows: repeat(2, auto) !important;
+  }
+  
+  .grid-item {
+    width: 100% !important;
+    min-width: 100px;
+    max-width: 60vw !important;
+  }
+  
+  .grid-container.fit-to-screen .grid-item {
+    max-width: 60vw !important;
+  }
+  
+  .grid-container.layout-2 {
+    grid-template-columns: var(--poster-width) !important;
+    grid-template-rows: repeat(3, auto) !important;
+  }
+  
+  .grid-container.layout-3 {
+    grid-template-columns: var(--poster-width) !important;
+    grid-template-rows: repeat(4, auto) !important;
+  }
+  
+  .grid-container.layout-4 {
+    grid-template-columns: var(--poster-width) !important;
+    grid-template-rows: repeat(4, auto) !important;
+  }
+  
+  .grid-container.layout-force-2x2 {
+    grid-template-columns: repeat(2, var(--poster-width)) !important;
+    grid-template-rows: repeat(2, auto) !important;
   }
   
   .placeholder-content {
-    font-size: 36px;
+    font-size: 32px;
   }
   
   .close-button {
@@ -197,21 +341,72 @@
   }
   
   .poster-grid {
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 15px;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: var(--spacing-md);
   }
 }
 
-@media (max-width: 480px) {
+/* Tablet: Standard 2x2 grid layouts */
+@media (min-width: 768px) and (max-width: 1199px) {
   .grid-container {
-    gap: 8px;
+    --poster-width: 164px;
   }
   
-  .grid-row {
-    gap: 8px;
+  .grid-container.layout-0 {
+    grid-template-columns: var(--poster-width);
+    grid-template-rows: auto;
   }
   
-  .placeholder-content {
-    font-size: 24px;
+  .grid-container.layout-1 {
+    grid-template-columns: repeat(2, var(--poster-width));
+    grid-template-rows: auto;
+  }
+  
+  .grid-container.layout-2 {
+    grid-template-columns: repeat(2, var(--poster-width));
+    grid-template-rows: repeat(2, auto);
+  }
+  
+  .grid-container.layout-3 {
+    grid-template-columns: repeat(2, var(--poster-width));
+    grid-template-rows: repeat(2, auto);
+  }
+  
+  .grid-container.layout-4 {
+    grid-template-columns: repeat(2, var(--poster-width));
+    grid-template-rows: repeat(2, auto);
+  }
+}
+
+/* Desktop: Larger grid layouts with more spacing */
+@media (min-width: 1200px) {
+  .grid-container {
+    gap: var(--spacing-xl);
+    --poster-width: 180px;
+  }
+  
+  .grid-container.layout-0 {
+    grid-template-columns: var(--poster-width);
+    grid-template-rows: auto;
+  }
+  
+  .grid-container.layout-1 {
+    grid-template-columns: repeat(2, var(--poster-width));
+    grid-template-rows: auto;
+  }
+  
+  .grid-container.layout-2 {
+    grid-template-columns: repeat(2, var(--poster-width));
+    grid-template-rows: repeat(2, auto);
+  }
+  
+  .grid-container.layout-3 {
+    grid-template-columns: repeat(2, var(--poster-width));
+    grid-template-rows: repeat(2, auto);
+  }
+  
+  .grid-container.layout-4 {
+    grid-template-columns: repeat(2, var(--poster-width));
+    grid-template-rows: repeat(2, auto);
   }
 }

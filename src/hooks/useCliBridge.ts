@@ -3,7 +3,7 @@ import { Movie } from '../types/media';
 import logger from '../utils/logger';
 
 interface CliMessage {
-  type: 'SEARCH' | 'ADD_MEDIA' | 'REMOVE_MEDIA' | 'GET_GRID_STATE' | 'CLEAR_GRID' | 'ADD_FIRST_RESULT' | 'GET_MENU_STATE' | 'MENU_CLEAR_GRID';
+  type: 'SEARCH' | 'ADD_MEDIA' | 'REMOVE_MEDIA' | 'GET_GRID_STATE' | 'CLEAR_GRID' | 'ADD_FIRST_RESULT' | 'GET_MENU_STATE' | 'MENU_CLEAR_GRID' | 'GET_DEBUG_INFO';
   query?: string;
   media?: Movie;
   id?: string | number;
@@ -18,6 +18,7 @@ interface CliBridgeProps {
   onAddFirstResult: (query: string) => Promise<void>;
   onGetMenuState: () => any;
   onMenuClearGrid: () => void;
+  onGetDebugInfo: () => any;
 }
 
 export function useCliBridge(props: CliBridgeProps) {
@@ -98,6 +99,14 @@ export function useCliBridge(props: CliBridgeProps) {
           
           case 'MENU_CLEAR_GRID':
             propsRef.current.onMenuClearGrid();
+            break;
+          
+          case 'GET_DEBUG_INFO':
+            const debugInfo = propsRef.current.onGetDebugInfo();
+            logger.info('[CLI-Bridge] Debug info requested', {
+              context: 'useCliBridge',
+              debugInfo
+            });
             break;
         }
       } catch (error) {

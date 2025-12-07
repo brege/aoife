@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import './grid-2x2.css';
 import CloseIcon from './close-icon';
 import { Movie } from '../types/media';
 import logger from '../utils/logger';
+
+export type GridLayoutMode = 'auto' | 'force-2x2' | 'prefer-horizontal' | 'vertical-stack';
 
 interface Grid2x2Props {
   movies: Movie[];
@@ -13,6 +15,8 @@ interface Grid2x2Props {
   onSelectAlternatePoster: (path: string) => void;
   onClosePosterGrid: () => void;
   onPlaceholderClick: () => void;
+  layoutMode?: GridLayoutMode;
+  fitToScreen?: boolean;
 }
 
 const Grid2x2: React.FC<Grid2x2Props> = ({
@@ -24,7 +28,95 @@ const Grid2x2: React.FC<Grid2x2Props> = ({
   onSelectAlternatePoster,
   onClosePosterGrid,
   onPlaceholderClick,
+  layoutMode = 'auto',
+  fitToScreen = true,
 }) => {
+  const movieCount = movies.length;
+  const gridContainerRef = useRef<HTMLDivElement>(null);
+  
+  // Determine layout class based on mode and movie count
+  const getLayoutClass = () => {
+    switch (layoutMode) {
+      case 'force-2x2':
+        return 'layout-force-2x2';
+      case 'prefer-horizontal':
+        return 'layout-prefer-horizontal';
+      case 'vertical-stack':
+        return 'layout-vertical-stack';
+      case 'auto':
+      default:
+        return `layout-${Math.min(movieCount, 4)}`;
+    }
+  };
+  
+  const layoutClass = getLayoutClass();
+  const containerClass = `grid-container ${layoutClass}${fitToScreen ? ' fit-to-screen' : ''}`;
+
+  // Debug layout information - capture current state
+  React.useEffect(() => {
+    if (gridContainerRef.current) {
+      const container = gridContainerRef.current;
+      const rect = container.getBoundingClientRect();
+      const styles = getComputedStyle(container);
+      
+      const debugInfo = {
+        viewport: {
+          width: window.innerWidth,
+          height: window.innerHeight,
+          devicePixelRatio: window.devicePixelRatio,
+          userAgent: navigator.userAgent.includes('Mobile') ? 'mobile' : 'desktop'
+        },
+        container: {
+          dimensions: {
+            width: Math.round(rect.width),
+            height: Math.round(rect.height),
+            left: Math.round(rect.left),
+            top: Math.round(rect.top)
+          },
+          computedStyles: {
+            display: styles.display,
+            gridTemplateColumns: styles.gridTemplateColumns,
+            gridTemplateRows: styles.gridTemplateRows,
+            gap: styles.gap,
+            justifyContent: styles.justifyContent,
+            alignContent: styles.alignContent,
+            width: styles.width,
+            maxWidth: styles.maxWidth,
+            padding: styles.padding,
+            margin: styles.margin
+          },
+          cssClasses: containerClass.split(' ')
+        },
+        layout: {
+          mode: layoutMode,
+          class: layoutClass,
+          fitToScreen: fitToScreen,
+          movieCount: movieCount,
+          positions: getPositionsToRender()
+        },
+        matrix: {
+          rendered: getPositionsToRender().map(pos => ({
+            position: pos,
+            row: Math.floor(pos / 2),
+            col: pos % 2,
+            hasMovie: !!movies[pos],
+            movieTitle: movies[pos]?.title || 'placeholder'
+          }))
+        }
+      };
+
+      logger.info(`GRID-DEBUG: Layout state captured`, {
+        context: 'Grid2x2.layoutDebug',
+        action: 'layout_state_capture',
+        debugInfo,
+        timestamp: Date.now()
+      });
+      
+      // Store in window for CLI access
+      (window as any).gridDebugInfo = debugInfo;
+    }
+  }, [layoutMode, fitToScreen, movieCount, movies, containerClass]);
+  
   // Matrix positions: [0] = (0,0), [1] = (0,1), [2] = (1,0), [3] = (1,1)
   const renderGridItem = (position: number) => {
     const movie = movies[position];
@@ -52,6 +144,10 @@ const Grid2x2: React.FC<Grid2x2Props> = ({
                 // Wait for next tick to ensure dimensions are stable
                 setTimeout(() => {
                   const rect = img.getBoundingClientRect();
+                  const itemElement = img.closest('.grid-item') as HTMLElement;
+                  const itemRect = itemElement?.getBoundingClientRect();
+                  const itemStyles = itemElement ? getComputedStyle(itemElement) : null;
+                  
                   const dimensions = {
                     displayWidth: Math.round(rect.width),
                     displayHeight: Math.round(rect.height),
@@ -60,12 +156,38 @@ const Grid2x2: React.FC<Grid2x2Props> = ({
                     aspectRatio: (rect.width / rect.height).toFixed(2)
                   };
                   
+                  const itemInfo = itemRect && itemStyles ? {
+                    itemWidth: Math.round(itemRect.width),
+                    itemHeight: Math.round(itemRect.height),
+                    itemComputedWidth: itemStyles.width,
+                    itemMinWidth: itemStyles.minWidth,
+                    itemMaxWidth: itemStyles.maxWidth
+                  } : {};
+                  
+                  // Calculate optimal sizes for comparison
+                  const viewportWidth = window.innerWidth;
+                  const availableWidth = viewportWidth - 32; // Account for basic padding
+                  const optimalSingleWidth = Math.min(200, availableWidth * 0.8);
+                  const optimalTwoColumnWidth = Math.min(164, (availableWidth - 16) / 2); // 16px gap
+                  
+                  const analysis = {
+                    viewport: viewportWidth,
+                    available: availableWidth,
+                    optimalSingle: optimalSingleWidth,
+                    optimalTwoColumn: optimalTwoColumnWidth,
+                    actualPoster: dimensions.displayWidth,
+                    actualItem: itemInfo.itemWidth,
+                    efficiency: itemInfo.itemWidth ? (dimensions.displayWidth / itemInfo.itemWidth * 100).toFixed(1) + '%' : 'N/A'
+                  };
+                  
                   logger.info(`GRID: Poster loaded at position ${position} - ${dimensions.displayWidth}x${dimensions.displayHeight}`, {
                     context: 'Grid2x2.posterLoad',
                     action: 'poster_dimensions',
                     media: { id: movie.id, title: movie.title },
                     position,
                     dimensions,
+                    itemInfo,
+                    analysis,
                     gridPosition: `(${Math.floor(position / 2)}, ${position % 2})`,
                     timestamp: Date.now()
                   });
@@ -107,17 +229,28 @@ const Grid2x2: React.FC<Grid2x2Props> = ({
     );
   };
 
+  // Always show at least one placeholder unless grid is full (4 items)
+  // For 3 items, we show positions: [0][1] on top row, [2][+] on bottom row (center-justified)
+  const getPositionsToRender = () => {
+    if (movieCount === 0) {
+      return [0]; // Show single placeholder
+    }
+    if (movieCount === 1) {
+      return [0, 1]; // Show 1 movie + 1 placeholder
+    }
+    if (movieCount === 2) {
+      return [0, 1, 2]; // Show 2 movies + 1 placeholder
+    }
+    if (movieCount === 3) {
+      return [0, 1, 2, 3]; // Show 3 movies + 1 placeholder (center-justified)
+    }
+    return [0, 1, 2, 3]; // Show all 4 positions for 4 movies (no placeholder)
+  };
+
   return (
     <div className="grid-2x2">
-      <div className="grid-container">
-        <div className="grid-row">
-          {renderGridItem(0)}
-          {renderGridItem(1)}
-        </div>
-        <div className="grid-row">
-          {renderGridItem(2)}
-          {renderGridItem(3)}
-        </div>
+      <div ref={gridContainerRef} className={containerClass}>
+        {getPositionsToRender().map(position => renderGridItem(position))}
       </div>
 
       {showPosterGrid && (

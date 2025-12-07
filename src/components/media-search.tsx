@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import '../styles/global.css';
 import './media-search.css';
-import Grid2x2 from './grid-2x2';
+import Grid2x2, { GridLayoutMode } from './grid-2x2';
 import CustomMediaForm from './custom-media-form';
 import CloseIcon from './close-icon';
 import AppHeader from './layout/app-header';
@@ -29,6 +29,8 @@ const MediaSearch: React.FC = () => {
   const [alternatePosterPaths, setAlternatePosterPaths] = useState<string[]>([]);
   const [showPosterGrid, setShowPosterGrid] = useState(false);
   const [activePosterMovieId, setActivePosterMovieId] = useState<number | null>(null);
+  const [gridLayoutMode, setGridLayoutMode] = useState<GridLayoutMode>('auto');
+  const [fitToScreen, setFitToScreen] = useState<boolean>(true);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   const API_KEY = import.meta.env.VITE_TMDB_API_KEY;
@@ -393,6 +395,56 @@ const MediaSearch: React.FC = () => {
     });
   }, []);
 
+  const handleGetDebugInfo = useCallback(() => {
+    // Return the debug info from window that Grid2x2 sets
+    const debugInfo = (window as any).gridDebugInfo || { error: 'No debug info available' };
+    
+    // Calculate space utilization metrics
+    const viewport = debugInfo.viewport || {};
+    const container = debugInfo.container || {};
+    const dimensions = container.dimensions || {};
+    
+    const viewportWidth = viewport.width || 0;
+    const containerWidth = dimensions.width || 0;
+    const availableWidth = viewportWidth - 32; // Basic padding estimate
+    const optimalTwoColumn = (availableWidth - 16) / 2; // With gap
+    const spacingEfficiency = containerWidth ? (containerWidth / viewportWidth * 100).toFixed(1) : 'N/A';
+    
+    logger.info(`VIEWPORT: ${viewportWidth}px wide, Container: ${containerWidth}px (${spacingEfficiency}% usage)`, {
+      context: 'MediaSearch.handleGetDebugInfo',
+      action: 'debug_viewport_analysis',
+      viewportWidth,
+      containerWidth,
+      availableWidth,
+      optimalTwoColumn,
+      spacingEfficiency: `${spacingEfficiency}%`,
+      timestamp: Date.now()
+    });
+    
+    logger.info(`GRID-CSS: ${container.computedStyles?.gridTemplateColumns || 'unknown'} | Gap: ${container.computedStyles?.gap || 'unknown'}`, {
+      context: 'MediaSearch.handleGetDebugInfo',
+      action: 'debug_grid_properties',
+      gridColumns: container.computedStyles?.gridTemplateColumns,
+      gridRows: container.computedStyles?.gridTemplateRows,
+      gap: container.computedStyles?.gap,
+      containerWidth: container.computedStyles?.width,
+      maxWidth: container.computedStyles?.maxWidth,
+      timestamp: Date.now()
+    });
+    
+    logger.info(`LAYOUT: ${debugInfo.layout?.mode || 'unknown'} mode, FitToScreen: ${debugInfo.layout?.fitToScreen}, Classes: ${container.cssClasses?.join(' ') || 'none'}`, {
+      context: 'MediaSearch.handleGetDebugInfo',
+      action: 'debug_layout_analysis',
+      layoutMode: debugInfo.layout?.mode,
+      fitToScreen: debugInfo.layout?.fitToScreen,
+      movieCount: debugInfo.layout?.movieCount,
+      cssClasses: container.cssClasses,
+      timestamp: Date.now()
+    });
+    
+    return debugInfo;
+  }, []);
+
   const handleCliAddFirstResult = useCallback(async (query: string) => {
     // Search and add first result
     setSearchQuery(query);
@@ -487,7 +539,8 @@ const MediaSearch: React.FC = () => {
     onClearGrid: handleCliClearGrid,
     onAddFirstResult: handleCliAddFirstResult,
     onGetMenuState: handleGetMenuState,
-    onMenuClearGrid: handleMenuClearGrid
+    onMenuClearGrid: handleMenuClearGrid,
+    onGetDebugInfo: handleGetDebugInfo
   });
 
   return (
@@ -496,6 +549,10 @@ const MediaSearch: React.FC = () => {
         selectedMediaType={selectedMediaType}
         onMediaTypeChange={setSelectedMediaType}
         onClearGrid={handleClearGrid}
+        gridLayoutMode={gridLayoutMode}
+        onGridLayoutModeChange={setGridLayoutMode}
+        fitToScreen={fitToScreen}
+        onFitToScreenChange={setFitToScreen}
       />
 
       <div className="search-section">
@@ -521,6 +578,8 @@ const MediaSearch: React.FC = () => {
               onSelectAlternatePoster={handleSelectAlternatePoster}
               onClosePosterGrid={handleClosePosterGrid}
               onPlaceholderClick={() => searchInputRef.current?.focus()}
+              layoutMode={gridLayoutMode}
+              fitToScreen={fitToScreen}
             />
             <form onSubmit={handleSearch} className="search-form">
               <input
