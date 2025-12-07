@@ -61,6 +61,7 @@ const MediaSearch: React.FC = () => {
   const [showCustomMediaForm, setShowCustomMediaForm] = useState(false);
   const [lastSearchSummary, setLastSearchSummary] = useState('');
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const mediaTypeOptions: MediaType[] = ['movies', 'books', 'music'];
 
   useEffect(() => {
     const stored = localStorage.getItem(GRID_STORAGE_KEY);
@@ -85,6 +86,7 @@ const MediaSearch: React.FC = () => {
     setSearchValues(provider.defaultSearchValues);
     setSearchResults([]);
     setLastSearchSummary('');
+    searchInputRef.current?.focus();
   }, [provider]);
 
   const persistGrid = useCallback((items: MediaItem[]) => {
@@ -513,11 +515,20 @@ const MediaSearch: React.FC = () => {
 
   const searchSummary = lastSearchSummary || provider.label;
 
+  const handleMediaTypeChange = (
+    event: React.ChangeEvent<HTMLSelectElement>,
+  ) => {
+    const type = event.target.value as MediaType;
+    setSelectedMediaType(type);
+  };
+
+  useEffect(() => {
+    searchInputRef.current?.focus();
+  }, []);
+
   return (
     <div className="container">
       <AppHeader
-        selectedMediaType={selectedMediaType}
-        onMediaTypeChange={setSelectedMediaType}
         onClearGrid={handleClearGrid}
         gridLayoutMode={gridLayoutMode}
         onGridLayoutModeChange={setGridLayoutMode}
@@ -559,6 +570,18 @@ const MediaSearch: React.FC = () => {
               aspectRatio={provider.aspectRatio}
             />
             <form onSubmit={handleSearch} className="search-form">
+              <select
+                className="search-select"
+                value={selectedMediaType}
+                onChange={handleMediaTypeChange}
+                aria-label="Media type"
+              >
+                {mediaTypeOptions.map((type) => (
+                  <option key={type} value={type}>
+                    {type.charAt(0).toUpperCase() + type.slice(1)}
+                  </option>
+                ))}
+              </select>
               {provider.searchFields.map((field, index) => (
                 <input
                   key={field.id}
@@ -567,6 +590,7 @@ const MediaSearch: React.FC = () => {
                   value={searchValues[field.id] ?? ''}
                   onChange={(e) => handleFieldChange(field.id, e.target.value)}
                   placeholder={field.placeholder}
+                  aria-label={field.label}
                   className="search-input"
                   required={field.required}
                 />

@@ -2,16 +2,12 @@ import type React from 'react';
 import { useEffect, useRef, useState } from 'react';
 import './menu.css';
 import logger from '../../lib/logger';
-import type { MediaType } from '../../media/types';
 import type { GridLayoutMode } from '../grid/grid';
 import MenuClear from './clear';
 import MenuConfig from './config';
-import MenuType from './type';
 
 interface MenuProps {
   onClearGrid: () => void;
-  selectedMediaType: MediaType;
-  onMediaTypeChange: (type: MediaType) => void;
   gridLayoutMode: GridLayoutMode;
   onGridLayoutModeChange: (mode: GridLayoutMode) => void;
   fitToScreen: boolean;
@@ -20,8 +16,6 @@ interface MenuProps {
 
 const Menu: React.FC<MenuProps> = ({
   onClearGrid,
-  selectedMediaType,
-  onMediaTypeChange,
   gridLayoutMode,
   onGridLayoutModeChange,
   fitToScreen,
@@ -57,41 +51,15 @@ const Menu: React.FC<MenuProps> = ({
     const newState = !isOpen;
     setIsOpen(newState);
 
-    // Report menu state and available options
     const menuState = {
       isOpen: newState,
       availableOptions: [
         {
-          section: 'Media Type',
-          items: [
-            {
-              name: `Current: ${selectedMediaType}`,
-              type: 'info',
-              enabled: true,
-            },
-            {
-              name: 'Movies',
-              type: 'action',
-              enabled: selectedMediaType !== 'movies',
-            },
-            {
-              name: 'Books',
-              type: 'action',
-              enabled: selectedMediaType !== 'books',
-            },
-            {
-              name: 'Music',
-              type: 'action',
-              enabled: selectedMediaType !== 'music',
-            },
-          ],
-        },
-        {
-          section: 'Grid Options',
+          section: 'Grid',
           items: [{ name: 'Clear Grid', type: 'action', enabled: true }],
         },
         {
-          section: 'Layout Configuration',
+          section: 'Layout',
           items: [
             {
               name: 'Grid layout options',
@@ -140,15 +108,6 @@ const Menu: React.FC<MenuProps> = ({
             <button type="button" className="close-button" onClick={toggleMenu}>
               ×
             </button>
-          </div>
-
-          <div className="menu-section">
-            <h4>Media Type</h4>
-            <MenuType
-              selectedMediaType={selectedMediaType}
-              onMediaTypeChange={onMediaTypeChange}
-              onMenuClose={closeMenu}
-            />
           </div>
 
           <div className="menu-section">

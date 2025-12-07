@@ -1,14 +1,11 @@
 import type React from 'react';
 import './header.css';
 import './title.css';
-import type { MediaType } from '../../media/types';
 import type { GridLayoutMode } from '../grid/grid';
 import Menu from '../menu/menu';
 import EditableTitle from './title';
 
 interface AppHeaderProps {
-  selectedMediaType: MediaType;
-  onMediaTypeChange: (type: MediaType) => void;
   onClearGrid: () => void;
   gridLayoutMode: GridLayoutMode;
   onGridLayoutModeChange: (mode: GridLayoutMode) => void;
@@ -17,8 +14,6 @@ interface AppHeaderProps {
 }
 
 const AppHeader: React.FC<AppHeaderProps> = ({
-  selectedMediaType,
-  onMediaTypeChange,
   onClearGrid,
   gridLayoutMode,
   onGridLayoutModeChange,
@@ -33,8 +28,6 @@ const AppHeader: React.FC<AppHeaderProps> = ({
 
       <div className="header-right">
         <Menu
-          selectedMediaType={selectedMediaType}
-          onMediaTypeChange={onMediaTypeChange}
           onClearGrid={onClearGrid}
           gridLayoutMode={gridLayoutMode}
           onGridLayoutModeChange={onGridLayoutModeChange}
