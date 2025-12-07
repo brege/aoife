@@ -78,6 +78,10 @@ Once a handful of these have been implemented, I will begin expanding to mixed m
 | Movie | TV Show | Game    |
 | Album | Book    | Podcast |
 
+## Roadmap
+
+[Roadmap](docs/roadmap.md)
+
 ## License
 
 [GPLv3](https://fsf.org/licensing/licenses/gpl-3.0)
