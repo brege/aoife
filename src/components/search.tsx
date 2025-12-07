@@ -1,10 +1,10 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import '../styles/global.css';
-import './media-search.css';
-import Grid2x2, { GridLayoutMode } from './grid-2x2';
-import CustomMediaForm from './custom-media-form';
-import CloseIcon from './close-icon';
-import AppHeader from './layout/app-header';
+import './search.css';
+import Grid2x2, { GridLayoutMode } from './grid';
+import CustomMediaForm from './form';
+import CloseIcon from './close';
+import AppHeader from './header';
 import useEscapeKey from '../hooks/useEscapeKey';
 import { useCliBridge } from '../hooks/useCliBridge';
 import { MediaItem, MediaSearchValues, MediaType } from '../types/media';

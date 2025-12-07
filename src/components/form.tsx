@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import './custom-media-form.css';
+import './form.css';
 import { MediaType } from '../types/media';
 import logger from '../utils/logger';
 

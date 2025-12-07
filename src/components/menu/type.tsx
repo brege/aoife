@@ -2,13 +2,13 @@ import React from 'react';
 import { MediaType } from '../../types/media';
 import logger from '../../utils/logger';
 
-interface MenuMediaTypeProps {
+interface MenuTypeProps {
   selectedMediaType: MediaType;
   onMediaTypeChange: (type: MediaType) => void;
   onMenuClose: () => void;
 }
 
-const MenuMediaType: React.FC<MenuMediaTypeProps> = ({ 
+const MenuType: React.FC<MenuTypeProps> = ({ 
   selectedMediaType, 
   onMediaTypeChange, 
   onMenuClose 
@@ -44,4 +44,4 @@ const MenuMediaType: React.FC<MenuMediaTypeProps> = ({
   );
 };
 
-export default MenuMediaType;
+export default MenuType;

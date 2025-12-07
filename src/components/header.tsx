@@ -1,10 +1,10 @@
 import React from 'react';
-import './app-header.css';
-import './editable-title.css';
-import EditableTitle from './editable-title';
-import HamburgerMenu from '../menu/hamburger-menu';
-import { MediaType } from '../../types/media';
-import { GridLayoutMode } from '../grid-2x2';
+import './header.css';
+import './title.css';
+import EditableTitle from './title';
+import Menu from './menu/menu';
+import { MediaType } from '../types/media';
+import { GridLayoutMode } from './grid';
 
 interface AppHeaderProps {
   selectedMediaType: MediaType;
@@ -32,7 +32,7 @@ const AppHeader: React.FC<AppHeaderProps> = ({
       </div>
       
       <div className="header-right">
-        <HamburgerMenu
+        <Menu
           selectedMediaType={selectedMediaType}
           onMediaTypeChange={onMediaTypeChange}
           onClearGrid={onClearGrid}

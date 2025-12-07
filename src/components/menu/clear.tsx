@@ -1,12 +1,12 @@
 import React from 'react';
 import logger from '../../utils/logger';
 
-interface MenuClearGridProps {
+interface MenuClearProps {
   onClearGrid: () => void;
   onMenuClose: () => void;
 }
 
-const MenuClearGrid: React.FC<MenuClearGridProps> = ({ onClearGrid, onMenuClose }) => {
+const MenuClear: React.FC<MenuClearProps> = ({ onClearGrid, onMenuClose }) => {
   const handleClear = () => {
     onClearGrid();
     onMenuClose();
@@ -28,4 +28,4 @@ const MenuClearGrid: React.FC<MenuClearGridProps> = ({ onClearGrid, onMenuClose 
   );
 };
 
-export default MenuClearGrid;
+export default MenuClear;

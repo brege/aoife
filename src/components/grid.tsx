@@ -1,6 +1,6 @@
 import React, { useRef } from 'react';
-import './grid-2x2.css';
-import CloseIcon from './close-icon';
+import './grid.css';
+import CloseIcon from './close';
 import { MediaItem } from '../types/media';
 import logger from '../utils/logger';
 

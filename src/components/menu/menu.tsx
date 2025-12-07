@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
-import './hamburger-menu.css';
-import MenuClearGrid from './menu-clear-grid';
-import MenuMediaType from './menu-media-type';
-import MenuGridConfig from './menu-grid-config';
+import './menu.css';
+import MenuClear from './clear';
+import MenuType from './type';
+import MenuConfig from './config';
 import { MediaType } from '../../types/media';
-import { GridLayoutMode } from '../grid-2x2';
+import { GridLayoutMode } from '../grid';
 import logger from '../../utils/logger';
 
-interface HamburgerMenuProps {
+interface MenuProps {
   onClearGrid: () => void;
   selectedMediaType: MediaType;
   onMediaTypeChange: (type: MediaType) => void;
@@ -17,7 +17,7 @@ interface HamburgerMenuProps {
   onFitToScreenChange: (enabled: boolean) => void;
 }
 
-const HamburgerMenu: React.FC<HamburgerMenuProps> = ({ 
+const Menu: React.FC<MenuProps> = ({ 
   onClearGrid, 
   selectedMediaType, 
   onMediaTypeChange, 
@@ -122,7 +122,7 @@ const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
             
             <div className="menu-section">
               <h4>Media Type</h4>
-              <MenuMediaType 
+              <MenuType 
                 selectedMediaType={selectedMediaType}
                 onMediaTypeChange={onMediaTypeChange}
                 onMenuClose={closeMenu}
@@ -131,13 +131,13 @@ const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
 
             <div className="menu-section">
               <h4>Grid Options</h4>
-              <MenuClearGrid 
+              <MenuClear 
                 onClearGrid={onClearGrid}
                 onMenuClose={closeMenu}
               />
             </div>
 
-          <MenuGridConfig 
+              <MenuConfig 
             onMenuClose={closeMenu}
             layoutMode={gridLayoutMode}
             onLayoutModeChange={onGridLayoutModeChange}
@@ -150,4 +150,4 @@ const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
   );
 };
 
-export default HamburgerMenu;
+export default Menu;

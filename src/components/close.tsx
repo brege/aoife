@@ -1,5 +1,5 @@
 import React from 'react';
-import './close-icon.css';
+import './close.css';
 
 const CloseIcon: React.FC<{ className?: string }> = ({ className }) => (
   <svg 
@@ -19,4 +19,3 @@ const CloseIcon: React.FC<{ className?: string }> = ({ className }) => (
 );
 
 export default CloseIcon;
-

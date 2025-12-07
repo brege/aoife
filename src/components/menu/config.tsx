@@ -1,8 +1,8 @@
 import React from 'react';
-import { GridLayoutMode } from '../grid-2x2';
+import { GridLayoutMode } from '../grid';
 import logger from '../../utils/logger';
 
-interface MenuGridConfigProps {
+interface MenuConfigProps {
   onMenuClose: () => void;
   layoutMode: GridLayoutMode;
   onLayoutModeChange: (mode: GridLayoutMode) => void;
@@ -10,7 +10,7 @@ interface MenuGridConfigProps {
   onFitToScreenChange: (enabled: boolean) => void;
 }
 
-const MenuGridConfig: React.FC<MenuGridConfigProps> = ({ 
+const MenuConfig: React.FC<MenuConfigProps> = ({ 
   onMenuClose, 
   layoutMode, 
   onLayoutModeChange,
@@ -89,4 +89,4 @@ const MenuGridConfig: React.FC<MenuGridConfigProps> = ({
   );
 };
 
-export default MenuGridConfig;
+export default MenuConfig;
