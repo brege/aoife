@@ -1,6 +1,6 @@
 import type React from 'react';
-import logger from '../../logger';
-import type { GridLayoutMode } from '../grid';
+import logger from '../../lib/logger';
+import type { GridLayoutMode } from '../grid/grid';
 
 interface MenuConfigProps {
   onMenuClose: () => void;

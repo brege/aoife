@@ -1,17 +1,21 @@
 import type React from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import '../global.css';
+import '../../app/styles/global.css';
 import './search.css';
-import { type CliMenuState, useCliBridge } from '../cli';
-import useEscapeKey from '../escape';
-import logger from '../logger';
-import { getMediaService } from '../media/factory';
-import { getMediaProvider } from '../media/providers';
-import type { MediaItem, MediaSearchValues, MediaType } from '../media/types';
-import CloseIcon from './close';
+import { type CliMenuState, useCliBridge } from '../../lib/cli';
+import useEscapeKey from '../../lib/escape';
+import logger from '../../lib/logger';
+import { getMediaService } from '../../media/factory';
+import { getMediaProvider } from '../../media/providers';
+import type {
+  MediaItem,
+  MediaSearchValues,
+  MediaType,
+} from '../../media/types';
+import Grid2x2, { type GridLayoutMode } from '../grid/grid';
+import CloseIcon from '../ui/close';
+import AppHeader from '../ui/header';
 import CustomMediaForm from './form';
-import Grid2x2, { type GridLayoutMode } from './grid';
-import AppHeader from './header';
 
 const GRID_STORAGE_KEY = 'gridItems';
 const GRID_CAPACITY = 4;

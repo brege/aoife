@@ -1,5 +1,5 @@
 import type React from 'react';
-import logger from '../../logger';
+import logger from '../../lib/logger';
 import type { MediaType } from '../../media/types';
 
 interface MenuTypeProps {

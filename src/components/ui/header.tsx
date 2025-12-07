@@ -1,9 +1,9 @@
 import type React from 'react';
 import './header.css';
 import './title.css';
-import type { MediaType } from '../media/types';
-import type { GridLayoutMode } from './grid';
-import Menu from './menu/menu';
+import type { MediaType } from '../../media/types';
+import type { GridLayoutMode } from '../grid/grid';
+import Menu from '../menu/menu';
 import EditableTitle from './title';
 
 interface AppHeaderProps {

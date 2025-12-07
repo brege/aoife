@@ -1,4 +1,4 @@
-import MediaSearch from './components/search';
+import MediaSearch from '../components/search/search';
 
 function App() {
   return <MediaSearch />;

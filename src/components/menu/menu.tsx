@@ -1,9 +1,9 @@
 import type React from 'react';
 import { useEffect, useRef, useState } from 'react';
 import './menu.css';
-import logger from '../../logger';
+import logger from '../../lib/logger';
 import type { MediaType } from '../../media/types';
-import type { GridLayoutMode } from '../grid';
+import type { GridLayoutMode } from '../grid/grid';
 import MenuClear from './clear';
 import MenuConfig from './config';
 import MenuType from './type';

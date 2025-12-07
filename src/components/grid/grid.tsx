@@ -1,12 +1,12 @@
 import React, { useRef } from 'react';
 import './grid.css';
-import logger from '../logger';
+import logger from '../../lib/logger';
 import {
   type AspectRatio,
   type MediaItem,
   TMDB_IMAGE_BASE,
-} from '../media/types';
-import CloseIcon from './close';
+} from '../../media/types';
+import CloseIcon from '../ui/close';
 
 export type GridLayoutMode =
   | 'auto'

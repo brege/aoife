@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
+import type { MediaItem } from '../media/types';
 import logger from './logger';
-import type { MediaItem } from './media/types';
 
 type CliGridPosition = {
   position: number;

@@ -35,7 +35,6 @@ interface MusicBrainzSearchResponse {
   releases: MusicBrainzRelease[];
 }
 
-
 const USER_AGENT = 'aoife/0.1.0 (https://github.com/user/aoife)';
 
 class CoverArtArchiveSource implements CoverArtSource {
