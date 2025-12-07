@@ -80,4 +80,4 @@ Once a handful of these have been implemented, I will begin expanding to mixed m
 
 ## License
 
-MIT License
+[GPLv3](https://fsf.org/licensing/licenses/gpl-3.0)
