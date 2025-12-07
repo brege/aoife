@@ -1,15 +1,24 @@
-import React, { useState } from 'react';
+import type React from 'react';
+import { useState } from 'react';
 import './form.css';
-import { MediaType } from '../media/types';
 import logger from '../logger';
+import type { MediaType } from '../media/types';
 
 interface CustomMediaFormProps {
   mediaType: MediaType;
-  onAddCustomMedia: (media: { title: string; year: string; coverUrl: string }) => void;
+  onAddCustomMedia: (media: {
+    title: string;
+    year: string;
+    coverUrl: string;
+  }) => void;
   onCancel: () => void;
 }
 
-const CustomMediaForm: React.FC<CustomMediaFormProps> = ({ mediaType, onAddCustomMedia, onCancel }) => {
+const CustomMediaForm: React.FC<CustomMediaFormProps> = ({
+  mediaType,
+  onAddCustomMedia,
+  onCancel,
+}) => {
   const [title, setTitle] = useState('');
   const [year, setYear] = useState('');
   const [coverUrl, setCoverUrl] = useState('');
@@ -17,13 +26,25 @@ const CustomMediaForm: React.FC<CustomMediaFormProps> = ({ mediaType, onAddCusto
   const getMediaTypeLabels = () => {
     switch (mediaType) {
       case 'movies':
-        return { singular: 'Movie', coverLabel: 'Poster URL', yearLabel: 'Year' };
+        return {
+          singular: 'Movie',
+          coverLabel: 'Poster URL',
+          yearLabel: 'Year',
+        };
       case 'music':
-        return { singular: 'Album', coverLabel: 'Cover URL', yearLabel: 'Year' };
+        return {
+          singular: 'Album',
+          coverLabel: 'Cover URL',
+          yearLabel: 'Year',
+        };
       case 'books':
         return { singular: 'Book', coverLabel: 'Cover URL', yearLabel: 'Year' };
       default:
-        return { singular: 'Media', coverLabel: 'Cover URL', yearLabel: 'Year' };
+        return {
+          singular: 'Media',
+          coverLabel: 'Cover URL',
+          yearLabel: 'Year',
+        };
     }
   };
 
@@ -31,7 +52,7 @@ const CustomMediaForm: React.FC<CustomMediaFormProps> = ({ mediaType, onAddCusto
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     logger.info(`CUSTOM: Adding custom ${mediaType.slice(0, -1)}`, {
       context: 'CustomMediaForm.handleSubmit',
       action: 'custom_media_add',
@@ -39,11 +60,11 @@ const CustomMediaForm: React.FC<CustomMediaFormProps> = ({ mediaType, onAddCusto
       media: {
         title,
         year,
-        coverUrl
+        coverUrl,
       },
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
-    
+
     onAddCustomMedia({ title, year, coverUrl });
     setTitle('');
     setYear('');
@@ -76,7 +97,9 @@ const CustomMediaForm: React.FC<CustomMediaFormProps> = ({ mediaType, onAddCusto
       />
       <div className="form-buttons">
         <button type="submit">Add Custom {labels.singular}</button>
-        <button type="button" onClick={onCancel}>Cancel</button>
+        <button type="button" onClick={onCancel}>
+          Cancel
+        </button>
       </div>
     </form>
   );

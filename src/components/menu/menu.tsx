@@ -1,11 +1,12 @@
-import React, { useState, useEffect, useRef } from 'react';
+import type React from 'react';
+import { useEffect, useRef, useState } from 'react';
 import './menu.css';
-import MenuClear from './clear';
-import MenuType from './type';
-import MenuConfig from './config';
-import { MediaType } from '../../media/types';
-import { GridLayoutMode } from '../grid';
 import logger from '../../logger';
+import type { MediaType } from '../../media/types';
+import type { GridLayoutMode } from '../grid';
+import MenuClear from './clear';
+import MenuConfig from './config';
+import MenuType from './type';
 
 interface MenuProps {
   onClearGrid: () => void;
@@ -17,14 +18,14 @@ interface MenuProps {
   onFitToScreenChange: (enabled: boolean) => void;
 }
 
-const Menu: React.FC<MenuProps> = ({ 
-  onClearGrid, 
-  selectedMediaType, 
-  onMediaTypeChange, 
-  gridLayoutMode, 
+const Menu: React.FC<MenuProps> = ({
+  onClearGrid,
+  selectedMediaType,
+  onMediaTypeChange,
+  gridLayoutMode,
   onGridLayoutModeChange,
   fitToScreen,
-  onFitToScreenChange
+  onFitToScreenChange,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -34,7 +35,7 @@ const Menu: React.FC<MenuProps> = ({
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
-        menuRef.current && 
+        menuRef.current &&
         !menuRef.current.contains(event.target as Node) &&
         buttonRef.current &&
         !buttonRef.current.contains(event.target as Node)
@@ -55,40 +56,58 @@ const Menu: React.FC<MenuProps> = ({
   const toggleMenu = () => {
     const newState = !isOpen;
     setIsOpen(newState);
-    
+
     // Report menu state and available options
     const menuState = {
       isOpen: newState,
       availableOptions: [
-        { 
+        {
           section: 'Media Type',
           items: [
-            { name: `Current: ${selectedMediaType}`, type: 'info', enabled: true },
-            { name: 'Movies', type: 'action', enabled: selectedMediaType !== 'movies' },
-            { name: 'Books', type: 'action', enabled: selectedMediaType !== 'books' },
-            { name: 'Music', type: 'action', enabled: selectedMediaType !== 'music' }
-          ]
-        },
-        { 
-          section: 'Grid Options',
-          items: [
-            { name: 'Clear Grid', type: 'action', enabled: true }
-          ]
+            {
+              name: `Current: ${selectedMediaType}`,
+              type: 'info',
+              enabled: true,
+            },
+            {
+              name: 'Movies',
+              type: 'action',
+              enabled: selectedMediaType !== 'movies',
+            },
+            {
+              name: 'Books',
+              type: 'action',
+              enabled: selectedMediaType !== 'books',
+            },
+            {
+              name: 'Music',
+              type: 'action',
+              enabled: selectedMediaType !== 'music',
+            },
+          ],
         },
         {
-          section: 'Layout Configuration', 
+          section: 'Grid Options',
+          items: [{ name: 'Clear Grid', type: 'action', enabled: true }],
+        },
+        {
+          section: 'Layout Configuration',
           items: [
-            { name: 'Grid layout options', type: 'placeholder', enabled: false }
-          ]
-        }
-      ]
+            {
+              name: 'Grid layout options',
+              type: 'placeholder',
+              enabled: false,
+            },
+          ],
+        },
+      ],
     };
-    
+
     logger.info(`MENU: ${newState ? 'Opened' : 'Closed'} hamburger menu`, {
       context: 'HamburgerMenu.toggleMenu',
       action: 'menu_toggle',
       menuState,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
   };
 
@@ -99,11 +118,12 @@ const Menu: React.FC<MenuProps> = ({
   return (
     <div className="hamburger-menu-container">
       {/* Hamburger Button */}
-      <button 
+      <button
+        type="button"
         ref={buttonRef}
         className="hamburger-button"
         onClick={toggleMenu}
-        aria-label={isOpen ? "Close menu" : "Open menu"}
+        aria-label={isOpen ? 'Close menu' : 'Open menu'}
       >
         <div className={`hamburger-icon ${isOpen ? 'open' : ''}`}>
           <span></span>
@@ -117,27 +137,26 @@ const Menu: React.FC<MenuProps> = ({
         <div className="menu-dropdown" ref={menuRef}>
           <div className="menu-header">
             <h3>Settings</h3>
-            <button className="close-button" onClick={toggleMenu}>×</button>
+            <button type="button" className="close-button" onClick={toggleMenu}>
+              ×
+            </button>
           </div>
-            
-            <div className="menu-section">
-              <h4>Media Type</h4>
-              <MenuType 
-                selectedMediaType={selectedMediaType}
-                onMediaTypeChange={onMediaTypeChange}
-                onMenuClose={closeMenu}
-              />
-            </div>
 
-            <div className="menu-section">
-              <h4>Grid Options</h4>
-              <MenuClear 
-                onClearGrid={onClearGrid}
-                onMenuClose={closeMenu}
-              />
-            </div>
+          <div className="menu-section">
+            <h4>Media Type</h4>
+            <MenuType
+              selectedMediaType={selectedMediaType}
+              onMediaTypeChange={onMediaTypeChange}
+              onMenuClose={closeMenu}
+            />
+          </div>
 
-              <MenuConfig 
+          <div className="menu-section">
+            <h4>Grid Options</h4>
+            <MenuClear onClearGrid={onClearGrid} onMenuClose={closeMenu} />
+          </div>
+
+          <MenuConfig
             onMenuClose={closeMenu}
             layoutMode={gridLayoutMode}
             onLayoutModeChange={onGridLayoutModeChange}

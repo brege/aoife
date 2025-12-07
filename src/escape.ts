@@ -17,4 +17,3 @@ const useEscapeKey = (callback: () => void) => {
 };
 
 export default useEscapeKey;
-

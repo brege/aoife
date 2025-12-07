@@ -8,6 +8,11 @@
   cursor: pointer;
   transition: color var(--transition-fast);
   user-select: none;
+  border: none;
+  background: transparent;
+  padding: 0;
+  text-align: left;
+  font-family: inherit;
 }
 
 .editable-title:hover {
@@ -30,4 +35,8 @@
 
 .editable-title-input::placeholder {
   color: var(--text-muted);
+}
+
+.editable-title-wrapper {
+  margin: 0;
 }

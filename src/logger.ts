@@ -16,34 +16,40 @@ interface LoggerConfig {
   stackDepth: number;
 }
 
-type LogLevel = 'debug' | 'info' | 'warn' | 'error' | 'success' | 'detail' | 'fatal' | 'validation';
+type LogLevel =
+  | 'debug'
+  | 'info'
+  | 'warn'
+  | 'error'
+  | 'success'
+  | 'detail'
+  | 'fatal'
+  | 'validation';
 
-interface LoggerOptions {
+interface LoggerOptions extends Record<string, unknown> {
   level?: LogLevel;
   context?: string;
-  meta?: Record<string, any>;
-  [key: string]: any;
+  meta?: Record<string, unknown>;
 }
 
-interface LoggerMeta {
+interface LoggerMeta extends Record<string, unknown> {
   context?: string;
   config?: LoggerConfig;
   caller?: string;
   stack?: string[];
   errorCategory?: string;
   hint?: string;
-  [key: string]: any;
 }
 
 const loggerConfig: LoggerConfig = {
-  showContext: true,      // Show context in formatted output
-  showTimestamp: false,   // Show timestamp in formatted output
+  showContext: true, // Show context in formatted output
+  showTimestamp: false, // Show timestamp in formatted output
   contextStyle: 'prefix', // 'prefix', 'suffix', 'none'
   // Enhanced debugging features
-  showCaller: false,      // Show file:line caller info
-  showStack: false,       // Show stack traces for errors
-  enrichErrors: false,    // Auto-categorize errors and add hints
-  stackDepth: 3           // Number of stack frames to show
+  showCaller: false, // Show file:line caller info
+  showStack: false, // Show stack traces for errors
+  enrichErrors: false, // Auto-categorize errors and add hints
+  stackDepth: 3, // Number of stack frames to show
 };
 
 // Browser-adapted color theme using CSS styles
@@ -54,7 +60,7 @@ const theme = {
   info: (msg: string) => `%c${msg}`,
   validation: (msg: string) => `%c${msg}`,
   detail: (msg: string) => `%c${msg}`,
-  debug: (msg: string) => `%c${msg}`
+  debug: (msg: string) => `%c${msg}`,
 };
 
 // CSS styles for browser console colors
@@ -65,23 +71,31 @@ const styles = {
   info: 'color: #83a598; font-weight: normal;',
   validation: 'color: #d3869b; font-weight: normal;',
   detail: 'color: #928374; font-weight: normal;',
-  debug: 'color: #665c54; font-weight: normal;'
+  debug: 'color: #665c54; font-weight: normal;',
 };
 
 // Returns a styled message for the given level
 function colorForLevel(level: LogLevel, message: string) {
-  if (level === 'error' || level === 'fatal') return { msg: theme.error(message), style: styles.error };
+  if (level === 'error' || level === 'fatal')
+    return { msg: theme.error(message), style: styles.error };
   if (level === 'warn') return { msg: theme.warn(message), style: styles.warn };
-  if (level === 'success') return { msg: theme.success(message), style: styles.success };
+  if (level === 'success')
+    return { msg: theme.success(message), style: styles.success };
   if (level === 'info') return { msg: theme.info(message), style: styles.info };
-  if (level === 'validation') return { msg: theme.validation(message), style: styles.validation };
-  if (level === 'detail') return { msg: theme.detail(message), style: styles.detail };
-  if (level === 'debug') return { msg: theme.debug(message), style: styles.debug };
+  if (level === 'validation')
+    return { msg: theme.validation(message), style: styles.validation };
+  if (level === 'detail')
+    return { msg: theme.detail(message), style: styles.detail };
+  if (level === 'debug')
+    return { msg: theme.debug(message), style: styles.debug };
   return { msg: message, style: '' };
 }
 
 // Format context prefix based on configuration
-function formatContext(context: string | undefined, config: LoggerConfig = loggerConfig): string {
+function formatContext(
+  context: string | undefined,
+  config: LoggerConfig = loggerConfig,
+): string {
   if (!context || !config.showContext) return '';
 
   const timestamp = config.showTimestamp ? ` ${new Date().toISOString()}` : '';
@@ -96,7 +110,12 @@ function formatContext(context: string | undefined, config: LoggerConfig = logge
 }
 
 // Enhanced message formatter for browser environment
-function enhanceMessage(message: string, _options: LoggerOptions, level: LogLevel, config: LoggerConfig): Partial<LoggerMeta> {
+function enhanceMessage(
+  message: string,
+  _options: LoggerOptions,
+  level: LogLevel,
+  config: LoggerConfig,
+): Partial<LoggerMeta> {
   const enhanced: Partial<LoggerMeta> = {};
 
   if (config.showCaller) {
@@ -105,8 +124,9 @@ function enhanceMessage(message: string, _options: LoggerOptions, level: LogLeve
       if (stack) {
         const lines = stack.split('\n');
         // Skip our logger functions and find the actual caller
-        const callerLine = lines.find((line, index) => 
-          index > 2 && !line.includes('logger.ts') && line.includes('at ')
+        const callerLine = lines.find(
+          (line, index) =>
+            index > 2 && !line.includes('logger.ts') && line.includes('at '),
         );
         if (callerLine) {
           const match = callerLine.match(/at\s+.*\s+\((.+):(\d+):(\d+)\)/);
@@ -116,7 +136,7 @@ function enhanceMessage(message: string, _options: LoggerOptions, level: LogLeve
           }
         }
       }
-    } catch (e) {
+    } catch {
       // Silently fail if stack trace parsing doesn't work
     }
   }
@@ -127,7 +147,7 @@ function enhanceMessage(message: string, _options: LoggerOptions, level: LogLeve
       if (stack) {
         enhanced.stack = stack.split('\n').slice(1, config.stackDepth + 1);
       }
-    } catch (e) {
+    } catch {
       // Silently fail if stack trace doesn't work
     }
   }
@@ -154,13 +174,25 @@ function enhanceMessage(message: string, _options: LoggerOptions, level: LogLeve
 }
 
 // Browser-adapted formatter
-function formatApp(level: LogLevel, message: string, meta: LoggerMeta = {}): void {
-  const { context, config = loggerConfig, caller, stack, errorCategory, hint } = meta;
+function formatApp(
+  level: LogLevel,
+  message: string,
+  meta: LoggerMeta = {},
+): void {
+  const {
+    context,
+    config = loggerConfig,
+    caller,
+    stack,
+    errorCategory,
+    hint,
+  } = meta;
 
   const contextPrefix = formatContext(context, config);
-  let formattedMessage = config.contextStyle === 'suffix'
-    ? message + formatContext(context, config)
-    : contextPrefix + message;
+  const formattedMessage =
+    config.contextStyle === 'suffix'
+      ? message + formatContext(context, config)
+      : contextPrefix + message;
 
   const { msg, style } = colorForLevel(level, formattedMessage);
 
@@ -176,9 +208,9 @@ function formatApp(level: LogLevel, message: string, meta: LoggerMeta = {}): voi
     timestamp: new Date().toISOString(),
     level: level.toUpperCase(),
     context: context || 'Unknown',
-    message: formattedMessage,
+    message,
     session: 'aoife-dev',
-    ...meta
+    ...meta,
   };
 
   // Also send to server for debugging via fetch (non-blocking)
@@ -186,33 +218,48 @@ function formatApp(level: LogLevel, message: string, meta: LoggerMeta = {}): voi
     fetch('/api/log', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(structuredLog)
+      body: JSON.stringify(structuredLog),
     }).catch(() => {}); // Silently fail if endpoint doesn't exist
-  } catch (e) {
+  } catch {
     // Silently fail if fetch not available
   }
 
   // Add enhanced debugging information
   if (caller) {
-    const { msg: callerMsg, style: callerStyle } = colorForLevel('debug', `  (${caller})`);
+    const { msg: callerMsg, style: callerStyle } = colorForLevel(
+      'debug',
+      `  (${caller})`,
+    );
     console.log(callerMsg, callerStyle);
   }
 
   if (errorCategory && errorCategory !== 'general') {
-    const { msg: catMsg, style: catStyle } = colorForLevel('info', `  [${errorCategory}]`);
+    const { msg: catMsg, style: catStyle } = colorForLevel(
+      'info',
+      `  [${errorCategory}]`,
+    );
     console.log(catMsg, catStyle);
   }
 
   if (hint) {
-    const { msg: hintMsg, style: hintStyle } = colorForLevel('debug', `  Hint: ${hint}`);
+    const { msg: hintMsg, style: hintStyle } = colorForLevel(
+      'debug',
+      `  Hint: ${hint}`,
+    );
     console.log(hintMsg, hintStyle);
   }
 
   if (stack && Array.isArray(stack)) {
-    const { msg: stackMsg, style: stackStyle } = colorForLevel('debug', '  Stack trace:');
+    const { msg: stackMsg, style: stackStyle } = colorForLevel(
+      'debug',
+      '  Stack trace:',
+    );
     console.log(stackMsg, stackStyle);
-    stack.forEach(line => {
-      const { msg: lineMsg, style: lineStyle } = colorForLevel('debug', `    ${line.trim()}`);
+    stack.forEach((line) => {
+      const { msg: lineMsg, style: lineStyle } = colorForLevel(
+        'debug',
+        `    ${line.trim()}`,
+      );
       console.log(lineMsg, lineStyle);
     });
   }
@@ -251,7 +298,11 @@ function logger(message: string, options: LoggerOptions = {}): void {
   meta.config = loggerConfig;
 
   // Apply enhanced debugging if any enhancement features are enabled
-  if (loggerConfig.showCaller || loggerConfig.showStack || loggerConfig.enrichErrors) {
+  if (
+    loggerConfig.showCaller ||
+    loggerConfig.showStack ||
+    loggerConfig.enrichErrors
+  ) {
     const enhanced = enhanceMessage(message, options, level, loggerConfig);
     Object.assign(meta, enhanced);
   }
@@ -259,31 +310,64 @@ function logger(message: string, options: LoggerOptions = {}): void {
   // Debug mode filtering
   if (level === 'debug' && !debugMode) return;
 
-  return formatApp(level, message, meta);
+  formatApp(level, message, meta);
 }
 
 // Convenience aliases for each level
-const info = (msg: string, options: Omit<LoggerOptions, 'level'> = {}) => logger(msg, { ...options, level: 'info' });
-const warn = (msg: string, options: Omit<LoggerOptions, 'level'> = {}) => logger(msg, { ...options, level: 'warn' });
-const error = (msg: string, options: Omit<LoggerOptions, 'level'> = {}) => logger(msg, { ...options, level: 'error' });
-const success = (msg: string, options: Omit<LoggerOptions, 'level'> = {}) => logger(msg, { ...options, level: 'success' });
-const detail = (msg: string, options: Omit<LoggerOptions, 'level'> = {}) => logger(msg, { ...options, level: 'detail' });
-const fatal = (msg: string, options: Omit<LoggerOptions, 'level'> = {}) => logger(msg, { ...options, level: 'fatal' });
-const debug = (msg: string, options: Omit<LoggerOptions, 'level'> = {}) => logger(msg, { ...options, level: 'debug' });
-const validation = (msg: string, options: Omit<LoggerOptions, 'level'> = {}) => logger(msg, { ...options, level: 'validation' });
+const info = (msg: string, options: Omit<LoggerOptions, 'level'> = {}) =>
+  logger(msg, { ...options, level: 'info' });
+const warn = (msg: string, options: Omit<LoggerOptions, 'level'> = {}) =>
+  logger(msg, { ...options, level: 'warn' });
+const error = (msg: string, options: Omit<LoggerOptions, 'level'> = {}) =>
+  logger(msg, { ...options, level: 'error' });
+const success = (msg: string, options: Omit<LoggerOptions, 'level'> = {}) =>
+  logger(msg, { ...options, level: 'success' });
+const detail = (msg: string, options: Omit<LoggerOptions, 'level'> = {}) =>
+  logger(msg, { ...options, level: 'detail' });
+const fatal = (msg: string, options: Omit<LoggerOptions, 'level'> = {}) =>
+  logger(msg, { ...options, level: 'fatal' });
+const debug = (msg: string, options: Omit<LoggerOptions, 'level'> = {}) =>
+  logger(msg, { ...options, level: 'debug' });
+const validation = (msg: string, options: Omit<LoggerOptions, 'level'> = {}) =>
+  logger(msg, { ...options, level: 'validation' });
 
 // Convenience method for pre-configured loggers with context
 function createLoggerFor(context: string) {
   return {
-    info: (msg: string, options: Omit<LoggerOptions, 'level' | 'context'> = {}) => logger(msg, { ...options, level: 'info', context }),
-    warn: (msg: string, options: Omit<LoggerOptions, 'level' | 'context'> = {}) => logger(msg, { ...options, level: 'warn', context }),
-    error: (msg: string, options: Omit<LoggerOptions, 'level' | 'context'> = {}) => logger(msg, { ...options, level: 'error', context }),
-    success: (msg: string, options: Omit<LoggerOptions, 'level' | 'context'> = {}) => logger(msg, { ...options, level: 'success', context }),
-    detail: (msg: string, options: Omit<LoggerOptions, 'level' | 'context'> = {}) => logger(msg, { ...options, level: 'detail', context }),
-    fatal: (msg: string, options: Omit<LoggerOptions, 'level' | 'context'> = {}) => logger(msg, { ...options, level: 'fatal', context }),
-    debug: (msg: string, options: Omit<LoggerOptions, 'level' | 'context'> = {}) => logger(msg, { ...options, level: 'debug', context }),
-    validation: (msg: string, options: Omit<LoggerOptions, 'level' | 'context'> = {}) => logger(msg, { ...options, level: 'validation', context }),
-    log: (msg: string, options: Omit<LoggerOptions, 'context'> = {}) => logger(msg, { ...options, context })
+    info: (
+      msg: string,
+      options: Omit<LoggerOptions, 'level' | 'context'> = {},
+    ) => logger(msg, { ...options, level: 'info', context }),
+    warn: (
+      msg: string,
+      options: Omit<LoggerOptions, 'level' | 'context'> = {},
+    ) => logger(msg, { ...options, level: 'warn', context }),
+    error: (
+      msg: string,
+      options: Omit<LoggerOptions, 'level' | 'context'> = {},
+    ) => logger(msg, { ...options, level: 'error', context }),
+    success: (
+      msg: string,
+      options: Omit<LoggerOptions, 'level' | 'context'> = {},
+    ) => logger(msg, { ...options, level: 'success', context }),
+    detail: (
+      msg: string,
+      options: Omit<LoggerOptions, 'level' | 'context'> = {},
+    ) => logger(msg, { ...options, level: 'detail', context }),
+    fatal: (
+      msg: string,
+      options: Omit<LoggerOptions, 'level' | 'context'> = {},
+    ) => logger(msg, { ...options, level: 'fatal', context }),
+    debug: (
+      msg: string,
+      options: Omit<LoggerOptions, 'level' | 'context'> = {},
+    ) => logger(msg, { ...options, level: 'debug', context }),
+    validation: (
+      msg: string,
+      options: Omit<LoggerOptions, 'level' | 'context'> = {},
+    ) => logger(msg, { ...options, level: 'validation', context }),
+    log: (msg: string, options: Omit<LoggerOptions, 'context'> = {}) =>
+      logger(msg, { ...options, context }),
   };
 }
 
@@ -305,7 +389,7 @@ export {
   detail,
   fatal,
   debug,
-  validation
+  validation,
 };
 
 export default {
@@ -321,5 +405,5 @@ export default {
   detail,
   fatal,
   debug,
-  validation
+  validation,
 };

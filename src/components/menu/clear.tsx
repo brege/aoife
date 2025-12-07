@@ -1,4 +1,4 @@
-import React from 'react';
+import type React from 'react';
 import logger from '../../logger';
 
 interface MenuClearProps {
@@ -12,13 +12,14 @@ const MenuClear: React.FC<MenuClearProps> = ({ onClearGrid, onMenuClose }) => {
     onMenuClose();
     logger.info('Grid cleared via menu clear component', {
       context: 'MenuClearGrid.handleClear',
-      action: 'clear_grid_component'
+      action: 'clear_grid_component',
     });
   };
 
   return (
     <div className="menu-clear-section">
-      <button 
+      <button
+        type="button"
         className="menu-option danger"
         onClick={handleClear}
       >

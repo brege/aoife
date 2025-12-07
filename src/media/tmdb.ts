@@ -1,10 +1,24 @@
 import axios from 'axios';
-import { MediaService, MediaSearchResult } from './service';
-import { MediaSearchValues } from './types';
+import { type MediaSearchResult, MediaService } from './service';
+import type { MediaSearchValues } from './types';
 
 const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p';
 
-const buildPosterUrl = (path?: string | null, size: 'w92' | 'w200' | 'w300' | 'w500' | 'original' = 'w500') => {
+type TmdbMovieResult = {
+  id: number;
+  title: string;
+  release_date?: string;
+  poster_path?: string | null;
+};
+
+type TmdbMovieDetails = TmdbMovieResult & {
+  imdb_id?: string | null;
+};
+
+const buildPosterUrl = (
+  path?: string | null,
+  size: 'w92' | 'w200' | 'w300' | 'w500' | 'original' = 'w500',
+) => {
   if (!path) return null;
   return `${TMDB_IMAGE_BASE}/${size}${path}`;
 };
@@ -33,13 +47,17 @@ export class TMDBService extends MediaService {
       });
 
       const moviesWithImdb = await Promise.all(
-        response.data.results.map(async (movie: any) => {
+        response.data.results.map(async (movie: TmdbMovieResult) => {
           const details = await this.getDetails(movie.id);
           return {
             id: movie.id,
             title: movie.title,
-            subtitle: movie.release_date ? new Date(movie.release_date).getFullYear().toString() : undefined,
-            year: movie.release_date ? new Date(movie.release_date).getFullYear() : undefined,
+            subtitle: movie.release_date
+              ? new Date(movie.release_date).getFullYear().toString()
+              : undefined,
+            year: movie.release_date
+              ? new Date(movie.release_date).getFullYear()
+              : undefined,
             type: 'movies',
             coverUrl: buildPosterUrl(movie.poster_path, 'w500'),
             coverThumbnailUrl: buildPosterUrl(movie.poster_path, 'w92'),
@@ -48,9 +66,9 @@ export class TMDBService extends MediaService {
               poster_path: movie.poster_path,
               imdb_id: details?.metadata?.imdb_id || null,
               isCustom: false,
-            }
+            },
           };
-        })
+        }),
       );
 
       return moviesWithImdb;
@@ -68,12 +86,16 @@ export class TMDBService extends MediaService {
         },
       });
 
-      const data = response.data;
+      const data: TmdbMovieDetails = response.data;
       return {
         id: data.id,
         title: data.title,
-        subtitle: data.release_date ? new Date(data.release_date).getFullYear().toString() : undefined,
-        year: data.release_date ? new Date(data.release_date).getFullYear() : undefined,
+        subtitle: data.release_date
+          ? new Date(data.release_date).getFullYear().toString()
+          : undefined,
+        year: data.release_date
+          ? new Date(data.release_date).getFullYear()
+          : undefined,
         type: 'movies',
         coverUrl: buildPosterUrl(data.poster_path, 'w500'),
         coverThumbnailUrl: buildPosterUrl(data.poster_path, 'w92'),
@@ -82,7 +104,7 @@ export class TMDBService extends MediaService {
           poster_path: data.poster_path,
           imdb_id: data.imdb_id,
           isCustom: false,
-        }
+        },
       };
     } catch (error) {
       console.error(`Error fetching details for movie ${id}:`, error);
@@ -98,7 +120,9 @@ export class TMDBService extends MediaService {
         },
       });
       return response.data.posters
-        .map((poster: { file_path: string }) => buildPosterUrl(poster.file_path, 'w500'))
+        .map((poster: { file_path: string }) =>
+          buildPosterUrl(poster.file_path, 'w500'),
+        )
         .filter((url: string | null): url is string => Boolean(url));
     } catch (error) {
       console.error('Error fetching alternate posters:', error);

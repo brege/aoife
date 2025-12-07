@@ -1,4 +1,4 @@
-import { MediaProviderConfig, MediaType } from './types';
+import type { MediaProviderConfig, MediaType } from './types';
 
 const tmdbProvider: MediaProviderConfig = {
   type: 'movies',
@@ -13,14 +13,14 @@ const tmdbProvider: MediaProviderConfig = {
       placeholder: 'Search for a movie...',
       type: 'text',
       required: true,
-      description: 'Uses TMDB search API on original title and common aliases.'
-    }
+      description: 'Uses TMDB search API on original title and common aliases.',
+    },
   ],
   defaultSearchValues: {
-    query: ''
+    query: '',
   },
   supportsCustomEntries: true,
-  supportsAlternateCovers: true
+  supportsAlternateCovers: true,
 };
 
 const booksProvider: MediaProviderConfig = {
@@ -35,22 +35,22 @@ const booksProvider: MediaProviderConfig = {
       label: 'Title',
       placeholder: 'Search for a book title...',
       type: 'text',
-      required: true
+      required: true,
     },
     {
       id: 'author',
       label: 'Author',
       placeholder: 'Author name',
       type: 'text',
-      required: false
-    }
+      required: false,
+    },
   ],
   defaultSearchValues: {
     title: '',
-    author: ''
+    author: '',
   },
   supportsCustomEntries: true,
-  supportsAlternateCovers: true
+  supportsAlternateCovers: true,
 };
 
 const musicProvider: MediaProviderConfig = {
@@ -65,20 +65,20 @@ const musicProvider: MediaProviderConfig = {
       label: 'Album or Artist',
       placeholder: 'Search for an album...',
       type: 'text',
-      required: true
-    }
+      required: true,
+    },
   ],
   defaultSearchValues: {
-    query: ''
+    query: '',
   },
   supportsCustomEntries: true,
-  supportsAlternateCovers: false
+  supportsAlternateCovers: false,
 };
 
 export const mediaProviders: Record<MediaType, MediaProviderConfig> = {
   movies: tmdbProvider,
   books: booksProvider,
-  music: musicProvider
+  music: musicProvider,
 };
 
 export function getMediaProvider(mediaType: MediaType): MediaProviderConfig {

@@ -84,7 +84,8 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: var(--spacing-xl) var(--spacing-xl) var(--spacing-md) var(--spacing-xl);
+  padding: var(--spacing-xl) var(--spacing-xl) var(--spacing-md)
+    var(--spacing-xl);
   border-bottom: 1px solid var(--border-color);
 }
 
@@ -232,7 +233,7 @@
     width: calc(100vw - 32px);
     max-width: 280px;
   }
-  
+
   .hamburger-button {
     top: 15px;
     right: 15px;

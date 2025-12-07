@@ -20,13 +20,13 @@
 
 .close-button:hover {
   transform: scale(1.1);
-  background-color: rgba(236, 18, 0, 1.0);
+  background-color: rgba(236, 18, 0, 1);
   color: rgba(255, 255, 255, 0.75);
 }
 
 .close-button:focus {
   outline: none;
-  background-color: rgba(236, 18, 0, 1.0);
+  background-color: rgba(236, 18, 0, 1);
 }
 
 .close-button svg {
@@ -36,4 +36,3 @@
 .close-button:hover svg {
   filter: drop-shadow(0px 0px 3px rgba(236, 18, 0, 0.8));
 }
-

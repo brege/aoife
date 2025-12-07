@@ -1,10 +1,10 @@
-import React from 'react';
+import type React from 'react';
 import './header.css';
 import './title.css';
-import EditableTitle from './title';
+import type { MediaType } from '../media/types';
+import type { GridLayoutMode } from './grid';
 import Menu from './menu/menu';
-import { MediaType } from '../media/types';
-import { GridLayoutMode } from './grid';
+import EditableTitle from './title';
 
 interface AppHeaderProps {
   selectedMediaType: MediaType;
@@ -16,21 +16,21 @@ interface AppHeaderProps {
   onFitToScreenChange: (enabled: boolean) => void;
 }
 
-const AppHeader: React.FC<AppHeaderProps> = ({ 
-  selectedMediaType, 
-  onMediaTypeChange, 
+const AppHeader: React.FC<AppHeaderProps> = ({
+  selectedMediaType,
+  onMediaTypeChange,
   onClearGrid,
   gridLayoutMode,
   onGridLayoutModeChange,
   fitToScreen,
-  onFitToScreenChange
+  onFitToScreenChange,
 }) => {
   return (
     <div className="app-header">
       <div className="header-left">
         <EditableTitle />
       </div>
-      
+
       <div className="header-right">
         <Menu
           selectedMediaType={selectedMediaType}

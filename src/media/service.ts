@@ -1,4 +1,4 @@
-import { MediaItem, MediaSearchValues } from './types';
+import type { MediaItem, MediaSearchValues } from './types';
 
 export type MediaSearchResult = MediaItem;
 

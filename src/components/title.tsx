@@ -1,4 +1,5 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import type React from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import './title.css';
 import logger from '../logger';
 
@@ -7,9 +8,9 @@ interface EditableTitleProps {
   className?: string;
 }
 
-const EditableTitle: React.FC<EditableTitleProps> = ({ 
+const EditableTitle: React.FC<EditableTitleProps> = ({
   initialTitle = 'aoife',
-  className = ''
+  className = '',
 }) => {
   const [title, setTitle] = useState(initialTitle);
   const [isEditing, setIsEditing] = useState(false);
@@ -23,7 +24,7 @@ const EditableTitle: React.FC<EditableTitleProps> = ({
   }, [isEditing]);
 
   const handleTitleClick = useCallback(() => setIsEditing(true), []);
-  
+
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) =>
     setTitle(e.target.value);
 
@@ -33,7 +34,7 @@ const EditableTitle: React.FC<EditableTitleProps> = ({
       context: 'EditableTitle.handleTitleBlur',
       action: 'title_change',
       newTitle: title,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
   };
 
@@ -60,12 +61,21 @@ const EditableTitle: React.FC<EditableTitleProps> = ({
           className={`editable-title-input ${className}`}
         />
       ) : (
-        <h1 
-          className={`editable-title ${className}`}
-          onClick={handleTitleClick}
-          title="Click to edit title"
-        >
-          {title}
+        <h1 className="editable-title-wrapper">
+          <button
+            type="button"
+            className={`editable-title ${className}`}
+            onClick={handleTitleClick}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                handleTitleClick();
+              }
+            }}
+            title="Click to edit title"
+          >
+            {title}
+          </button>
         </h1>
       )}
     </>

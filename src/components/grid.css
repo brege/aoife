@@ -6,7 +6,6 @@
   margin: 0 auto;
 }
 
-
 .grid-container {
   display: grid;
   gap: var(--spacing-lg);
@@ -81,19 +80,28 @@
 }
 
 .grid-container.fit-to-screen.layout-1 {
-  grid-template-columns: repeat(2, minmax(100px, min(var(--poster-width), 22vw)));
+  grid-template-columns: repeat(
+      2,
+      minmax(100px, min(var(--poster-width), 22vw))
+    );
 }
 
 .grid-container.fit-to-screen.layout-2,
 .grid-container.fit-to-screen.layout-3,
 .grid-container.fit-to-screen.layout-4,
 .grid-container.fit-to-screen.layout-force-2x2 {
-  grid-template-columns: repeat(2, minmax(100px, min(var(--poster-width), 22vw)));
+  grid-template-columns: repeat(
+      2,
+      minmax(100px, min(var(--poster-width), 22vw))
+    );
   grid-template-rows: repeat(2, auto);
 }
 
 .grid-container.fit-to-screen.layout-prefer-horizontal {
-  grid-template-columns: repeat(auto-fit, minmax(100px, min(var(--poster-width), 20vw)));
+  grid-template-columns: repeat(
+      auto-fit,
+      minmax(100px, min(var(--poster-width), 20vw))
+    );
   grid-template-rows: auto;
 }
 
@@ -104,11 +112,19 @@
 
 .grid-item {
   width: var(--poster-width);
-  aspect-ratio: 2/3;
+  aspect-ratio: 2 / 3;
   position: relative;
   border-radius: var(--border-radius-md);
   overflow: hidden;
-  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+  transition:
+    transform var(--transition-fast),
+    box-shadow var(--transition-fast);
+  border: none;
+  padding: 0;
+  background: transparent;
+  display: block;
+  font: inherit;
+  color: inherit;
 }
 
 /* Responsive grid items for fit-to-screen */
@@ -117,7 +133,6 @@
   min-width: 100px;
   max-width: var(--poster-width);
 }
-
 
 .grid-item.filled {
   background-color: #1a1a1a;
@@ -151,6 +166,23 @@
   height: 100%;
 }
 
+.poster-button {
+  border: none;
+  background: transparent;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  cursor: pointer;
+}
+
+.poster-button:focus-visible,
+.alternate-poster-button:focus-visible,
+.grid-item.empty:focus-visible {
+  outline: 2px solid var(--accent-blue);
+  outline-offset: 2px;
+}
+
 .grid-poster {
   width: 100%;
   height: 100%;
@@ -173,6 +205,13 @@
 .grid-item.empty:hover .placeholder-content {
   color: #888;
   transform: scale(1.1);
+}
+
+.alternate-poster-button {
+  border: none;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
 }
 
 .close-button {
@@ -269,77 +308,77 @@
     padding: 0 var(--spacing-lg);
     width: 100%;
   }
-  
+
   .grid-container {
     gap: var(--spacing-md);
     width: 100%;
     max-width: none;
     margin: 0 auto;
   }
-  
+
   /* Force mobile responsive width calculation */
   .grid-container,
   .grid-container.fit-to-screen {
     --poster-width: 30vw !important;
   }
-  
+
   .grid-container.layout-0 {
     grid-template-columns: var(--poster-width) !important;
     grid-template-rows: auto !important;
     justify-content: center !important;
   }
-  
+
   .grid-container.layout-1 {
     grid-template-columns: var(--poster-width) !important;
     grid-template-rows: repeat(2, auto) !important;
   }
-  
+
   .grid-item {
     width: 100% !important;
     min-width: 100px;
     max-width: 60vw !important;
   }
-  
+
   .grid-container.fit-to-screen .grid-item {
     max-width: 60vw !important;
   }
-  
+
   .grid-container.layout-2 {
     grid-template-columns: var(--poster-width) !important;
     grid-template-rows: repeat(3, auto) !important;
   }
-  
+
   .grid-container.layout-3 {
     grid-template-columns: var(--poster-width) !important;
     grid-template-rows: repeat(4, auto) !important;
   }
-  
+
   .grid-container.layout-4 {
     grid-template-columns: var(--poster-width) !important;
     grid-template-rows: repeat(4, auto) !important;
   }
-  
+
   .grid-container.layout-force-2x2 {
     grid-template-columns: repeat(2, var(--poster-width)) !important;
     grid-template-rows: repeat(2, auto) !important;
   }
-  
+
   .placeholder-content {
     font-size: 32px;
   }
-  
+
   .close-button {
     width: 28px;
     height: 28px;
     top: 6px;
     right: 6px;
   }
-  
+
   .close-button svg {
     width: 14px;
     height: 14px;
   }
-  
+
   .poster-grid {
     grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
     gap: var(--spacing-md);
@@ -351,27 +390,27 @@
   .grid-container {
     --poster-width: 164px;
   }
-  
+
   .grid-container.layout-0 {
     grid-template-columns: var(--poster-width);
     grid-template-rows: auto;
   }
-  
+
   .grid-container.layout-1 {
     grid-template-columns: repeat(2, var(--poster-width));
     grid-template-rows: auto;
   }
-  
+
   .grid-container.layout-2 {
     grid-template-columns: repeat(2, var(--poster-width));
     grid-template-rows: repeat(2, auto);
   }
-  
+
   .grid-container.layout-3 {
     grid-template-columns: repeat(2, var(--poster-width));
     grid-template-rows: repeat(2, auto);
   }
-  
+
   .grid-container.layout-4 {
     grid-template-columns: repeat(2, var(--poster-width));
     grid-template-rows: repeat(2, auto);
@@ -384,27 +423,27 @@
     gap: var(--spacing-xl);
     --poster-width: 180px;
   }
-  
+
   .grid-container.layout-0 {
     grid-template-columns: var(--poster-width);
     grid-template-rows: auto;
   }
-  
+
   .grid-container.layout-1 {
     grid-template-columns: repeat(2, var(--poster-width));
     grid-template-rows: auto;
   }
-  
+
   .grid-container.layout-2 {
     grid-template-columns: repeat(2, var(--poster-width));
     grid-template-rows: repeat(2, auto);
   }
-  
+
   .grid-container.layout-3 {
     grid-template-columns: repeat(2, var(--poster-width));
     grid-template-rows: repeat(2, auto);
   }
-  
+
   .grid-container.layout-4 {
     grid-template-columns: repeat(2, var(--poster-width));
     grid-template-rows: repeat(2, auto);

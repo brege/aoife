@@ -1,6 +1,6 @@
-import React from 'react';
-import { MediaType } from '../../media/types';
+import type React from 'react';
 import logger from '../../logger';
+import type { MediaType } from '../../media/types';
 
 interface MenuTypeProps {
   selectedMediaType: MediaType;
@@ -8,10 +8,10 @@ interface MenuTypeProps {
   onMenuClose: () => void;
 }
 
-const MenuType: React.FC<MenuTypeProps> = ({ 
-  selectedMediaType, 
-  onMediaTypeChange, 
-  onMenuClose 
+const MenuType: React.FC<MenuTypeProps> = ({
+  selectedMediaType,
+  onMediaTypeChange,
+  onMenuClose,
 }) => {
   const handleMediaTypeSelect = (type: MediaType) => {
     logger.info(`MENU: Media type changed to "${type}"`, {
@@ -19,9 +19,9 @@ const MenuType: React.FC<MenuTypeProps> = ({
       action: 'media_type_change_menu',
       previousType: selectedMediaType,
       newType: type,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
-    
+
     onMediaTypeChange(type);
     onMenuClose();
   };
@@ -29,10 +29,12 @@ const MenuType: React.FC<MenuTypeProps> = ({
   return (
     <div className="menu-media-type-section">
       <div className="media-type-current">
-        Current: {selectedMediaType.charAt(0).toUpperCase() + selectedMediaType.slice(1)}
+        Current:{' '}
+        {selectedMediaType.charAt(0).toUpperCase() + selectedMediaType.slice(1)}
       </div>
       {(['movies', 'books', 'music'] as MediaType[]).map((type) => (
         <button
+          type="button"
           key={type}
           className={`menu-option ${selectedMediaType === type ? 'active' : ''}`}
           onClick={() => handleMediaTypeSelect(type)}
