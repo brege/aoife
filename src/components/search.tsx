@@ -2,7 +2,7 @@ import type React from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import '../global.css';
 import './search.css';
-import { useCliBridge } from '../cli';
+import { useCliBridge, type CliMenuState } from '../cli';
 import useEscapeKey from '../escape';
 import logger from '../logger';
 import { getMediaService } from '../media/factory';
@@ -42,15 +42,23 @@ const normalizeStoredMedia = (stored: unknown): MediaItem | null => {
     return null;
   }
 
-  if ('coverUrl' in stored || 'coverThumbnailUrl' in stored) {
+  const data = stored as Record<string, unknown>;
+
+  if ('coverUrl' in data || 'coverThumbnailUrl' in data) {
+    const media = data as unknown as MediaItem;
     return {
-      ...stored,
-      type: stored.type || 'movies',
-    } as MediaItem;
+      ...media,
+      type: media.type || 'movies',
+    };
   }
 
-  if ('poster_path' in stored || stored.metadata?.poster_path) {
-    const legacy = stored as LegacyMovie;
+  const hasMetadata =
+    typeof data.metadata === 'object' &&
+    data.metadata !== null &&
+    'poster_path' in (data.metadata as Record<string, unknown>);
+
+  if ('poster_path' in data || hasMetadata) {
+    const legacy = data as LegacyMovie;
     const releaseYear = legacy.release_date
       ? new Date(legacy.release_date).getFullYear()
       : undefined;
@@ -445,7 +453,7 @@ const MediaSearch: React.FC = () => {
   }, []);
 
   const handleGetMenuState = useCallback(() => {
-    const menuState = {
+    const menuState: CliMenuState = {
       sections: [
         {
           name: 'Grid Options',

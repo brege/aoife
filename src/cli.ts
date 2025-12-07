@@ -24,7 +24,7 @@ type CliGridState = {
 
 type CliMenuOption = {
   name: string;
-  type: 'action' | 'feature';
+  type: 'action' | 'feature' | 'info';
   enabled: boolean;
   description: string;
 };
@@ -34,7 +34,7 @@ type CliMenuSection = {
   options: CliMenuOption[];
 };
 
-type CliMenuState = {
+export type CliMenuState = {
   sections: CliMenuSection[];
   currentGridCount: number;
   maxGridCapacity: number;
