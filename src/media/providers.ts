@@ -21,13 +21,14 @@ const tmdbProvider: MediaProviderConfig = {
   },
   supportsCustomEntries: true,
   supportsAlternateCovers: true,
+  aspectRatio: '2:3',
 };
 
 const booksProvider: MediaProviderConfig = {
   type: 'books',
   id: 'book-covers',
   label: 'Books',
-  description: 'Placeholder for Book Covers API (OpenLibrary + Google Books).',
+  description: 'Search via OpenLibrary + Google Books.',
   resultLabel: 'book',
   searchFields: [
     {
@@ -51,28 +52,47 @@ const booksProvider: MediaProviderConfig = {
   },
   supportsCustomEntries: true,
   supportsAlternateCovers: true,
+  aspectRatio: 'auto',
 };
 
 const musicProvider: MediaProviderConfig = {
   type: 'music',
-  id: 'music-placeholder',
+  id: 'musicbrainz',
   label: 'Music',
-  description: 'Placeholder for future music cover integrations.',
+  description:
+    'Search albums via MusicBrainz. Cover art from Cover Art Archive, iTunes, Deezer.',
   resultLabel: 'album',
   searchFields: [
     {
       id: 'query',
-      label: 'Album or Artist',
-      placeholder: 'Search for an album...',
+      label: 'Search',
+      placeholder: 'Search for an album or artist...',
       type: 'text',
-      required: true,
+      required: false,
+    },
+    {
+      id: 'artist',
+      label: 'Artist',
+      placeholder: 'Artist name',
+      type: 'text',
+      required: false,
+    },
+    {
+      id: 'album',
+      label: 'Album',
+      placeholder: 'Album title',
+      type: 'text',
+      required: false,
     },
   ],
   defaultSearchValues: {
     query: '',
+    artist: '',
+    album: '',
   },
   supportsCustomEntries: true,
-  supportsAlternateCovers: false,
+  supportsAlternateCovers: true,
+  aspectRatio: '1:1',
 };
 
 export const mediaProviders: Record<MediaType, MediaProviderConfig> = {

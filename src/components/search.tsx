@@ -552,6 +552,7 @@ const MediaSearch: React.FC = () => {
               layoutMode={gridLayoutMode}
               fitToScreen={fitToScreen}
               placeholderLabel={provider.resultLabel}
+              aspectRatio={provider.aspectRatio}
             />
             <form onSubmit={handleSearch} className="search-form">
               {provider.searchFields.map((field, index) => (

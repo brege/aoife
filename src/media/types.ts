@@ -27,6 +27,8 @@ export interface MediaItem {
   metadata?: Record<string, unknown>;
 }
 
+export type AspectRatio = '2:3' | '1:1' | 'auto';
+
 export interface MediaProviderConfig {
   type: MediaType;
   id: string;
@@ -37,4 +39,5 @@ export interface MediaProviderConfig {
   defaultSearchValues: MediaSearchValues;
   supportsCustomEntries: boolean;
   supportsAlternateCovers: boolean;
+  aspectRatio: AspectRatio;
 }

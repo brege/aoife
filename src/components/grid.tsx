@@ -1,7 +1,11 @@
 import React, { useRef } from 'react';
 import './grid.css';
 import logger from '../logger';
-import { type MediaItem, TMDB_IMAGE_BASE } from '../media/types';
+import {
+  type AspectRatio,
+  type MediaItem,
+  TMDB_IMAGE_BASE,
+} from '../media/types';
 import CloseIcon from './close';
 
 export type GridLayoutMode =
@@ -22,6 +26,7 @@ interface Grid2x2Props {
   layoutMode?: GridLayoutMode;
   fitToScreen?: boolean;
   placeholderLabel: string;
+  aspectRatio?: AspectRatio;
 }
 
 const getCoverSrc = (media: MediaItem) => {
@@ -46,6 +51,7 @@ const Grid2x2: React.FC<Grid2x2Props> = ({
   layoutMode = 'auto',
   fitToScreen = true,
   placeholderLabel,
+  aspectRatio = '2:3',
 }) => {
   const itemCount = items.length;
   const gridContainerRef = useRef<HTMLDivElement>(null);
@@ -151,7 +157,7 @@ const Grid2x2: React.FC<Grid2x2Props> = ({
 
     if (item) {
       return (
-        <div key={item.id} className="grid-item filled">
+        <div key={item.id} className="grid-item filled" data-type={item.type}>
           <div className="poster-wrapper">
             <button
               type="button"
@@ -278,6 +284,7 @@ const Grid2x2: React.FC<Grid2x2Props> = ({
         key={`placeholder-${position}`}
         type="button"
         className="grid-item empty"
+        data-aspect={aspectRatio}
         onClick={onPlaceholderClick}
         title={`Add a ${placeholderLabel}`}
       >

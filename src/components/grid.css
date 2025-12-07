@@ -61,6 +61,17 @@
   --poster-width: clamp(120px, 30vw, 200px);
 }
 
+/* Aspect ratio by item media type */
+.grid-item[data-type="music"],
+.grid-item[data-aspect="1:1"] {
+  aspect-ratio: 1 / 1;
+}
+
+.grid-item[data-type="books"],
+.grid-item[data-aspect="auto"] {
+  aspect-ratio: auto;
+}
+
 /* Grid items */
 .grid-item {
   width: 100%;

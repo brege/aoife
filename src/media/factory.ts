@@ -1,4 +1,5 @@
 import { BooksService } from './books';
+import { MusicService } from './music';
 import type { MediaService } from './service';
 import { TMDBService } from './tmdb';
 import type { MediaType } from './types';
@@ -29,7 +30,8 @@ export function getMediaService(mediaType: MediaType): MediaService {
       break;
 
     case 'music':
-      throw new Error('Music service not yet implemented');
+      service = new MusicService();
+      break;
 
     default:
       throw new Error(`Unsupported media type: ${mediaType}`);
