@@ -62,6 +62,7 @@ const MediaSearch: React.FC = () => {
   const [lastSearchSummary, setLastSearchSummary] = useState('');
   const searchInputRef = useRef<HTMLInputElement>(null);
   const mediaTypeOptions: MediaType[] = ['movies', 'books', 'music'];
+  const [isSearchPanelVisible, setIsSearchPanelVisible] = useState(true);
 
   useEffect(() => {
     const stored = localStorage.getItem(GRID_STORAGE_KEY);
@@ -86,8 +87,10 @@ const MediaSearch: React.FC = () => {
     setSearchValues(provider.defaultSearchValues);
     setSearchResults([]);
     setLastSearchSummary('');
-    searchInputRef.current?.focus();
-  }, [provider]);
+    if (isSearchPanelVisible) {
+      searchInputRef.current?.focus();
+    }
+  }, [provider, isSearchPanelVisible]);
 
   const persistGrid = useCallback((items: MediaItem[]) => {
     localStorage.setItem(GRID_STORAGE_KEY, JSON.stringify(items));
@@ -368,6 +371,20 @@ const MediaSearch: React.FC = () => {
     const menuState: CliMenuState = {
       sections: [
         {
+          name: 'Search Panel',
+          options: [
+            {
+              name: isSearchPanelVisible
+                ? 'Hide search panel'
+                : 'Show search panel',
+              type: 'action',
+              enabled: true,
+              description:
+                'Toggle visibility of search inputs and custom button',
+            },
+          ],
+        },
+        {
           name: 'Grid Options',
           options: [
             {
@@ -402,7 +419,7 @@ const MediaSearch: React.FC = () => {
     });
 
     return menuState;
-  }, [gridItems.length]);
+  }, [gridItems.length, isSearchPanelVisible]);
 
   const handleMenuClearGrid = useCallback(() => {
     setGridItems([]);
@@ -523,7 +540,28 @@ const MediaSearch: React.FC = () => {
   };
 
   useEffect(() => {
-    searchInputRef.current?.focus();
+    if (isSearchPanelVisible) {
+      searchInputRef.current?.focus();
+    }
+  }, [isSearchPanelVisible]);
+
+  useEffect(() => {
+    if (!isSearchPanelVisible) {
+      setShowCustomMediaForm(false);
+    }
+  }, [isSearchPanelVisible]);
+
+  const handleSearchPanelToggle = useCallback((visible: boolean) => {
+    setIsSearchPanelVisible(visible);
+    logger.info(
+      `SEARCH PANEL: ${visible ? 'Showing' : 'Hiding'} from menu control`,
+      {
+        context: 'MediaSearch.handleSearchPanelToggle',
+        action: 'search_panel_toggle',
+        isVisible: visible,
+        timestamp: Date.now(),
+      },
+    );
   }, []);
 
   return (
@@ -534,6 +572,8 @@ const MediaSearch: React.FC = () => {
         onGridLayoutModeChange={setGridLayoutMode}
         fitToScreen={fitToScreen}
         onFitToScreenChange={setFitToScreen}
+        isSearchPanelVisible={isSearchPanelVisible}
+        onSearchPanelToggle={handleSearchPanelToggle}
       />
 
       <div className="search-section">
@@ -568,52 +608,57 @@ const MediaSearch: React.FC = () => {
               fitToScreen={fitToScreen}
               placeholderLabel={provider.resultLabel}
               aspectRatio={provider.aspectRatio}
+              isSearchPanelVisible={isSearchPanelVisible}
             />
-            <form onSubmit={handleSearch} className="search-form">
-              <select
-                className="search-select"
-                value={selectedMediaType}
-                onChange={handleMediaTypeChange}
-                aria-label="Media type"
-              >
-                {mediaTypeOptions.map((type) => (
-                  <option key={type} value={type}>
-                    {type.charAt(0).toUpperCase() + type.slice(1)}
-                  </option>
+            {isSearchPanelVisible && (
+              <form onSubmit={handleSearch} className="search-form">
+                <select
+                  className="search-select"
+                  value={selectedMediaType}
+                  onChange={handleMediaTypeChange}
+                  aria-label="Media type"
+                >
+                  {mediaTypeOptions.map((type) => (
+                    <option key={type} value={type}>
+                      {type.charAt(0).toUpperCase() + type.slice(1)}
+                    </option>
+                  ))}
+                </select>
+                {provider.searchFields.map((field, index) => (
+                  <input
+                    key={field.id}
+                    ref={index === 0 ? searchInputRef : undefined}
+                    type="text"
+                    value={searchValues[field.id] ?? ''}
+                    onChange={(e) =>
+                      handleFieldChange(field.id, e.target.value)
+                    }
+                    placeholder={field.placeholder}
+                    aria-label={field.label}
+                    className="search-input"
+                    required={field.required}
+                  />
                 ))}
-              </select>
-              {provider.searchFields.map((field, index) => (
-                <input
-                  key={field.id}
-                  ref={index === 0 ? searchInputRef : undefined}
-                  type="text"
-                  value={searchValues[field.id] ?? ''}
-                  onChange={(e) => handleFieldChange(field.id, e.target.value)}
-                  placeholder={field.placeholder}
-                  aria-label={field.label}
-                  className="search-input"
-                  required={field.required}
-                />
-              ))}
-              <button
-                type="submit"
-                className="search-button"
-                disabled={isLoading}
-                onClick={() => {
-                  logger.info(
-                    `SEARCH: Searching for "${formatSearchSummary(searchValues, provider.searchFields)}"`,
-                    {
-                      context: 'MediaSearch.SearchButton',
-                      action: 'search_submit',
-                      values: searchValues,
-                      timestamp: Date.now(),
-                    },
-                  );
-                }}
-              >
-                {isLoading ? 'Searching...' : 'Search'}
-              </button>
-            </form>
+                <button
+                  type="submit"
+                  className="search-button"
+                  disabled={isLoading}
+                  onClick={() => {
+                    logger.info(
+                      `SEARCH: Searching for "${formatSearchSummary(searchValues, provider.searchFields)}"`,
+                      {
+                        context: 'MediaSearch.SearchButton',
+                        action: 'search_submit',
+                        values: searchValues,
+                        timestamp: Date.now(),
+                      },
+                    );
+                  }}
+                >
+                  {isLoading ? 'Searching...' : 'Search'}
+                </button>
+              </form>
+            )}
           </div>
           {isLoading && <p>Loading...</p>}
           {error && <p className="error">{error}</p>}
@@ -704,15 +749,17 @@ const MediaSearch: React.FC = () => {
             </div>
           )}
         </div>
-        {gridItems.length < GRID_CAPACITY && !searchResults.length && (
-          <button
-            type="button"
-            onClick={() => setShowCustomMediaForm(true)}
-            className="add-custom-button"
-          >
-            {`Add Custom ${provider.resultLabel.charAt(0).toUpperCase() + provider.resultLabel.slice(1)}`}
-          </button>
-        )}
+        {isSearchPanelVisible &&
+          gridItems.length < GRID_CAPACITY &&
+          !searchResults.length && (
+            <button
+              type="button"
+              onClick={() => setShowCustomMediaForm(true)}
+              className="add-custom-button"
+            >
+              {`Add Custom ${provider.resultLabel.charAt(0).toUpperCase() + provider.resultLabel.slice(1)}`}
+            </button>
+          )}
       </div>
 
       {showCustomMediaForm && (

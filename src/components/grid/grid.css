@@ -194,6 +194,17 @@
   color: white;
 }
 
+.grid-close-button {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.grid-item.filled:hover .grid-close-button,
+.grid-item.filled:focus-within .grid-close-button {
+  opacity: 1;
+  pointer-events: auto;
+}
+
 /* Alternate poster button */
 .alternate-poster-button {
   border: none;

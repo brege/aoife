@@ -12,6 +12,8 @@ interface MenuProps {
   onGridLayoutModeChange: (mode: GridLayoutMode) => void;
   fitToScreen: boolean;
   onFitToScreenChange: (enabled: boolean) => void;
+  isSearchPanelVisible: boolean;
+  onSearchPanelToggle: (visible: boolean) => void;
 }
 
 const Menu: React.FC<MenuProps> = ({
@@ -20,6 +22,8 @@ const Menu: React.FC<MenuProps> = ({
   onGridLayoutModeChange,
   fitToScreen,
   onFitToScreenChange,
+  isSearchPanelVisible,
+  onSearchPanelToggle,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -54,6 +58,18 @@ const Menu: React.FC<MenuProps> = ({
     const menuState = {
       isOpen: newState,
       availableOptions: [
+        {
+          section: 'Search Panel',
+          items: [
+            {
+              name: isSearchPanelVisible
+                ? 'Hide search panel'
+                : 'Show search panel',
+              type: 'action',
+              enabled: true,
+            },
+          ],
+        },
         {
           section: 'Grid',
           items: [{ name: 'Clear Grid', type: 'action', enabled: true }],
@@ -107,6 +123,30 @@ const Menu: React.FC<MenuProps> = ({
             <h3>Settings</h3>
             <button type="button" className="close-button" onClick={toggleMenu}>
               ×
+            </button>
+          </div>
+
+          <div className="menu-section">
+            <h4>Search Panel</h4>
+            <button
+              type="button"
+              className="menu-option"
+              onClick={() => {
+                const nextValue = !isSearchPanelVisible;
+                onSearchPanelToggle(nextValue);
+                logger.info(
+                  `MENU: ${nextValue ? 'Showing' : 'Hiding'} search panel`,
+                  {
+                    context: 'MenuSearchPanel.toggle',
+                    action: 'search_panel_toggle',
+                    isVisible: nextValue,
+                    timestamp: Date.now(),
+                  },
+                );
+                closeMenu();
+              }}
+            >
+              {isSearchPanelVisible ? 'Hide search form' : 'Show search form'}
             </button>
           </div>
 

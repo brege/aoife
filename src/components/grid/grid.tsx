@@ -27,6 +27,7 @@ interface Grid2x2Props {
   fitToScreen?: boolean;
   placeholderLabel: string;
   aspectRatio?: AspectRatio;
+  isSearchPanelVisible?: boolean;
 }
 
 const getCoverSrc = (media: MediaItem) => {
@@ -52,6 +53,7 @@ const Grid2x2: React.FC<Grid2x2Props> = ({
   fitToScreen = true,
   placeholderLabel,
   aspectRatio = '2:3',
+  isSearchPanelVisible = true,
 }) => {
   const itemCount = items.length;
   const gridContainerRef = useRef<HTMLDivElement>(null);
@@ -256,7 +258,7 @@ const Grid2x2: React.FC<Grid2x2Props> = ({
             </button>
             <button
               type="button"
-              className="close-button"
+              className="close-button grid-close-button"
               onClick={() => {
                 logger.info(
                   `GRID: Removed "${item.title}" from position ${position}`,
@@ -277,6 +279,10 @@ const Grid2x2: React.FC<Grid2x2Props> = ({
           </div>
         </div>
       );
+    }
+
+    if (!isSearchPanelVisible) {
+      return null;
     }
 
     return (
@@ -303,7 +309,9 @@ const Grid2x2: React.FC<Grid2x2Props> = ({
         data-layout={layoutValue}
         data-fit={fitToScreen}
       >
-        {positionsToRender.map((position) => renderGridItem(position))}
+        {positionsToRender
+          .map((position) => renderGridItem(position))
+          .filter(Boolean)}
       </div>
 
       {showPosterGrid && (
