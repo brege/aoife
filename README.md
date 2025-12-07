@@ -46,13 +46,15 @@ npm run lint    # run biome linter
 
 ## Roadmap
 
-- [x] **Movies** (TMDB API)
-- [ ] **TV Shows** (TMDB API)
+- [x] **Movies** 
+  - TMDB API
+- [ ] **TV Shows**
+  - TMDB API
 - [ ] **Games**
   - IGDB (Internet Game Database)
   - Giant Bomb API
   - Steam API
-- [ ] **Books**
+- [x] **Books**
   - Google Books API
   - Open Library API
 - [ ] **Music**

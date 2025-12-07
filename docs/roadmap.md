@@ -19,40 +19,73 @@ Nothing is ever perfect--you have to be militant with MusicBrainz Piccard and Be
 
 #### Architectural Priorities
 
-0. **Aspect Ratios**  
-   - Movies, TV Shows: 2:3
-   - Books: 2:3 (or other)
-   - Music Albums: 1:1  
-   The grid system must support media‑type aware CSS to properly display collections.  
+0. **Aspect Ratios** ✓ DONE
+   - Movies, TV Shows: 2:3 ✓
+   - Books: Dynamic (actual image ratio) ✓
+   - Music Albums: 1:1 (next)
+   The grid system now supports media‑type aware CSS with dynamic aspect ratios for books.
 
-1. **Service Layer Abstraction**  
-   Current movie logic is hardcoded to TMDB. This should become a pluggable service interface, e.g.:  
+1. **Service Layer Abstraction** ✓ DONE
+   Pluggable service interface implemented:
    ```typescript
    interface MediaService {
-     search(query: string): Promise<MediaItem[]>;
-     getAlternateCovers(id: string): Promise<string[]>;
+     search(values: MediaSearchValues): Promise<MediaSearchResult[]>;
+     getAlternateCovers(id: string | number): Promise<string[]>;
+     getDetails(id: string | number): Promise<MediaSearchResult | null>;
    }
    ```
+   Implementations: TMDBService, BooksService, MusicService (in progress)
 
-2. **Media Type Selection**  
-   A header selector for `Movies | Books | Music` will allow a user to switch views cleanly.
+2. **Media Type Selection** ✓ DONE
+   Header menu selector for `Movies | Books | Music` allows switching views cleanly.
 
-   This could also include the build-up for a userspace configuration method. I will have to decide when to support user accounts--extending beyond local storage--and if the tool and my approach to React have made this doable.  
-   
-   The potential for screwing this up into an impossible refactor (like oshea's CJS to ESM proof)
-   later is high; I will have to keep this adaptability in mind, catching myself early.
+3. **Collection Strategy**
+   Separate collections by type (Music, Books, Movies in distinct views).
+   Future: Mixed collections if needed.
 
-3. **Collection Strategy**  
-   - **Mixed collections**: More complex UI, but flexibility for users who want a single all‑media shelf.  
-   - **Separate collections**: Easier to implement, provides clarity by type.  
-   This choice will affect UX heavily and should be made early as well.
+4. **Custom Entry Extension**
+   Custom form adapts to media type. Ready for music implementation.  
 
-4. **Custom Entry Extension**  
-   Adapt the existing “add a movie” custom input form so that it also works for books and albums, ensuring manual creation is first‑class across types.  
+---
+
+### Music Implementation
+
+**Status:** In Progress
+
+**APIs Planned:**
+- **Spotify Web API** - Primary source for album art, metadata
+- **MusicBrainz API** - Fallback metadata and cover art (via Cover Art Archive)
+- **Last.fm API** - User listening history and album info (optional)
+
+**Key Differences from Books:**
+- Album artwork is **square (1:1 aspect ratio)** — different grid layout than movies/books
+- Search metadata includes artist, release date, genres
+- Multiple editions/pressings of same album (remix, reissue, etc.)
+- Rich album metadata: track count, duration, label, catalog number
+
+**Implementation Plan:**
+1. Create `src/media/music.ts` with MusicService class
+2. Implement Spotify album search + MusicBrainz fallback
+3. Map API responses to MediaItem shape:
+   - `id`: `sp:{albumId}` or `mb:{albumId}`
+   - `title`: Album name
+   - `subtitle`: Artist name(s)
+   - `type`: 'music'
+   - `coverUrl`: Album art (largest available)
+   - `coverThumbnailUrl`: Album art (thumbnail)
+   - `year`: Release date (extract year)
+4. Implement `getAlternateCovers()`: Edition variants, remixes, reissues
+5. Update factory.ts to instantiate MusicService
+6. Test via CLI and UI with known albums
+
+**API Considerations:**
+- Spotify requires authentication (Client Credentials flow for app-only access)
+- MusicBrainz is open but rate-limited; Cover Art Archive has free art
+- Cache search results for alternate editions (like books do)
 
 #### Summary
 
-The project's near‑term path is clear: add support for books and music, use their differences to drive real architectural improvements, and maintain the flexibility of custom media creation. Once these steps are complete, the foundation will be strong enough to revisit secondary categories like TV shows or games without risking brittle code or wasted design effort.
+Books are complete. Music next leverages the same service abstraction, proving the architecture scales to different media with distinct aspect ratios and metadata patterns. Once music is done, the foundation will be strong enough for TV shows, games, podcasts, or custom media types without architectural rework.
 
 ---
 
@@ -119,6 +152,7 @@ Three Main Benefits:
 
 Grid Evolution Sequence...
 
+```
 Stage 1: 1x1           Stage 2: 1x2           Stage 3: 2x2 (3 items)
 ┌─────┐               ┌─────┬─────┐          ┌─────┬─────┐
 │ [0] │               │ [0] │ [1] │          │ [0] │ [1] │
@@ -132,6 +166,7 @@ Stage 4: 2x2 (full)
 ├─────┼─────┤
 │ [2] │ [3] │
 └─────┴─────┘
+```
 
 Matrix Indexing.
 - Position [0] = (0,0) = top-left
