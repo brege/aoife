@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
-import { MediaItem } from '../types/media';
-import logger from '../utils/logger';
+import { MediaItem } from './media/types';
+import logger from './logger';
 
 interface CliMessage {
   type: 'SEARCH' | 'ADD_MEDIA' | 'REMOVE_MEDIA' | 'GET_GRID_STATE' | 'CLEAR_GRID' | 'ADD_FIRST_RESULT' | 'GET_MENU_STATE' | 'MENU_CLEAR_GRID' | 'GET_DEBUG_INFO';

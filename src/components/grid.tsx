@@ -1,8 +1,8 @@
 import React, { useRef } from 'react';
 import './grid.css';
 import CloseIcon from './close';
-import { MediaItem } from '../types/media';
-import logger from '../utils/logger';
+import { MediaItem } from '../media/types';
+import logger from '../logger';
 
 export type GridLayoutMode = 'auto' | 'force-2x2' | 'prefer-horizontal' | 'vertical-stack';
 

@@ -3,9 +3,9 @@ import './menu.css';
 import MenuClear from './clear';
 import MenuType from './type';
 import MenuConfig from './config';
-import { MediaType } from '../../types/media';
+import { MediaType } from '../../media/types';
 import { GridLayoutMode } from '../grid';
-import logger from '../../utils/logger';
+import logger from '../../logger';
 
 interface MenuProps {
   onClearGrid: () => void;

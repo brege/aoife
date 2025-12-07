@@ -1,6 +1,6 @@
 import axios from 'axios';
-import { MediaService, MediaSearchResult } from './media-service';
-import { MediaSearchValues } from '../types/media';
+import { MediaService, MediaSearchResult } from './service';
+import { MediaSearchValues } from './types';
 
 const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p';
 

@@ -1,16 +1,16 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import '../styles/global.css';
+import '../global.css';
 import './search.css';
 import Grid2x2, { GridLayoutMode } from './grid';
 import CustomMediaForm from './form';
 import CloseIcon from './close';
 import AppHeader from './header';
-import useEscapeKey from '../hooks/useEscapeKey';
-import { useCliBridge } from '../hooks/useCliBridge';
-import { MediaItem, MediaSearchValues, MediaType } from '../types/media';
-import { getMediaProvider } from '../config/media-providers';
-import { MediaServiceFactory } from '../services/media-service-factory';
-import logger from '../utils/logger';
+import useEscapeKey from '../escape';
+import { useCliBridge } from '../cli';
+import { MediaItem, MediaSearchValues, MediaType } from '../media/types';
+import { getMediaProvider } from '../media/providers';
+import { MediaServiceFactory } from '../media/factory';
+import logger from '../logger';
 
 const GRID_STORAGE_KEY = 'gridItems';
 const LEGACY_GRID_STORAGE_KEY = 'gridMovies';

@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import './title.css';
-import logger from '../utils/logger';
+import logger from '../logger';
 
 interface EditableTitleProps {
   initialTitle?: string;

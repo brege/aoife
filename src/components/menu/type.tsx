@@ -1,6 +1,6 @@
 import React from 'react';
-import { MediaType } from '../../types/media';
-import logger from '../../utils/logger';
+import { MediaType } from '../../media/types';
+import logger from '../../logger';
 
 interface MenuTypeProps {
   selectedMediaType: MediaType;

@@ -1,4 +1,4 @@
-import { MediaProviderConfig, MediaType } from '../types/media';
+import { MediaProviderConfig, MediaType } from './types';
 
 const tmdbProvider: MediaProviderConfig = {
   type: 'movies',

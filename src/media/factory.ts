@@ -1,6 +1,6 @@
-import { MediaType } from '../types/media';
-import { MediaService } from './media-service';
-import { TMDBService } from './tmdb-service';
+import { MediaType } from './types';
+import { MediaService } from './service';
+import { TMDBService } from './tmdb';
 
 type ServiceCache = Partial<Record<MediaType, MediaService>>;
 

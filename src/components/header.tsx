@@ -3,7 +3,7 @@ import './header.css';
 import './title.css';
 import EditableTitle from './title';
 import Menu from './menu/menu';
-import { MediaType } from '../types/media';
+import { MediaType } from '../media/types';
 import { GridLayoutMode } from './grid';
 
 interface AppHeaderProps {

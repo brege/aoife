@@ -1,5 +1,5 @@
 import React from 'react';
-import logger from '../../utils/logger';
+import logger from '../../logger';
 
 interface MenuClearProps {
   onClearGrid: () => void;
