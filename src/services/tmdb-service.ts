@@ -1,5 +1,13 @@
 import axios from 'axios';
 import { MediaService, MediaSearchResult } from './media-service';
+import { MediaSearchValues } from '../types/media';
+
+const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p';
+
+const buildPosterUrl = (path?: string | null, size: 'w92' | 'w200' | 'w300' | 'w500' | 'original' = 'w500') => {
+  if (!path) return null;
+  return `${TMDB_IMAGE_BASE}/${size}${path}`;
+};
 
 export class TMDBService extends MediaService {
   private readonly apiKey: string;
@@ -10,8 +18,13 @@ export class TMDBService extends MediaService {
     this.apiKey = apiKey;
   }
 
-  async search(query: string): Promise<MediaSearchResult[]> {
+  async search(values: MediaSearchValues): Promise<MediaSearchResult[]> {
     try {
+      const query = values.query || values.title;
+      if (!query) {
+        return [];
+      }
+
       const response = await axios.get(`${this.baseUrl}/search/movie`, {
         params: {
           api_key: this.apiKey,
@@ -19,7 +32,6 @@ export class TMDBService extends MediaService {
         },
       });
 
-      // Fetch movie details including imdb_id for each search result
       const moviesWithImdb = await Promise.all(
         response.data.results.map(async (movie: any) => {
           const details = await this.getDetails(movie.id);
@@ -28,7 +40,9 @@ export class TMDBService extends MediaService {
             title: movie.title,
             subtitle: movie.release_date ? new Date(movie.release_date).getFullYear().toString() : undefined,
             year: movie.release_date ? new Date(movie.release_date).getFullYear() : undefined,
-            coverUrl: movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : null,
+            type: 'movies',
+            coverUrl: buildPosterUrl(movie.poster_path, 'w500'),
+            coverThumbnailUrl: buildPosterUrl(movie.poster_path, 'w92'),
             metadata: {
               release_date: movie.release_date,
               poster_path: movie.poster_path,
@@ -60,7 +74,9 @@ export class TMDBService extends MediaService {
         title: data.title,
         subtitle: data.release_date ? new Date(data.release_date).getFullYear().toString() : undefined,
         year: data.release_date ? new Date(data.release_date).getFullYear() : undefined,
-        coverUrl: data.poster_path ? `https://image.tmdb.org/t/p/w500${data.poster_path}` : null,
+        type: 'movies',
+        coverUrl: buildPosterUrl(data.poster_path, 'w500'),
+        coverThumbnailUrl: buildPosterUrl(data.poster_path, 'w92'),
         metadata: {
           release_date: data.release_date,
           poster_path: data.poster_path,
@@ -81,7 +97,9 @@ export class TMDBService extends MediaService {
           api_key: this.apiKey,
         },
       });
-      return response.data.posters.map((poster: { file_path: string }) => poster.file_path);
+      return response.data.posters
+        .map((poster: { file_path: string }) => buildPosterUrl(poster.file_path, 'w500'))
+        .filter((url: string | null): url is string => Boolean(url));
     } catch (error) {
       console.error('Error fetching alternate posters:', error);
       return [];

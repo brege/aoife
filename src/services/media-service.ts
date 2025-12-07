@@ -1,16 +1,9 @@
-// Media service interfaces
+import { MediaItem, MediaSearchValues } from '../types/media';
 
-export interface MediaSearchResult {
-  id: string | number;
-  title: string;
-  subtitle?: string;
-  year?: number;
-  coverUrl?: string | null;
-  metadata?: Record<string, unknown>;
-}
+export type MediaSearchResult = MediaItem;
 
 export abstract class MediaService {
-  abstract search(query: string): Promise<MediaSearchResult[]>;
+  abstract search(values: MediaSearchValues): Promise<MediaSearchResult[]>;
   abstract getAlternateCovers(id: string | number): Promise<string[]>;
   abstract getDetails(id: string | number): Promise<MediaSearchResult | null>;
 }

@@ -1,17 +1,17 @@
 import { useEffect, useRef } from 'react';
-import { Movie } from '../types/media';
+import { MediaItem } from '../types/media';
 import logger from '../utils/logger';
 
 interface CliMessage {
   type: 'SEARCH' | 'ADD_MEDIA' | 'REMOVE_MEDIA' | 'GET_GRID_STATE' | 'CLEAR_GRID' | 'ADD_FIRST_RESULT' | 'GET_MENU_STATE' | 'MENU_CLEAR_GRID' | 'GET_DEBUG_INFO';
   query?: string;
-  media?: Movie;
+  media?: MediaItem;
   id?: string | number;
 }
 
 interface CliBridgeProps {
   onSearch: (query: string) => Promise<void>;
-  onAddMedia: (media: Movie) => void;
+  onAddMedia: (media: MediaItem) => void;
   onRemoveMedia: (id: string | number) => void;
   onGetGridState: () => any;
   onClearGrid: () => void;

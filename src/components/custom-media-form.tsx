@@ -5,14 +5,14 @@ import logger from '../utils/logger';
 
 interface CustomMediaFormProps {
   mediaType: MediaType;
-  onAddCustomMedia: (media: { title: string; year: string; posterUrl: string }) => void;
+  onAddCustomMedia: (media: { title: string; year: string; coverUrl: string }) => void;
   onCancel: () => void;
 }
 
 const CustomMediaForm: React.FC<CustomMediaFormProps> = ({ mediaType, onAddCustomMedia, onCancel }) => {
   const [title, setTitle] = useState('');
   const [year, setYear] = useState('');
-  const [posterUrl, setPosterUrl] = useState('');
+  const [coverUrl, setCoverUrl] = useState('');
 
   const getMediaTypeLabels = () => {
     switch (mediaType) {
@@ -39,15 +39,15 @@ const CustomMediaForm: React.FC<CustomMediaFormProps> = ({ mediaType, onAddCusto
       media: {
         title,
         year,
-        posterUrl
+        coverUrl
       },
       timestamp: Date.now()
     });
     
-    onAddCustomMedia({ title, year, posterUrl });
+    onAddCustomMedia({ title, year, coverUrl });
     setTitle('');
     setYear('');
-    setPosterUrl('');
+    setCoverUrl('');
   };
 
   return (
@@ -70,8 +70,8 @@ const CustomMediaForm: React.FC<CustomMediaFormProps> = ({ mediaType, onAddCusto
       <input
         type="url"
         placeholder={labels.coverLabel}
-        value={posterUrl}
-        onChange={(e) => setPosterUrl(e.target.value)}
+        value={coverUrl}
+        onChange={(e) => setCoverUrl(e.target.value)}
         required
       />
       <div className="form-buttons">
@@ -83,4 +83,3 @@ const CustomMediaForm: React.FC<CustomMediaFormProps> = ({ mediaType, onAddCusto
 };
 
 export default CustomMediaForm;
-

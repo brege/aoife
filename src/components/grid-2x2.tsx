@@ -1,40 +1,50 @@
 import React, { useRef } from 'react';
 import './grid-2x2.css';
 import CloseIcon from './close-icon';
-import { Movie } from '../types/media';
+import { MediaItem } from '../types/media';
 import logger from '../utils/logger';
 
 export type GridLayoutMode = 'auto' | 'force-2x2' | 'prefer-horizontal' | 'vertical-stack';
 
 interface Grid2x2Props {
-  movies: Movie[];
-  onRemoveMedia: (mediaId: number) => void;
-  onPosterClick: (media: Movie) => void;
+  items: MediaItem[];
+  onRemoveMedia: (mediaId: string | number) => void;
+  onPosterClick: (media: MediaItem) => void;
   showPosterGrid: boolean;
-  alternatePosterPaths: string[];
-  onSelectAlternatePoster: (path: string) => void;
+  alternatePosterUrls: string[];
+  onSelectAlternatePoster: (url: string) => void;
   onClosePosterGrid: () => void;
   onPlaceholderClick: () => void;
   layoutMode?: GridLayoutMode;
   fitToScreen?: boolean;
+  placeholderLabel: string;
 }
 
+const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p';
+
+const getCoverSrc = (media: MediaItem) => {
+  if (media.coverUrl) return media.coverUrl;
+  if (media.coverThumbnailUrl) return media.coverThumbnailUrl;
+  const posterPath = typeof media.metadata?.poster_path === 'string' ? media.metadata?.poster_path : undefined;
+  return posterPath ? `${TMDB_IMAGE_BASE}/w300${posterPath}` : '';
+};
+
 const Grid2x2: React.FC<Grid2x2Props> = ({
-  movies,
+  items,
   onRemoveMedia,
   onPosterClick,
   showPosterGrid,
-  alternatePosterPaths,
+  alternatePosterUrls,
   onSelectAlternatePoster,
   onClosePosterGrid,
   onPlaceholderClick,
   layoutMode = 'auto',
   fitToScreen = true,
+  placeholderLabel,
 }) => {
-  const movieCount = movies.length;
+  const itemCount = items.length;
   const gridContainerRef = useRef<HTMLDivElement>(null);
-  
-  // Determine layout class based on mode and movie count
+
   const getLayoutClass = () => {
     switch (layoutMode) {
       case 'force-2x2':
@@ -45,109 +55,99 @@ const Grid2x2: React.FC<Grid2x2Props> = ({
         return 'layout-vertical-stack';
       case 'auto':
       default:
-        return `layout-${Math.min(movieCount, 4)}`;
+        return `layout-${Math.min(itemCount, 4)}`;
     }
   };
-  
+
   const layoutClass = getLayoutClass();
   const containerClass = `grid-container ${layoutClass}${fitToScreen ? ' fit-to-screen' : ''}`;
 
-  // Debug layout information - capture current state
   React.useEffect(() => {
-    if (gridContainerRef.current) {
-      const container = gridContainerRef.current;
-      const rect = container.getBoundingClientRect();
-      const styles = getComputedStyle(container);
-      
-      const debugInfo = {
-        viewport: {
-          width: window.innerWidth,
-          height: window.innerHeight,
-          devicePixelRatio: window.devicePixelRatio,
-          userAgent: navigator.userAgent.includes('Mobile') ? 'mobile' : 'desktop'
-        },
-        container: {
-          dimensions: {
-            width: Math.round(rect.width),
-            height: Math.round(rect.height),
-            left: Math.round(rect.left),
-            top: Math.round(rect.top)
-          },
-          computedStyles: {
-            display: styles.display,
-            gridTemplateColumns: styles.gridTemplateColumns,
-            gridTemplateRows: styles.gridTemplateRows,
-            gap: styles.gap,
-            justifyContent: styles.justifyContent,
-            alignContent: styles.alignContent,
-            width: styles.width,
-            maxWidth: styles.maxWidth,
-            padding: styles.padding,
-            margin: styles.margin
-          },
-          cssClasses: containerClass.split(' ')
-        },
-        layout: {
-          mode: layoutMode,
-          class: layoutClass,
-          fitToScreen: fitToScreen,
-          movieCount: movieCount,
-          positions: getPositionsToRender()
-        },
-        matrix: {
-          rendered: getPositionsToRender().map(pos => ({
-            position: pos,
-            row: Math.floor(pos / 2),
-            col: pos % 2,
-            hasMovie: !!movies[pos],
-            movieTitle: movies[pos]?.title || 'placeholder'
-          }))
-        }
-      };
-
-      logger.info(`GRID-DEBUG: Layout state captured`, {
-        context: 'Grid2x2.layoutDebug',
-        action: 'layout_state_capture',
-        debugInfo,
-        timestamp: Date.now()
-      });
-      
-      // Store in window for CLI access
-      (window as any).gridDebugInfo = debugInfo;
+    if (!gridContainerRef.current) {
+      return;
     }
-  }, [layoutMode, fitToScreen, movieCount, movies, containerClass]);
-  
-  // Matrix positions: [0] = (0,0), [1] = (0,1), [2] = (1,0), [3] = (1,1)
+
+    const container = gridContainerRef.current;
+    const rect = container.getBoundingClientRect();
+    const styles = getComputedStyle(container);
+
+    const debugInfo = {
+      viewport: {
+        width: window.innerWidth,
+        height: window.innerHeight,
+        devicePixelRatio: window.devicePixelRatio,
+        userAgent: navigator.userAgent.includes('Mobile') ? 'mobile' : 'desktop'
+      },
+      container: {
+        dimensions: {
+          width: Math.round(rect.width),
+          height: Math.round(rect.height),
+          left: Math.round(rect.left),
+          top: Math.round(rect.top)
+        },
+        computedStyles: {
+          display: styles.display,
+          gridTemplateColumns: styles.gridTemplateColumns,
+          gridTemplateRows: styles.gridTemplateRows,
+          gap: styles.gap,
+          justifyContent: styles.justifyContent,
+          alignContent: styles.alignContent,
+          width: styles.width,
+          maxWidth: styles.maxWidth,
+          padding: styles.padding,
+          margin: styles.margin
+        },
+        cssClasses: containerClass.split(' ')
+      },
+      layout: {
+        mode: layoutMode,
+        class: layoutClass,
+        fitToScreen: fitToScreen,
+        movieCount: itemCount,
+        positions: getPositionsToRender()
+      },
+      matrix: {
+        rendered: getPositionsToRender().map(pos => ({
+          position: pos,
+          row: Math.floor(pos / 2),
+          col: pos % 2,
+          hasMedia: !!items[pos],
+          mediaTitle: items[pos]?.title || 'placeholder'
+        }))
+      }
+    };
+
+    logger.info(`GRID-DEBUG: Layout state captured`, {
+      context: 'Grid2x2.layoutDebug',
+      action: 'layout_state_capture',
+      debugInfo,
+      timestamp: Date.now()
+    });
+
+    (window as any).gridDebugInfo = debugInfo;
+  }, [layoutMode, fitToScreen, itemCount, items, containerClass]);
+
   const renderGridItem = (position: number) => {
-    const movie = movies[position];
-    
-    if (movie) {
+    const item = items[position];
+
+    if (item) {
       return (
-        <div key={movie.id} className="grid-item filled">
+        <div key={item.id} className="grid-item filled">
           <div className="poster-wrapper">
             <img
-              src={
-                movie.isCustom
-                  ? movie.poster_path || ''
-                  : `https://image.tmdb.org/t/p/w300${movie.poster_path || ''}`
-              }
-              alt={`${movie.title} poster`}
+              src={getCoverSrc(item) || ''}
+              alt={`${item.title} cover`}
               className="grid-poster"
-              title={`${movie.title}${
-                movie.release_date
-                  ? ` (${new Date(movie.release_date).getFullYear()})`
-                  : ''
-              }`}
-              onClick={() => onPosterClick(movie)}
+              title={`${item.title}${item.year ? ` (${item.year})` : ''}`}
+              onClick={() => onPosterClick(item)}
               onLoad={(e) => {
                 const img = e.target as HTMLImageElement;
-                // Wait for next tick to ensure dimensions are stable
                 setTimeout(() => {
                   const rect = img.getBoundingClientRect();
                   const itemElement = img.closest('.grid-item') as HTMLElement;
                   const itemRect = itemElement?.getBoundingClientRect();
                   const itemStyles = itemElement ? getComputedStyle(itemElement) : null;
-                  
+
                   const dimensions = {
                     displayWidth: Math.round(rect.width),
                     displayHeight: Math.round(rect.height),
@@ -155,7 +155,7 @@ const Grid2x2: React.FC<Grid2x2Props> = ({
                     naturalHeight: img.naturalHeight,
                     aspectRatio: (rect.width / rect.height).toFixed(2)
                   };
-                  
+
                   const itemInfo = itemRect && itemStyles ? {
                     itemWidth: Math.round(itemRect.width),
                     itemHeight: Math.round(itemRect.height),
@@ -163,13 +163,12 @@ const Grid2x2: React.FC<Grid2x2Props> = ({
                     itemMinWidth: itemStyles.minWidth,
                     itemMaxWidth: itemStyles.maxWidth
                   } : {};
-                  
-                  // Calculate optimal sizes for comparison
+
                   const viewportWidth = window.innerWidth;
-                  const availableWidth = viewportWidth - 32; // Account for basic padding
+                  const availableWidth = viewportWidth - 32;
                   const optimalSingleWidth = Math.min(200, availableWidth * 0.8);
-                  const optimalTwoColumnWidth = Math.min(164, (availableWidth - 16) / 2); // 16px gap
-                  
+                  const optimalTwoColumnWidth = Math.min(164, (availableWidth - 16) / 2);
+
                   const analysis = {
                     viewport: viewportWidth,
                     available: availableWidth,
@@ -179,11 +178,11 @@ const Grid2x2: React.FC<Grid2x2Props> = ({
                     actualItem: itemInfo.itemWidth,
                     efficiency: itemInfo.itemWidth ? (dimensions.displayWidth / itemInfo.itemWidth * 100).toFixed(1) + '%' : 'N/A'
                   };
-                  
+
                   logger.info(`GRID: Poster loaded at position ${position} - ${dimensions.displayWidth}x${dimensions.displayHeight}`, {
                     context: 'Grid2x2.posterLoad',
                     action: 'poster_dimensions',
-                    media: { id: movie.id, title: movie.title },
+                    media: { id: item.id, title: item.title },
                     position,
                     dimensions,
                     itemInfo,
@@ -191,22 +190,22 @@ const Grid2x2: React.FC<Grid2x2Props> = ({
                     gridPosition: `(${Math.floor(position / 2)}, ${position % 2})`,
                     timestamp: Date.now()
                   });
-                }, 50); // Increased timeout to ensure layout is complete
+                }, 50);
               }}
             />
             <button
               className="close-button"
               onClick={() => {
-                logger.info(`GRID: Removed "${movie.title}" from position ${position}`, {
-                  context: 'Grid2x2.onRemoveMovie',
-                  action: 'grid_remove_movie',
-                  movieId: movie.id,
+                logger.info(`GRID: Removed "${item.title}" from position ${position}`, {
+                  context: 'Grid2x2.onRemoveMedia',
+                  action: 'grid_remove_media',
+                  mediaId: item.id,
                   position,
                   timestamp: Date.now()
                 });
-                onRemoveMedia(movie.id);
+                onRemoveMedia(item.id);
               }}
-              aria-label={`Remove ${movie.title}`}
+              aria-label={`Remove ${item.title}`}
             >
               <CloseIcon />
             </button>
@@ -214,13 +213,13 @@ const Grid2x2: React.FC<Grid2x2Props> = ({
         </div>
       );
     }
-    
+
     return (
-      <div 
-        key={`placeholder-${position}`} 
+      <div
+        key={`placeholder-${position}`}
         className="grid-item empty"
         onClick={onPlaceholderClick}
-        title="Add a movie"
+        title={`Add a ${placeholderLabel}`}
       >
         <div className="placeholder-content">
           <span>+</span>
@@ -229,22 +228,12 @@ const Grid2x2: React.FC<Grid2x2Props> = ({
     );
   };
 
-  // Always show at least one placeholder unless grid is full (4 items)
-  // For 3 items, we show positions: [0][1] on top row, [2][+] on bottom row (center-justified)
   const getPositionsToRender = () => {
-    if (movieCount === 0) {
-      return [0]; // Show single placeholder
-    }
-    if (movieCount === 1) {
-      return [0, 1]; // Show 1 movie + 1 placeholder
-    }
-    if (movieCount === 2) {
-      return [0, 1, 2]; // Show 2 movies + 1 placeholder
-    }
-    if (movieCount === 3) {
-      return [0, 1, 2, 3]; // Show 3 movies + 1 placeholder (center-justified)
-    }
-    return [0, 1, 2, 3]; // Show all 4 positions for 4 movies (no placeholder)
+    if (itemCount === 0) return [0];
+    if (itemCount === 1) return [0, 1];
+    if (itemCount === 2) return [0, 1, 2];
+    if (itemCount === 3) return [0, 1, 2, 3];
+    return [0, 1, 2, 3];
   };
 
   return (
@@ -258,24 +247,24 @@ const Grid2x2: React.FC<Grid2x2Props> = ({
           <button className="close-button" onClick={onClosePosterGrid}>
             <CloseIcon />
           </button>
-          <h2 className="poster-grid-title">Alternate Posters</h2>
+          <h2 className="poster-grid-title">Alternate Covers</h2>
           <div className="poster-grid">
-            {alternatePosterPaths.map((path, index) => (
+            {alternatePosterUrls.map((url, index) => (
               <img
                 key={index}
-                src={`https://image.tmdb.org/t/p/w200${path}`}
-                alt={`Alternate poster ${index + 1}`}
+                src={url}
+                alt={`Alternate cover ${index + 1}`}
                 className="alternate-poster"
-                title={`Alternate Poster ${index + 1}`}
+                title={`Alternate Cover ${index + 1}`}
                 onClick={() => {
                   logger.info(`POSTER: Selected alternate poster ${index + 1}`, {
                     context: 'Grid2x2.onSelectAlternatePoster',
                     action: 'poster_change',
                     posterIndex: index + 1,
-                    posterPath: path,
+                    posterPath: url,
                     timestamp: Date.now()
                   });
-                  onSelectAlternatePoster(path);
+                  onSelectAlternatePoster(url);
                 }}
               />
             ))}
