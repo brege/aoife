@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { IoSettingsOutline } from 'react-icons/io5';
 import '../../app/styles/global.css';
 import './search.css';
-import { type CliMenuState, useCliBridge } from '../../lib/cli';
+import { type CliMenuState, useCliBridge } from '../../lib/api';
 import useEscapeKey from '../../lib/escape';
 import logger from '../../lib/logger';
 import { getMediaService } from '../../media/factory';
@@ -149,7 +149,10 @@ const MediaSearch: React.FC = () => {
   useEscapeKey(closeCustomMediaForm);
 
   const handleSearchResultImageLoad = useCallback(
-    (resultId: string | number, event: React.SyntheticEvent<HTMLImageElement>) => {
+    (
+      resultId: string | number,
+      event: React.SyntheticEvent<HTMLImageElement>,
+    ) => {
       const img = event.currentTarget;
       if (img.naturalWidth > 0 && img.naturalHeight > 0) {
         const aspectRatio = img.naturalWidth / img.naturalHeight;
@@ -390,12 +393,19 @@ const MediaSearch: React.FC = () => {
     setShowCustomMediaForm(false);
   };
 
-  const handleCliSearch = async (query: string) => {
+  const handleCliSearch = async (query: string, mediaType?: string) => {
     if (!query) return;
-    const primaryFieldId = provider.searchFields[0]?.id ?? 'query';
+
+    let activeMediaType = selectedMediaType;
+    if (mediaType && mediaType !== selectedMediaType) {
+      activeMediaType = mediaType as MediaType;
+      setSelectedMediaType(mediaType as MediaType);
+    }
+
+    const targetProvider = getMediaProvider(activeMediaType);
+    const primaryFieldId = targetProvider.searchFields[0]?.id ?? 'query';
     const nextValues = {
-      ...provider.defaultSearchValues,
-      ...searchValues,
+      ...targetProvider.defaultSearchValues,
       [primaryFieldId]: query,
     };
     setSearchValues(nextValues);
@@ -776,11 +786,14 @@ const MediaSearch: React.FC = () => {
                         src={result.coverThumbnailUrl || result.coverUrl || ''}
                         alt={`${result.title} cover`}
                         className="search-result-poster"
-                        onLoad={(e) => handleSearchResultImageLoad(result.id, e)}
+                        onLoad={(e) =>
+                          handleSearchResultImageLoad(result.id, e)
+                        }
                         style={
                           searchResultAspectRatios[result.id]
                             ? {
-                                aspectRatio: searchResultAspectRatios[result.id],
+                                aspectRatio:
+                                  searchResultAspectRatios[result.id],
                               }
                             : undefined
                         }

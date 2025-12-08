@@ -3,7 +3,7 @@
 .editable-title {
   color: var(--text-light);
   margin: 0;
-  font-size: 36px;
+  font-size: clamp(24px, 8vw, 36px);
   font-weight: bold;
   cursor: pointer;
   transition: color var(--transition-fast);
@@ -13,6 +13,12 @@
   padding: 0;
   text-align: left;
   font-family: inherit;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
+  height: 100%;
 }
 
 .editable-title:hover {
@@ -23,7 +29,7 @@
   color: var(--text-light);
   background: transparent;
   border: none;
-  font-size: 36px;
+  font-size: clamp(24px, 8vw, 36px);
   font-weight: bold;
   font-family: inherit;
   outline: none;
@@ -31,6 +37,10 @@
   padding: 0;
   margin: 0;
   min-width: 200px;
+  max-width: calc(100vw - 120px);
+  height: 100%;
+  display: flex;
+  align-items: center;
 }
 
 .editable-title-input::placeholder {

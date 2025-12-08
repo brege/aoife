@@ -60,12 +60,13 @@ interface CliMessage {
     | 'MENU_CLEAR_GRID'
     | 'GET_DEBUG_INFO';
   query?: string;
+  mediaType?: string;
   media?: MediaItem;
   id?: string | number;
 }
 
 interface CliBridgeProps {
-  onSearch: (query: string) => Promise<void>;
+  onSearch: (query: string, mediaType?: string) => Promise<void>;
   onAddMedia: (media: MediaItem) => void;
   onRemoveMedia: (id: string | number) => void;
   onGetGridState: () => CliGridState;
@@ -111,7 +112,7 @@ export function useCliBridge(props: CliBridgeProps) {
         switch (message.type) {
           case 'SEARCH':
             if (message.query) {
-              await propsRef.current.onSearch(message.query);
+              await propsRef.current.onSearch(message.query, message.mediaType);
             }
             break;
 

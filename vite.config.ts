@@ -31,13 +31,14 @@ export default defineConfig({
           });
         });
 
-        // CLI API endpoints - use /cli prefix to avoid conflicts with TMDB proxy
-        server.middlewares.use('/cli', (req, res, next) => {
+        // API endpoints for programmatic control
+        server.middlewares.use('/api', (req, res, next) => {
           const url = new URL(req.url || '', 'http://localhost');
-          const path = url.pathname.replace('/cli', '');
+          const path = url.pathname.replace('/api', '');
 
           if (path === '/search' && req.method === 'GET') {
             const query = url.searchParams.get('q');
+            const mediaType = url.searchParams.get('type');
             if (!query) {
               res.writeHead(400, { 'Content-Type': 'application/json' });
               res.end(
@@ -47,13 +48,21 @@ export default defineConfig({
             }
 
             if (reactClient) {
-              console.log(`[CLI] Sending search request to React: "${query}"`);
-              reactClient.send(JSON.stringify({ type: 'SEARCH', query }));
+              console.log(
+                `[API] Sending search request to React: "${query}"${mediaType ? ` (${mediaType})` : ''}`,
+              );
+              const message: Record<string, unknown> = {
+                type: 'SEARCH',
+                query,
+              };
+              if (mediaType) message.mediaType = mediaType;
+              reactClient.send(JSON.stringify(message));
               res.writeHead(200, { 'Content-Type': 'application/json' });
               res.end(
                 JSON.stringify({
                   status: 'sent',
                   query,
+                  mediaType: mediaType || 'current',
                   message: 'Search request sent to React app',
                 }),
               );
@@ -71,7 +80,7 @@ export default defineConfig({
                 const mediaItem = JSON.parse(body);
                 if (reactClient) {
                   console.log(
-                    `[CLI] Sending add request to React:`,
+                    `[API] Sending add request to React:`,
                     mediaItem.title || mediaItem.id,
                   );
                   reactClient.send(
@@ -91,7 +100,7 @@ export default defineConfig({
           } else if (path.startsWith('/add-first/') && req.method === 'POST') {
             const query = path.replace('/add-first/', '');
             if (reactClient) {
-              console.log(`[CLI] Adding first search result for: "${query}"`);
+              console.log(`[API] Adding first search result for: "${query}"`);
               reactClient.send(
                 JSON.stringify({
                   type: 'ADD_FIRST_RESULT',
@@ -112,7 +121,7 @@ export default defineConfig({
           } else if (path.startsWith('/remove/') && req.method === 'DELETE') {
             const id = path.replace('/remove/', '');
             if (reactClient) {
-              console.log(`[CLI] Sending remove request to React: ${id}`);
+              console.log(`[API] Sending remove request to React: ${id}`);
               reactClient.send(JSON.stringify({ type: 'REMOVE_MEDIA', id }));
               res.writeHead(200, { 'Content-Type': 'application/json' });
               res.end(JSON.stringify({ status: 'sent', id }));
@@ -122,7 +131,7 @@ export default defineConfig({
             }
           } else if (path === '/grid' && req.method === 'GET') {
             if (reactClient) {
-              console.log(`[CLI] Requesting grid state from React`);
+              console.log(`[API] Requesting grid state from React`);
               reactClient.send(JSON.stringify({ type: 'GET_GRID_STATE' }));
               res.writeHead(200, { 'Content-Type': 'application/json' });
               res.end(
@@ -137,7 +146,7 @@ export default defineConfig({
             }
           } else if (path === '/clear' && req.method === 'DELETE') {
             if (reactClient) {
-              console.log(`[CLI] Clearing grid via React`);
+              console.log(`[API] Clearing grid via React`);
               reactClient.send(JSON.stringify({ type: 'CLEAR_GRID' }));
               res.writeHead(200, { 'Content-Type': 'application/json' });
               res.end(
@@ -152,7 +161,7 @@ export default defineConfig({
             }
           } else if (path === '/menu' && req.method === 'GET') {
             if (reactClient) {
-              console.log(`[CLI] Requesting menu state from React`);
+              console.log(`[API] Requesting menu state from React`);
               reactClient.send(JSON.stringify({ type: 'GET_MENU_STATE' }));
               res.writeHead(200, { 'Content-Type': 'application/json' });
               res.end(
@@ -167,7 +176,7 @@ export default defineConfig({
             }
           } else if (path === '/menu/clear' && req.method === 'POST') {
             if (reactClient) {
-              console.log(`[CLI] Triggering menu clear action`);
+              console.log(`[API] Triggering menu clear action`);
               reactClient.send(JSON.stringify({ type: 'MENU_CLEAR_GRID' }));
               res.writeHead(200, { 'Content-Type': 'application/json' });
               res.end(
@@ -182,7 +191,7 @@ export default defineConfig({
             }
           } else if (path === '/debug' && req.method === 'GET') {
             if (reactClient) {
-              console.log(`[CLI] Requesting debug information from React`);
+              console.log(`[API] Requesting debug information from React`);
               reactClient.send(JSON.stringify({ type: 'GET_DEBUG_INFO' }));
               res.writeHead(200, { 'Content-Type': 'application/json' });
               res.end(

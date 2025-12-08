@@ -22,12 +22,12 @@
 - Replaced ESLint with Biome for linting and formatting
 - Reorganized codebase under src/ directory
 - Removed legacy container storage patterns
-- Improved CLI endpoints and Cypress test infrastructure
+- Improved API endpoints and Cypress test infrastructure
 
 ## 2025-08-17
 
 - Initial release: Movies via TMDB, custom media entries, responsive 2×2 grid
-- CLI API layer with programmatic control (`/cli/search`, `/cli/add`, `/cli/remove`, etc.)
+- API layer with programmatic control (`/api/search`, `/api/add`, `/api/remove`, etc.)
 - Centralized logging system with browser-to-server streaming
 - Alternate poster/cover selection
 - Design token system and header navigation
