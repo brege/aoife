@@ -1,18 +1,8 @@
-import React, { useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import './grid.css';
 import logger from '../../lib/logger';
-import {
-  type AspectRatio,
-  type MediaItem,
-  TMDB_IMAGE_BASE,
-} from '../../media/types';
+import { type MediaItem, TMDB_IMAGE_BASE } from '../../media/types';
 import CloseIcon from '../ui/close';
-
-export type GridLayoutMode =
-  | 'auto'
-  | 'force-2x2'
-  | 'prefer-horizontal'
-  | 'vertical-stack';
 
 interface Grid2x2Props {
   items: MediaItem[];
@@ -23,12 +13,18 @@ interface Grid2x2Props {
   onSelectAlternatePoster: (url: string) => void;
   onClosePosterGrid: () => void;
   onPlaceholderClick: () => void;
-  layoutMode?: GridLayoutMode;
-  fitToScreen?: boolean;
+  columns: number;
+  minRows: number;
   placeholderLabel: string;
-  aspectRatio?: AspectRatio;
   isBuilderMode?: boolean;
+  onAspectRatioUpdate?: (mediaId: string | number, aspectRatio: number) => void;
 }
+
+const DEFAULT_ASPECT_RATIOS: Record<string, number> = {
+  movies: 2 / 3,
+  books: 2 / 3,
+  music: 1,
+};
 
 const getCoverSrc = (media: MediaItem) => {
   if (media.coverUrl) return media.coverUrl;
@@ -40,6 +36,50 @@ const getCoverSrc = (media: MediaItem) => {
   return posterPath ? `${TMDB_IMAGE_BASE}/w300${posterPath}` : '';
 };
 
+const getAspectRatio = (media: MediaItem): number => {
+  if (media.aspectRatio) return media.aspectRatio;
+  return DEFAULT_ASPECT_RATIOS[media.type] ?? 2 / 3;
+};
+
+interface RowLayout {
+  height: number;
+  items: { media: MediaItem; width: number }[];
+}
+
+const calculateRowLayouts = (
+  items: MediaItem[],
+  columns: number,
+  availableWidth: number,
+  availableHeight: number,
+  gap: number,
+  minRowsVisible: number,
+): RowLayout[] => {
+  const rows: RowLayout[] = [];
+  const totalRows = Math.ceil(items.length / columns);
+  const effectiveMinRows = Math.max(totalRows, minRowsVisible);
+  const maxRowHeight =
+    (availableHeight - (effectiveMinRows - 1) * gap) / effectiveMinRows;
+
+  for (let i = 0; i < items.length; i += columns) {
+    const rowItems = items.slice(i, i + columns);
+    const aspectRatios = rowItems.map(getAspectRatio);
+    const sumAspectRatios = aspectRatios.reduce((sum, ar) => sum + ar, 0);
+    const totalGaps = (rowItems.length - 1) * gap;
+    const naturalHeight = (availableWidth - totalGaps) / sumAspectRatios;
+    const height = Math.min(naturalHeight, maxRowHeight);
+
+    rows.push({
+      height,
+      items: rowItems.map((media, index) => ({
+        media,
+        width: height * aspectRatios[index],
+      })),
+    });
+  }
+
+  return rows;
+};
+
 const Grid2x2: React.FC<Grid2x2Props> = ({
   items,
   onRemoveMedia,
@@ -49,275 +89,193 @@ const Grid2x2: React.FC<Grid2x2Props> = ({
   onSelectAlternatePoster,
   onClosePosterGrid,
   onPlaceholderClick,
-  layoutMode = 'auto',
-  fitToScreen = true,
+  columns,
+  minRows,
   placeholderLabel,
-  aspectRatio = '2:3',
   isBuilderMode = true,
+  onAspectRatioUpdate,
 }) => {
-  const itemCount = items.length;
+  const wrapperRef = useRef<HTMLDivElement>(null);
   const gridContainerRef = useRef<HTMLDivElement>(null);
+  const [containerWidth, setContainerWidth] = useState(0);
+  const [containerHeight, setContainerHeight] = useState(0);
 
-  const getLayoutValue = (): string => {
-    switch (layoutMode) {
-      case 'force-2x2':
-      case 'prefer-horizontal':
-      case 'vertical-stack':
-        return layoutMode;
-      default:
-        return String(Math.min(itemCount, 4));
-    }
-  };
-
-  const layoutValue = getLayoutValue();
-
-  const positionsToRender = React.useMemo(() => {
-    if (!isBuilderMode) {
-      return Array.from({ length: itemCount }, (_, index) => index);
-    }
-    if (itemCount === 0) return [0];
-    if (itemCount === 1) return [0, 1];
-    if (itemCount === 2) return [0, 1, 2];
-    if (itemCount === 3) return [0, 1, 2, 3];
-    return [0, 1, 2, 3];
-  }, [itemCount, isBuilderMode]);
-
-  React.useEffect(() => {
-    if (!gridContainerRef.current) {
-      return;
-    }
-
-    const container = gridContainerRef.current;
-    const rect = container.getBoundingClientRect();
-    const styles = getComputedStyle(container);
-
-    const debugInfo = {
-      viewport: {
-        width: window.innerWidth,
-        height: window.innerHeight,
-        devicePixelRatio: window.devicePixelRatio,
-        userAgent: navigator.userAgent.includes('Mobile')
-          ? 'mobile'
-          : 'desktop',
-      },
-      container: {
-        dimensions: {
-          width: Math.round(rect.width),
-          height: Math.round(rect.height),
-          left: Math.round(rect.left),
-          top: Math.round(rect.top),
-        },
-        computedStyles: {
-          display: styles.display,
-          gridTemplateColumns: styles.gridTemplateColumns,
-          gridTemplateRows: styles.gridTemplateRows,
-          gap: styles.gap,
-          justifyContent: styles.justifyContent,
-          alignContent: styles.alignContent,
-          width: styles.width,
-          maxWidth: styles.maxWidth,
-          padding: styles.padding,
-          margin: styles.margin,
-        },
-        dataLayout: layoutValue,
-        dataFit: fitToScreen,
-      },
-      layout: {
-        mode: layoutMode,
-        layoutValue: layoutValue,
-        fitToScreen: fitToScreen,
-        movieCount: itemCount,
-        positions: positionsToRender,
-      },
-      matrix: {
-        rendered: positionsToRender.map((pos) => ({
-          position: pos,
-          row: Math.floor(pos / 2),
-          col: pos % 2,
-          hasMedia: !!items[pos],
-          mediaTitle: items[pos]?.title || 'placeholder',
-        })),
-      },
+  useEffect(() => {
+    const updateDimensions = () => {
+      if (!isBuilderMode) {
+        const horizontalPadding = 80;
+        const headerHeight = 80;
+        const verticalPadding = 80;
+        const availableWidth = window.innerWidth - horizontalPadding;
+        const availableHeight =
+          window.innerHeight - headerHeight - verticalPadding;
+        setContainerWidth(Math.min(availableWidth, 1600));
+        setContainerHeight(availableHeight);
+      }
     };
 
-    logger.info(`GRID-DEBUG: Layout state captured`, {
-      context: 'Grid2x2.layoutDebug',
-      action: 'layout_state_capture',
-      debugInfo,
-      timestamp: Date.now(),
-    });
+    updateDimensions();
+    window.addEventListener('resize', updateDimensions);
+    return () => window.removeEventListener('resize', updateDimensions);
+  }, [isBuilderMode]);
 
-    window.gridDebugInfo = debugInfo;
-  }, [
-    layoutMode,
-    layoutValue,
-    fitToScreen,
-    itemCount,
-    items,
-    positionsToRender,
-  ]);
+  const gap = 16;
+  const rowLayouts = React.useMemo(() => {
+    if (isBuilderMode || containerWidth === 0 || containerHeight === 0)
+      return [];
+    return calculateRowLayouts(
+      items,
+      columns,
+      containerWidth,
+      containerHeight,
+      gap,
+      minRows,
+    );
+  }, [items, columns, containerWidth, containerHeight, isBuilderMode, minRows]);
 
-  const renderGridItem = (position: number) => {
-    const item = items[position];
+  const handleImageLoad = (
+    media: MediaItem,
+    event: React.SyntheticEvent<HTMLImageElement>,
+  ) => {
+    const img = event.target as HTMLImageElement;
+    const naturalAspectRatio = img.naturalWidth / img.naturalHeight;
 
-    if (item) {
-      return (
-        <div key={item.id} className="grid-item filled" data-type={item.type}>
-          <div className="poster-wrapper">
-            <button
-              type="button"
-              className="poster-button"
-              onClick={() => onPosterClick(item)}
-              aria-label={`View poster for ${item.title}`}
-            >
-              <img
-                src={getCoverSrc(item) || ''}
-                alt={`${item.title} cover`}
-                className="grid-poster"
-                title={`${item.title}${item.year ? ` (${item.year})` : ''}`}
-                onLoad={(e) => {
-                  const img = e.target as HTMLImageElement;
-                  setTimeout(() => {
-                    const itemElement = img.closest(
-                      '.grid-item',
-                    ) as HTMLElement;
-
-                    // For books, apply actual image aspect ratio
-                    if (item.type === 'books' && itemElement) {
-                      const actualRatio = img.naturalWidth / img.naturalHeight;
-                      itemElement.style.setProperty(
-                        '--item-aspect-ratio',
-                        String(actualRatio),
-                      );
-                    }
-
-                    const rect = img.getBoundingClientRect();
-                    const itemRect = itemElement?.getBoundingClientRect();
-                    const itemStyles = itemElement
-                      ? getComputedStyle(itemElement)
-                      : null;
-
-                    const dimensions = {
-                      displayWidth: Math.round(rect.width),
-                      displayHeight: Math.round(rect.height),
-                      naturalWidth: img.naturalWidth,
-                      naturalHeight: img.naturalHeight,
-                      aspectRatio: (rect.width / rect.height).toFixed(2),
-                    };
-
-                    const itemInfo =
-                      itemRect && itemStyles
-                        ? {
-                            itemWidth: Math.round(itemRect.width),
-                            itemHeight: Math.round(itemRect.height),
-                            itemComputedWidth: itemStyles.width,
-                            itemMinWidth: itemStyles.minWidth,
-                            itemMaxWidth: itemStyles.maxWidth,
-                          }
-                        : {};
-
-                    const viewportWidth = window.innerWidth;
-                    const availableWidth = viewportWidth - 32;
-                    const optimalSingleWidth = Math.min(
-                      200,
-                      availableWidth * 0.8,
-                    );
-                    const optimalTwoColumnWidth = Math.min(
-                      164,
-                      (availableWidth - 16) / 2,
-                    );
-
-                    const analysis = {
-                      viewport: viewportWidth,
-                      available: availableWidth,
-                      optimalSingle: optimalSingleWidth,
-                      optimalTwoColumn: optimalTwoColumnWidth,
-                      actualPoster: dimensions.displayWidth,
-                      actualItem: itemInfo.itemWidth,
-                      efficiency: itemInfo.itemWidth
-                        ? `${(
-                            (dimensions.displayWidth / itemInfo.itemWidth) * 100
-                          ).toFixed(1)}%`
-                        : 'N/A',
-                    };
-
-                    logger.info(
-                      `GRID: Poster loaded at position ${position} - ${dimensions.displayWidth}x${dimensions.displayHeight}`,
-                      {
-                        context: 'Grid2x2.posterLoad',
-                        action: 'poster_dimensions',
-                        media: { id: item.id, title: item.title },
-                        position,
-                        dimensions,
-                        itemInfo,
-                        analysis,
-                        gridPosition: `(${Math.floor(position / 2)}, ${position % 2})`,
-                        timestamp: Date.now(),
-                      },
-                    );
-                  }, 50);
-                }}
-              />
-            </button>
-            <button
-              type="button"
-              className="close-button grid-close-button"
-              onClick={() => {
-                logger.info(
-                  `GRID: Removed "${item.title}" from position ${position}`,
-                  {
-                    context: 'Grid2x2.onRemoveMedia',
-                    action: 'grid_remove_media',
-                    mediaId: item.id,
-                    position,
-                    timestamp: Date.now(),
-                  },
-                );
-                onRemoveMedia(item.id);
-              }}
-              aria-label={`Remove ${item.title}`}
-            >
-              <CloseIcon />
-            </button>
-          </div>
-        </div>
-      );
+    if (!media.aspectRatio && onAspectRatioUpdate) {
+      onAspectRatioUpdate(media.id, naturalAspectRatio);
     }
 
-    if (!isBuilderMode) {
-      return null;
-    }
+    logger.info(
+      `GRID: Poster loaded - ${img.naturalWidth}x${img.naturalHeight} (${naturalAspectRatio.toFixed(2)})`,
+      {
+        context: 'Grid2x2.posterLoad',
+        action: 'poster_dimensions',
+        media: { id: media.id, title: media.title },
+        naturalAspectRatio,
+        timestamp: Date.now(),
+      },
+    );
+  };
+
+  const renderBuilderMode = () => {
+    const positionsToRender = Math.max(items.length + 1, 1);
 
     return (
-      <button
-        key={`placeholder-${position}`}
-        type="button"
-        className="grid-item empty"
-        data-aspect={aspectRatio}
-        onClick={onPlaceholderClick}
-        title={`Add a ${placeholderLabel}`}
-      >
-        <div className="placeholder-content">
-          <span>+</span>
-        </div>
-      </button>
+      <div ref={gridContainerRef} className="grid-container">
+        {Array.from({ length: positionsToRender }, (_, position) => {
+          const item = items[position];
+
+          if (item) {
+            return (
+              <div
+                key={item.id}
+                className="grid-item filled"
+                data-type={item.type}
+              >
+                <div className="poster-wrapper">
+                  <button
+                    type="button"
+                    className="poster-button"
+                    onClick={() => onPosterClick(item)}
+                    aria-label={`View poster for ${item.title}`}
+                  >
+                    <img
+                      src={getCoverSrc(item) || ''}
+                      alt={`${item.title} cover`}
+                      className="grid-poster"
+                      title={`${item.title}${item.year ? ` (${item.year})` : ''}`}
+                      onLoad={(e) => handleImageLoad(item, e)}
+                    />
+                  </button>
+                  <button
+                    type="button"
+                    className="close-button grid-close-button"
+                    onClick={() => onRemoveMedia(item.id)}
+                    aria-label={`Remove ${item.title}`}
+                  >
+                    <CloseIcon />
+                  </button>
+                </div>
+              </div>
+            );
+          }
+
+          return (
+            <button
+              key="builder-placeholder"
+              type="button"
+              className="grid-item empty"
+              onClick={onPlaceholderClick}
+              title={`Add a ${placeholderLabel}`}
+            >
+              <div className="placeholder-content">
+                <span>+</span>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+    );
+  };
+
+  const renderPresentationMode = () => {
+    return (
+      <div ref={gridContainerRef} className="grid-container">
+        {rowLayouts.map((row) => {
+          const rowKey =
+            row.items.map(({ media }) => media.id).join('-') ||
+            `row-${row.height}`;
+          return (
+            <div
+              key={rowKey}
+              className="grid-row"
+              style={{ height: row.height, gap }}
+            >
+              {row.items.map(({ media, width }) => (
+                <div
+                  key={media.id}
+                  className="grid-item filled"
+                  data-type={media.type}
+                  style={{ width, height: row.height }}
+                >
+                  <div className="poster-wrapper">
+                    <button
+                      type="button"
+                      className="poster-button"
+                      onClick={() => onPosterClick(media)}
+                      aria-label={`View poster for ${media.title}`}
+                    >
+                      <img
+                        src={getCoverSrc(media) || ''}
+                        alt={`${media.title} cover`}
+                        className="grid-poster"
+                        title={`${media.title}${media.year ? ` (${media.year})` : ''}`}
+                        onLoad={(e) => handleImageLoad(media, e)}
+                      />
+                    </button>
+                    <button
+                      type="button"
+                      className="close-button grid-close-button"
+                      onClick={() => onRemoveMedia(media.id)}
+                      aria-label={`Remove ${media.title}`}
+                    >
+                      <CloseIcon />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          );
+        })}
+      </div>
     );
   };
 
   return (
     <div
+      ref={wrapperRef}
       className={`grid-2x2 ${isBuilderMode ? 'grid-builder' : 'grid-presentation'}`}
     >
-      <div
-        ref={gridContainerRef}
-        className="grid-container"
-        data-layout={layoutValue}
-        data-fit={fitToScreen}
-      >
-        {positionsToRender
-          .map((position) => renderGridItem(position))
-          .filter(Boolean)}
-      </div>
+      {isBuilderMode ? renderBuilderMode() : renderPresentationMode()}
 
       {showPosterGrid && (
         <div className="poster-grid-overlay">

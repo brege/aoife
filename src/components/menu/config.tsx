@@ -1,116 +1,132 @@
 import type React from 'react';
 import logger from '../../lib/logger';
-import type { GridLayoutMode } from '../grid/grid';
 
 interface MenuConfigProps {
   onMenuClose: () => void;
-  layoutMode: GridLayoutMode;
-  onLayoutModeChange: (mode: GridLayoutMode) => void;
-  fitToScreen: boolean;
-  onFitToScreenChange: (enabled: boolean) => void;
+  columns: number;
+  onColumnsChange: (columns: number) => void;
+  minRows: number;
+  onMinRowsChange: (minRows: number) => void;
 }
 
+const MIN_COLUMNS = 1;
+const MAX_COLUMNS = 8;
+const MIN_ROWS_VALUE = 1;
+const MAX_ROWS_VALUE = 6;
+
 const MenuConfig: React.FC<MenuConfigProps> = ({
-  onMenuClose,
-  layoutMode,
-  onLayoutModeChange,
-  fitToScreen,
-  onFitToScreenChange,
+  columns,
+  onColumnsChange,
+  minRows,
+  onMinRowsChange,
 }) => {
-  const handleLayoutModeChange = (mode: GridLayoutMode) => {
-    logger.info(`MENU: Grid layout mode changed to "${mode}"`, {
-      context: 'MenuGridConfig.handleLayoutModeChange',
-      action: 'grid_layout_mode_change',
-      previousMode: layoutMode,
-      newMode: mode,
+  const handleColumnsDecrement = () => {
+    if (columns <= MIN_COLUMNS) return;
+    const nextValue = columns - 1;
+    logger.info(`MENU: Columns decreased to ${nextValue}`, {
+      context: 'MenuConfig.handleColumnsDecrement',
+      action: 'columns_change',
+      previousValue: columns,
+      newValue: nextValue,
       timestamp: Date.now(),
     });
-
-    onLayoutModeChange(mode);
-    onMenuClose();
+    onColumnsChange(nextValue);
   };
 
-  const handleFitToScreenToggle = () => {
-    const newValue = !fitToScreen;
-    logger.info(`MENU: Fit to screen ${newValue ? 'enabled' : 'disabled'}`, {
-      context: 'MenuGridConfig.handleFitToScreenToggle',
-      action: 'fit_to_screen_toggle',
-      previousValue: fitToScreen,
-      newValue: newValue,
+  const handleColumnsIncrement = () => {
+    if (columns >= MAX_COLUMNS) return;
+    const nextValue = columns + 1;
+    logger.info(`MENU: Columns increased to ${nextValue}`, {
+      context: 'MenuConfig.handleColumnsIncrement',
+      action: 'columns_change',
+      previousValue: columns,
+      newValue: nextValue,
       timestamp: Date.now(),
     });
-
-    onFitToScreenChange(newValue);
+    onColumnsChange(nextValue);
   };
 
-  const layoutModes: {
-    value: GridLayoutMode;
-    label: string;
-    description: string;
-  }[] = [
-    {
-      value: 'auto',
-      label: 'Auto Layout',
-      description: 'Adaptive layouts: 1x1 → 1x2 → center 2x2',
-    },
-    {
-      value: 'force-2x2',
-      label: 'Force 2x2',
-      description: 'Always use 2x2 grid regardless of count',
-    },
-    {
-      value: 'prefer-horizontal',
-      label: 'Prefer Horizontal',
-      description: 'Favor horizontal layouts when possible',
-    },
-    {
-      value: 'vertical-stack',
-      label: 'Vertical Stack',
-      description: 'Single column vertical arrangement',
-    },
-  ];
+  const handleRowsDecrement = () => {
+    if (minRows <= MIN_ROWS_VALUE) return;
+    const nextValue = minRows - 1;
+    logger.info(`MENU: Min rows decreased to ${nextValue}`, {
+      context: 'MenuConfig.handleRowsDecrement',
+      action: 'min_rows_change',
+      previousValue: minRows,
+      newValue: nextValue,
+      timestamp: Date.now(),
+    });
+    onMinRowsChange(nextValue);
+  };
+
+  const handleRowsIncrement = () => {
+    if (minRows >= MAX_ROWS_VALUE) return;
+    const nextValue = minRows + 1;
+    logger.info(`MENU: Min rows increased to ${nextValue}`, {
+      context: 'MenuConfig.handleRowsIncrement',
+      action: 'min_rows_change',
+      previousValue: minRows,
+      newValue: nextValue,
+      timestamp: Date.now(),
+    });
+    onMinRowsChange(nextValue);
+  };
 
   return (
     <div className="menu-grid-config-section">
       <div className="grid-config-header">
-        <h3>Grid Layout</h3>
-        <div className="current-mode">
-          Current: {layoutModes.find((m) => m.value === layoutMode)?.label}
+        <h3>Layout</h3>
+      </div>
+
+      <div className="config-row">
+        <span className="config-label">Items per Row</span>
+        <div className="column-stepper">
+          <button
+            type="button"
+            className="stepper-button"
+            onClick={handleColumnsDecrement}
+            disabled={columns <= MIN_COLUMNS}
+            aria-label="Decrease columns"
+          >
+            -
+          </button>
+          <span className="stepper-value">{columns}</span>
+          <button
+            type="button"
+            className="stepper-button"
+            onClick={handleColumnsIncrement}
+            disabled={columns >= MAX_COLUMNS}
+            aria-label="Increase columns"
+          >
+            +
+          </button>
         </div>
       </div>
 
-      {/* Fit to Screen Toggle */}
-      <button
-        type="button"
-        className={`menu-option fit-to-screen-toggle ${fitToScreen ? 'active' : ''}`}
-        onClick={handleFitToScreenToggle}
-        title="Scale posters to fit screen width (enabled by default)"
-      >
-        <div className="layout-option-content">
-          <span className="layout-name">Fit to Screen</span>
-          <span className="layout-description">
-            {fitToScreen
-              ? 'Enabled - Posters scale to fit screen'
-              : 'Disabled - Fixed poster sizes'}
-          </span>
+      <div className="config-row">
+        <span className="config-label">Min Rows Visible</span>
+        <div className="column-stepper">
+          <button
+            type="button"
+            className="stepper-button"
+            onClick={handleRowsDecrement}
+            disabled={minRows <= MIN_ROWS_VALUE}
+            aria-label="Decrease minimum rows"
+          >
+            -
+          </button>
+          <span className="stepper-value">{minRows}</span>
+          <button
+            type="button"
+            className="stepper-button"
+            onClick={handleRowsIncrement}
+            disabled={minRows >= MAX_ROWS_VALUE}
+            aria-label="Increase minimum rows"
+          >
+            +
+          </button>
         </div>
-      </button>
-
-      {/* Layout Mode Options */}
-      {layoutModes.map((mode) => (
-        <button
-          type="button"
-          key={mode.value}
-          className={`menu-option grid-layout-option ${layoutMode === mode.value ? 'active' : ''}`}
-          onClick={() => handleLayoutModeChange(mode.value)}
-          title={mode.description}
-        >
-          <div className="layout-option-content">
-            <span className="layout-name">{mode.label}</span>
-            <span className="layout-description">{mode.description}</span>
-          </div>
-        </button>
-      ))}
+      </div>
     </div>
   );
 };

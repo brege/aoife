@@ -1,26 +1,25 @@
 import type React from 'react';
 import './header.css';
 import './title.css';
-import type { GridLayoutMode } from '../grid/grid';
 import Menu from '../menu/menu';
 import EditableTitle from './title';
 
 interface AppHeaderProps {
   onClearGrid: () => void;
-  gridLayoutMode: GridLayoutMode;
-  onGridLayoutModeChange: (mode: GridLayoutMode) => void;
-  fitToScreen: boolean;
-  onFitToScreenChange: (enabled: boolean) => void;
+  columns: number;
+  onColumnsChange: (columns: number) => void;
+  minRows: number;
+  onMinRowsChange: (minRows: number) => void;
   isBuilderMode: boolean;
   onBuilderModeToggle: (enabled: boolean) => void;
 }
 
 const AppHeader: React.FC<AppHeaderProps> = ({
   onClearGrid,
-  gridLayoutMode,
-  onGridLayoutModeChange,
-  fitToScreen,
-  onFitToScreenChange,
+  columns,
+  onColumnsChange,
+  minRows,
+  onMinRowsChange,
   isBuilderMode,
   onBuilderModeToggle,
 }) => {
@@ -33,10 +32,10 @@ const AppHeader: React.FC<AppHeaderProps> = ({
       <div className="header-right">
         <Menu
           onClearGrid={onClearGrid}
-          gridLayoutMode={gridLayoutMode}
-          onGridLayoutModeChange={onGridLayoutModeChange}
-          fitToScreen={fitToScreen}
-          onFitToScreenChange={onFitToScreenChange}
+          columns={columns}
+          onColumnsChange={onColumnsChange}
+          minRows={minRows}
+          onMinRowsChange={onMinRowsChange}
           isBuilderMode={isBuilderMode}
           onBuilderModeToggle={onBuilderModeToggle}
         />

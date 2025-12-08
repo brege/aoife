@@ -25,6 +25,7 @@ export interface MediaItem {
   source?: string;
   customEntry?: boolean;
   metadata?: Record<string, unknown>;
+  aspectRatio?: number;
 }
 
 export type AspectRatio = '2:3' | '1:1' | 'auto';

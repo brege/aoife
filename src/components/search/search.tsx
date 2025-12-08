@@ -12,12 +12,14 @@ import type {
   MediaSearchValues,
   MediaType,
 } from '../../media/types';
-import Grid2x2, { type GridLayoutMode } from '../grid/grid';
+import Grid2x2 from '../grid/grid';
 import CloseIcon from '../ui/close';
 import AppHeader from '../ui/header';
 import CustomMediaForm from './form';
 
 const GRID_STORAGE_KEY = 'gridItems';
+const COLUMNS_STORAGE_KEY = 'gridColumns';
+const MIN_ROWS_STORAGE_KEY = 'gridMinRows';
 const GRID_CAPACITY = 4;
 
 const formatSearchSummary = (
@@ -56,8 +58,26 @@ const MediaSearch: React.FC = () => {
   const [activePosterItemId, setActivePosterItemId] = useState<
     string | number | null
   >(null);
-  const [gridLayoutMode, setGridLayoutMode] = useState<GridLayoutMode>('auto');
-  const [fitToScreen, setFitToScreen] = useState<boolean>(true);
+  const [columns, setColumns] = useState(() => {
+    const stored = localStorage.getItem(COLUMNS_STORAGE_KEY);
+    if (stored) {
+      const parsed = parseInt(stored, 10);
+      if (!Number.isNaN(parsed) && parsed >= 1 && parsed <= 8) {
+        return parsed;
+      }
+    }
+    return 4;
+  });
+  const [minRows, setMinRows] = useState(() => {
+    const stored = localStorage.getItem(MIN_ROWS_STORAGE_KEY);
+    if (stored) {
+      const parsed = parseInt(stored, 10);
+      if (!Number.isNaN(parsed) && parsed >= 1 && parsed <= 6) {
+        return parsed;
+      }
+    }
+    return 2;
+  });
   const [showCustomMediaForm, setShowCustomMediaForm] = useState(false);
   const [lastSearchSummary, setLastSearchSummary] = useState('');
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -95,6 +115,14 @@ const MediaSearch: React.FC = () => {
   const persistGrid = useCallback((items: MediaItem[]) => {
     localStorage.setItem(GRID_STORAGE_KEY, JSON.stringify(items));
   }, []);
+
+  useEffect(() => {
+    localStorage.setItem(COLUMNS_STORAGE_KEY, String(columns));
+  }, [columns]);
+
+  useEffect(() => {
+    localStorage.setItem(MIN_ROWS_STORAGE_KEY, String(minRows));
+  }, [minRows]);
 
   const closeSearchResults = () => {
     logger.debug('Closing search results', {
@@ -169,14 +197,6 @@ const MediaSearch: React.FC = () => {
 
   const handleAddMedia = useCallback(
     (media: MediaItem) => {
-      if (gridItems.length >= GRID_CAPACITY) {
-        logger.warn('Cannot add media: grid is full (4/4)', {
-          context: 'MediaSearch.handleAddMedia',
-          action: 'add_rejected_full_grid',
-        });
-        return;
-      }
-
       const updatedGrid = [...gridItems, media];
       setGridItems(updatedGrid);
       setSearchResults([]);
@@ -286,6 +306,19 @@ const MediaSearch: React.FC = () => {
     setShowPosterGrid(false);
     setActivePosterItemId(null);
   };
+
+  const handleAspectRatioUpdate = useCallback(
+    (mediaId: string | number, aspectRatio: number) => {
+      setGridItems((current) => {
+        const updated = current.map((item) =>
+          item.id === mediaId ? { ...item, aspectRatio } : item,
+        );
+        persistGrid(updated);
+        return updated;
+      });
+    },
+    [persistGrid],
+  );
 
   const handleAddCustomMedia = (media: {
     title: string;
@@ -571,10 +604,10 @@ const MediaSearch: React.FC = () => {
     <div className="container">
       <AppHeader
         onClearGrid={handleClearGrid}
-        gridLayoutMode={gridLayoutMode}
-        onGridLayoutModeChange={setGridLayoutMode}
-        fitToScreen={fitToScreen}
-        onFitToScreenChange={setFitToScreen}
+        columns={columns}
+        onColumnsChange={setColumns}
+        minRows={minRows}
+        onMinRowsChange={setMinRows}
         isBuilderMode={isBuilderMode}
         onBuilderModeToggle={handleBuilderModeToggle}
       />
@@ -607,11 +640,11 @@ const MediaSearch: React.FC = () => {
               onSelectAlternatePoster={handleSelectAlternatePoster}
               onClosePosterGrid={handleClosePosterGrid}
               onPlaceholderClick={() => searchInputRef.current?.focus()}
-              layoutMode={gridLayoutMode}
-              fitToScreen={fitToScreen}
+              columns={columns}
+              minRows={minRows}
               placeholderLabel={provider.resultLabel}
-              aspectRatio={provider.aspectRatio}
               isBuilderMode={isBuilderMode}
+              onAspectRatioUpdate={handleAspectRatioUpdate}
             />
             {isBuilderMode && (
               <form onSubmit={handleSearch} className="search-form">
@@ -752,17 +785,15 @@ const MediaSearch: React.FC = () => {
             </div>
           )}
         </div>
-        {isBuilderMode &&
-          gridItems.length < GRID_CAPACITY &&
-          !searchResults.length && (
-            <button
-              type="button"
-              onClick={() => setShowCustomMediaForm(true)}
-              className="add-custom-button"
-            >
-              {`Add Custom ${provider.resultLabel.charAt(0).toUpperCase() + provider.resultLabel.slice(1)}`}
-            </button>
-          )}
+        {isBuilderMode && !searchResults.length && (
+          <button
+            type="button"
+            onClick={() => setShowCustomMediaForm(true)}
+            className="add-custom-button"
+          >
+            {`Add Custom ${provider.resultLabel.charAt(0).toUpperCase() + provider.resultLabel.slice(1)}`}
+          </button>
+        )}
       </div>
 
       {showCustomMediaForm && (
