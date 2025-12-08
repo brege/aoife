@@ -79,7 +79,7 @@ const MenuConfig: React.FC<MenuConfigProps> = ({
       </div>
 
       <div className="config-row">
-        <span className="config-label">Items per Row</span>
+        <span className="config-label">titles per row</span>
         <div className="column-stepper">
           <button
             type="button"
@@ -104,7 +104,7 @@ const MenuConfig: React.FC<MenuConfigProps> = ({
       </div>
 
       <div className="config-row">
-        <span className="config-label">Min Rows Visible</span>
+        <span className="config-label">minimum rows</span>
         <div className="column-stepper">
           <button
             type="button"

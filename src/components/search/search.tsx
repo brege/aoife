@@ -687,24 +687,35 @@ const MediaSearch: React.FC = () => {
                     required={field.required}
                   />
                 ))}
-                <button
-                  type="submit"
-                  className="search-button"
-                  disabled={isLoading}
-                  onClick={() => {
-                    logger.info(
-                      `SEARCH: Searching for "${formatSearchSummary(searchValues, provider.searchFields)}"`,
-                      {
-                        context: 'MediaSearch.SearchButton',
-                        action: 'search_submit',
-                        values: searchValues,
-                        timestamp: Date.now(),
-                      },
-                    );
-                  }}
-                >
-                  {isLoading ? 'Searching...' : 'Search'}
-                </button>
+                <div className="search-buttons-row">
+                  <button
+                    type="submit"
+                    className="search-button"
+                    disabled={isLoading}
+                    onClick={() => {
+                      logger.info(
+                        `SEARCH: Searching for "${formatSearchSummary(searchValues, provider.searchFields)}"`,
+                        {
+                          context: 'MediaSearch.SearchButton',
+                          action: 'search_submit',
+                          values: searchValues,
+                          timestamp: Date.now(),
+                        },
+                      );
+                    }}
+                  >
+                    {isLoading ? 'Searching...' : 'Search'}
+                  </button>
+                  {!searchResults.length && (
+                    <button
+                      type="button"
+                      onClick={() => setShowCustomMediaForm(true)}
+                      className="add-custom-button"
+                    >
+                      Add Custom
+                    </button>
+                  )}
+                </div>
               </form>
             )}
           </div>
@@ -797,15 +808,6 @@ const MediaSearch: React.FC = () => {
             </div>
           )}
         </div>
-        {isBuilderMode && !searchResults.length && (
-          <button
-            type="button"
-            onClick={() => setShowCustomMediaForm(true)}
-            className="add-custom-button"
-          >
-            {`Add Custom ${provider.resultLabel.charAt(0).toUpperCase() + provider.resultLabel.slice(1)}`}
-          </button>
-        )}
       </div>
 
       {showCustomMediaForm && (

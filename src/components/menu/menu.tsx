@@ -103,20 +103,16 @@ const Menu: React.FC<MenuProps> = ({
 
       {isOpen && (
         <div className="menu-dropdown" ref={menuRef}>
-          <div className="menu-header">
-            <h3>Settings</h3>
-          </div>
-
           <div className="menu-actions">
             <button
               type="button"
               className={`menu-icon-button${isBuilderMode ? ' active' : ''}`}
               aria-pressed={isBuilderMode}
               aria-label="Toggle editor"
-              title="Editor"
+              title={isBuilderMode ? 'Show grid' : 'Show editor'}
               onClick={() => handleModeSelect(!isBuilderMode)}
             >
-              <BuilderModeIcon />
+              {isBuilderMode ? <GridIcon /> : <EditIcon />}
             </button>
 
             <MenuClear onClearGrid={onClearGrid} onMenuClose={closeMenu} />
@@ -135,29 +131,45 @@ const Menu: React.FC<MenuProps> = ({
   );
 };
 
-const BuilderModeIcon: React.FC = () => (
-  <svg viewBox="0 0 36 36" role="img" aria-hidden="true" focusable="false">
-    <path
-      d="M21 12H7a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1Zm-13-2h12V8H8Z"
-      fill="currentColor"
-    />
-    <path
-      d="M21 14.08H7a1 1 0 0 0-1 1V19a1 1 0 0 0 1 1h11.36L22 16.3v-1.22a1 1 0 0 0-1-1Zm-1 3.92H8v-2h12Z"
-      fill="currentColor"
-    />
-    <path
-      d="M11.06 31.45l.32-1.39H4V4h20v10.25L26 12.36V3a1 1 0 0 0-1-1H3a1 1 0 0 0-1 1v28a1 1 0 0 0 1 1h8a3.26 3.26 0 0 1 .06-.55Z"
-      fill="currentColor"
-    />
-    <path d="M22 19.17l-.78.79A1 1 0 0 0 22 19.17Z" fill="currentColor" />
-    <path
-      d="M6 26.94a1 1 0 0 0 1 1h4.84l.43-1.9H8V24h6.34l2-2H7a1 1 0 0 0-1 1Z"
-      fill="currentColor"
-    />
-    <path
-      d="M33.49 16.67l-3.37-3.37a1.61 1.61 0 0 0-2.28 0L14.13 27.09 13 31.9a1.61 1.61 0 0 0 1.26 1.9l.31.06a1.15 1.15 0 0 0 .37 0l4.85-1.07L33.49 19a1.6 1.6 0 0 0 0-2.27Zm-14.72 14.24l-3.66.81L16 28.09l10.28-10.39 2.82 2.82Zm11.46-11.52-2.82-2.82L29 15l2.84 2.84Z"
-      fill="currentColor"
-    />
+const EditIcon: React.FC = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    role="img"
+    aria-hidden="true"
+    focusable="false"
+  >
+    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+  </svg>
+);
+
+const GridIcon: React.FC = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    role="img"
+    aria-hidden="true"
+    focusable="false"
+  >
+    <rect x="3" y="3" width="7" height="7"></rect>
+    <rect x="14" y="3" width="7" height="7"></rect>
+    <rect x="14" y="14" width="7" height="7"></rect>
+    <rect x="3" y="14" width="7" height="7"></rect>
   </svg>
 );
 
