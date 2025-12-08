@@ -30,11 +30,19 @@ VITE_TMDB_API_KEY=your_key_here
 
 ## Tech Stack
 
+### Infrastructure
+
 - React + TypeScript
 - Vite for build and development
 - CSS Grid for responsive layouts
-- TMDB API for movie/TV data (more to come)
+- CLI + Cypress layers for AI-development and testing
 - Biome for linting, formatting, and type checking
+
+### APIs
+
+- TMDB API for movie/TV data
+- Musicbrainz API for music
+- OpenLibrary and Google Books API's books
 
 ## Development
 
@@ -44,45 +52,13 @@ npm run build   # build for production
 npm run lint    # run biome linter
 ```
 
-## Roadmap
+### Roadmap
 
-- [x] **Movies** 
-  - TMDB API
-- [ ] **TV Shows**
-  - TMDB API
-- [ ] **Games**
-  - IGDB (Internet Game Database)
-  - Giant Bomb API
-  - Steam API
-- [x] **Books**
-  - Google Books API
-  - Open Library API
-- [ ] **Music**
-  - Last.fm API
-  - Spotify Web API
-  - MusicBrainz API
-- [ ] **Podcasts**
-  - Listen Notes API
-  - iTunes Search API
-  - Podcast Index API
-- [ ] **Websites/Bookmarks**
-  - Web scraping (Open Graph)
-- [ ] **Scientific Articles**
-  - arXiv API
-  - PubMed API
-  - CrossRef API
+[roadmap](docs/roadmap.md)
 
-Once a handful of these have been implemented, I will begin expanding to mixed media year-in-review galleries.  Maybe you'd want to see
+### Changelog
 
-#### My 2025 Year-in-Review
-|       |         |         |
-|:----- |:------- |:------- |
-| Movie | TV Show | Game    |
-| Album | Book    | Podcast |
-
-## Roadmap
-
-[Roadmap](docs/roadmap.md)
+[changelog](docs/changelog.md)
 
 ## License
 
