@@ -196,8 +196,17 @@ const MediaSearch: React.FC = () => {
   };
 
   const handleAddMedia = useCallback(
-    (media: MediaItem) => {
-      const updatedGrid = [...gridItems, media];
+    (media: MediaItem, availableCovers?: MediaItem[]) => {
+      const mediaWithCovers = { ...media };
+      const coversSource = availableCovers ?? searchResults;
+      if (coversSource.length > 0) {
+        const coverUrls = coversSource
+          .map((result) => result.coverUrl || result.coverThumbnailUrl)
+          .filter((url): url is string => Boolean(url));
+        mediaWithCovers.alternateCoverUrls = coverUrls;
+      }
+
+      const updatedGrid = [...gridItems, mediaWithCovers];
       setGridItems(updatedGrid);
       setSearchResults([]);
       setSearchValues(provider.defaultSearchValues);
@@ -215,11 +224,12 @@ const MediaSearch: React.FC = () => {
           },
           position: gridItems.length,
           gridCount: updatedGrid.length,
+          hasAlternateCovers: Boolean(mediaWithCovers.alternateCoverUrls?.length),
           timestamp: Date.now(),
         },
       );
     },
-    [gridItems, provider.defaultSearchValues, persistGrid],
+    [gridItems, provider.defaultSearchValues, searchResults, persistGrid],
   );
 
   const handleRemoveMedia = useCallback(
@@ -247,26 +257,30 @@ const MediaSearch: React.FC = () => {
   );
 
   const fetchAlternateCovers = useCallback(
-    async (mediaId: string | number) => {
-      if (!provider.supportsAlternateCovers) {
-        setAlternateCoverUrls([]);
-        return;
-      }
-
+    async (mediaId: string | number, mediaType: MediaType, storedCovers?: string[]) => {
       try {
-        const service = getMediaService(selectedMediaType);
+        const service = getMediaService(mediaType);
         const covers = await service.getAlternateCovers(mediaId);
-        setAlternateCoverUrls(covers);
+        if (covers.length > 0) {
+          setAlternateCoverUrls(covers);
+          return;
+        }
       } catch (err) {
-        setAlternateCoverUrls([]);
-        logger.error('Failed to fetch alternate covers', {
+        logger.error('Failed to fetch alternate covers from API', {
           context: 'MediaSearch.fetchAlternateCovers',
           mediaId,
+          mediaType,
           error: err instanceof Error ? err.message : String(err),
         });
       }
+
+      if (storedCovers && storedCovers.length > 0) {
+        setAlternateCoverUrls(storedCovers);
+      } else {
+        setAlternateCoverUrls([]);
+      }
     },
-    [provider.supportsAlternateCovers, selectedMediaType],
+    [],
   );
 
   const handleClosePosterGrid = () => {
@@ -501,7 +515,7 @@ const MediaSearch: React.FC = () => {
     setSearchValues(nextValues);
     const results = await runSearch(nextValues);
     if (results.length > 0) {
-      handleAddMedia(results[0]);
+      handleAddMedia(results[0], results);
       logger.info(`CLI-ADD-FIRST: Added first result "${results[0].title}"`, {
         context: 'MediaSearch.handleCliAddFirstResult',
         action: 'cli_add_first_result',
@@ -619,20 +633,18 @@ const MediaSearch: React.FC = () => {
               items={gridItems}
               onRemoveMedia={handleRemoveMedia}
               onPosterClick={(item) => {
-                if (!provider.supportsAlternateCovers) {
-                  return;
-                }
                 logger.info(
                   `GRID: Opening alternate poster grid for "${item.title}"`,
                   {
                     context: 'MediaSearch.Grid2x2.onPosterClick',
                     action: 'poster_grid_open',
-                    media: { id: item.id, title: item.title },
+                    media: { id: item.id, title: item.title, type: item.type },
                     timestamp: Date.now(),
                   },
                 );
                 setActivePosterItemId(item.id);
-                fetchAlternateCovers(item.id);
+
+                fetchAlternateCovers(item.id, item.type as MediaType, item.alternateCoverUrls);
                 setShowPosterGrid(true);
               }}
               showPosterGrid={showPosterGrid}
@@ -774,7 +786,7 @@ const MediaSearch: React.FC = () => {
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        handleAddMedia(result);
+                        handleAddMedia(result, searchResults);
                       }}
                     >
                       Add
