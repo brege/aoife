@@ -62,7 +62,7 @@ const MediaSearch: React.FC = () => {
   const [lastSearchSummary, setLastSearchSummary] = useState('');
   const searchInputRef = useRef<HTMLInputElement>(null);
   const mediaTypeOptions: MediaType[] = ['movies', 'books', 'music'];
-  const [isSearchPanelVisible, setIsSearchPanelVisible] = useState(true);
+  const [isBuilderMode, setIsBuilderMode] = useState(true);
 
   useEffect(() => {
     const stored = localStorage.getItem(GRID_STORAGE_KEY);
@@ -87,10 +87,10 @@ const MediaSearch: React.FC = () => {
     setSearchValues(provider.defaultSearchValues);
     setSearchResults([]);
     setLastSearchSummary('');
-    if (isSearchPanelVisible) {
+    if (isBuilderMode) {
       searchInputRef.current?.focus();
     }
-  }, [provider, isSearchPanelVisible]);
+  }, [provider, isBuilderMode]);
 
   const persistGrid = useCallback((items: MediaItem[]) => {
     localStorage.setItem(GRID_STORAGE_KEY, JSON.stringify(items));
@@ -371,16 +371,16 @@ const MediaSearch: React.FC = () => {
     const menuState: CliMenuState = {
       sections: [
         {
-          name: 'Search Panel',
+          name: 'Mode',
           options: [
             {
-              name: isSearchPanelVisible
-                ? 'Hide search panel'
-                : 'Show search panel',
+              name: isBuilderMode
+                ? 'Switch to presentation mode'
+                : 'Switch to builder mode',
               type: 'action',
               enabled: true,
               description:
-                'Toggle visibility of search inputs and custom button',
+                'Presentation hides builder UI for screenshots or display',
             },
           ],
         },
@@ -419,7 +419,7 @@ const MediaSearch: React.FC = () => {
     });
 
     return menuState;
-  }, [gridItems.length, isSearchPanelVisible]);
+  }, [gridItems.length, isBuilderMode]);
 
   const handleMenuClearGrid = useCallback(() => {
     setGridItems([]);
@@ -540,29 +540,32 @@ const MediaSearch: React.FC = () => {
   };
 
   useEffect(() => {
-    if (isSearchPanelVisible) {
+    if (isBuilderMode) {
       searchInputRef.current?.focus();
     }
-  }, [isSearchPanelVisible]);
+  }, [isBuilderMode]);
 
   useEffect(() => {
-    if (!isSearchPanelVisible) {
+    if (!isBuilderMode) {
       setShowCustomMediaForm(false);
     }
-  }, [isSearchPanelVisible]);
+  }, [isBuilderMode]);
 
-  const handleSearchPanelToggle = useCallback((visible: boolean) => {
-    setIsSearchPanelVisible(visible);
+  const handleBuilderModeToggle = useCallback((enabled: boolean) => {
+    setIsBuilderMode(enabled);
     logger.info(
-      `SEARCH PANEL: ${visible ? 'Showing' : 'Hiding'} from menu control`,
+      `MODE: Switched to ${enabled ? 'builder' : 'presentation'} mode`,
       {
-        context: 'MediaSearch.handleSearchPanelToggle',
-        action: 'search_panel_toggle',
-        isVisible: visible,
+        context: 'MediaSearch.handleBuilderModeToggle',
+        action: 'mode_toggle',
+        builderMode: enabled,
         timestamp: Date.now(),
       },
     );
   }, []);
+
+  const searchSectionClassName = `search-section ${isBuilderMode ? 'builder-mode' : 'presentation-mode'}`;
+  const searchModuleClassName = `search-module ${isBuilderMode ? 'builder-mode' : 'presentation-mode'}`;
 
   return (
     <div className="container">
@@ -572,13 +575,13 @@ const MediaSearch: React.FC = () => {
         onGridLayoutModeChange={setGridLayoutMode}
         fitToScreen={fitToScreen}
         onFitToScreenChange={setFitToScreen}
-        isSearchPanelVisible={isSearchPanelVisible}
-        onSearchPanelToggle={handleSearchPanelToggle}
+        isBuilderMode={isBuilderMode}
+        onBuilderModeToggle={handleBuilderModeToggle}
       />
 
-      <div className="search-section">
+      <div className={searchSectionClassName}>
         <div className="search-content">
-          <div className="search-module">
+          <div className={searchModuleClassName}>
             <Grid2x2
               items={gridItems}
               onRemoveMedia={handleRemoveMedia}
@@ -608,9 +611,9 @@ const MediaSearch: React.FC = () => {
               fitToScreen={fitToScreen}
               placeholderLabel={provider.resultLabel}
               aspectRatio={provider.aspectRatio}
-              isSearchPanelVisible={isSearchPanelVisible}
+              isBuilderMode={isBuilderMode}
             />
-            {isSearchPanelVisible && (
+            {isBuilderMode && (
               <form onSubmit={handleSearch} className="search-form">
                 <select
                   className="search-select"
@@ -749,7 +752,7 @@ const MediaSearch: React.FC = () => {
             </div>
           )}
         </div>
-        {isSearchPanelVisible &&
+        {isBuilderMode &&
           gridItems.length < GRID_CAPACITY &&
           !searchResults.length && (
             <button

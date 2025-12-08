@@ -12,8 +12,8 @@ interface MenuProps {
   onGridLayoutModeChange: (mode: GridLayoutMode) => void;
   fitToScreen: boolean;
   onFitToScreenChange: (enabled: boolean) => void;
-  isSearchPanelVisible: boolean;
-  onSearchPanelToggle: (visible: boolean) => void;
+  isBuilderMode: boolean;
+  onBuilderModeToggle: (enabled: boolean) => void;
 }
 
 const Menu: React.FC<MenuProps> = ({
@@ -22,8 +22,8 @@ const Menu: React.FC<MenuProps> = ({
   onGridLayoutModeChange,
   fitToScreen,
   onFitToScreenChange,
-  isSearchPanelVisible,
-  onSearchPanelToggle,
+  isBuilderMode,
+  onBuilderModeToggle,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -59,12 +59,12 @@ const Menu: React.FC<MenuProps> = ({
       isOpen: newState,
       availableOptions: [
         {
-          section: 'Search Panel',
+          section: 'Mode',
           items: [
             {
-              name: isSearchPanelVisible
-                ? 'Hide search panel'
-                : 'Show search panel',
+              name: isBuilderMode
+                ? 'Switch to presentation mode'
+                : 'Switch to builder mode',
               type: 'action',
               enabled: true,
             },
@@ -127,26 +127,28 @@ const Menu: React.FC<MenuProps> = ({
           </div>
 
           <div className="menu-section">
-            <h4>Search Panel</h4>
+            <h4>Mode</h4>
             <button
               type="button"
               className="menu-option"
               onClick={() => {
-                const nextValue = !isSearchPanelVisible;
-                onSearchPanelToggle(nextValue);
+                const nextValue = !isBuilderMode;
+                onBuilderModeToggle(nextValue);
                 logger.info(
-                  `MENU: ${nextValue ? 'Showing' : 'Hiding'} search panel`,
+                  `MENU: Switched to ${nextValue ? 'builder' : 'presentation'} mode`,
                   {
-                    context: 'MenuSearchPanel.toggle',
-                    action: 'search_panel_toggle',
-                    isVisible: nextValue,
+                    context: 'MenuMode.toggle',
+                    action: 'mode_toggle',
+                    builderMode: nextValue,
                     timestamp: Date.now(),
                   },
                 );
                 closeMenu();
               }}
             >
-              {isSearchPanelVisible ? 'Hide search form' : 'Show search form'}
+              {isBuilderMode
+                ? 'Enter presentation mode'
+                : 'Return to builder mode'}
             </button>
           </div>
 

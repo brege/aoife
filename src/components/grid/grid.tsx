@@ -27,7 +27,7 @@ interface Grid2x2Props {
   fitToScreen?: boolean;
   placeholderLabel: string;
   aspectRatio?: AspectRatio;
-  isSearchPanelVisible?: boolean;
+  isBuilderMode?: boolean;
 }
 
 const getCoverSrc = (media: MediaItem) => {
@@ -53,7 +53,7 @@ const Grid2x2: React.FC<Grid2x2Props> = ({
   fitToScreen = true,
   placeholderLabel,
   aspectRatio = '2:3',
-  isSearchPanelVisible = true,
+  isBuilderMode = true,
 }) => {
   const itemCount = items.length;
   const gridContainerRef = useRef<HTMLDivElement>(null);
@@ -72,12 +72,15 @@ const Grid2x2: React.FC<Grid2x2Props> = ({
   const layoutValue = getLayoutValue();
 
   const positionsToRender = React.useMemo(() => {
+    if (!isBuilderMode) {
+      return Array.from({ length: itemCount }, (_, index) => index);
+    }
     if (itemCount === 0) return [0];
     if (itemCount === 1) return [0, 1];
     if (itemCount === 2) return [0, 1, 2];
     if (itemCount === 3) return [0, 1, 2, 3];
     return [0, 1, 2, 3];
-  }, [itemCount]);
+  }, [itemCount, isBuilderMode]);
 
   React.useEffect(() => {
     if (!gridContainerRef.current) {
@@ -281,7 +284,7 @@ const Grid2x2: React.FC<Grid2x2Props> = ({
       );
     }
 
-    if (!isSearchPanelVisible) {
+    if (!isBuilderMode) {
       return null;
     }
 
@@ -302,7 +305,9 @@ const Grid2x2: React.FC<Grid2x2Props> = ({
   };
 
   return (
-    <div className="grid-2x2">
+    <div
+      className={`grid-2x2 ${isBuilderMode ? 'grid-builder' : 'grid-presentation'}`}
+    >
       <div
         ref={gridContainerRef}
         className="grid-container"

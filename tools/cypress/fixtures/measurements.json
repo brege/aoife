@@ -1,18 +1,18 @@
 {
-  "timestamp": "2025-12-07T23:53:21.688Z",
+  "timestamp": "2025-12-08T00:15:38.672Z",
   "viewport": {
     "width": 980,
     "height": 1835
   },
   "container": {
-    "width": 201,
+    "width": 600,
     "height": 300,
     "computedStyle": "200px",
     "className": "grid-container",
     "posterWidth": "clamp(120px, 25vw, 200px)",
     "gap": "16px",
     "allStyles": {
-      "width": "201px",
+      "width": "600px",
       "maxWidth": "100%",
       "minWidth": "0px"
     }

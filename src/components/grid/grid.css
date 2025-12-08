@@ -7,6 +7,25 @@
   margin: 0 auto;
 }
 
+.grid-2x2.grid-presentation {
+  max-width: none;
+  width: 100%;
+  padding: 0 var(--spacing-xl);
+  min-height: calc(100vh - var(--header-height));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.grid-2x2.grid-presentation .grid-container {
+  --poster-width: clamp(240px, 18vw, 380px);
+  --gap: clamp(24px, 4vw, 64px);
+  width: min(1600px, 95vw);
+  margin: 0 auto;
+  justify-content: center;
+  min-height: calc(100vh - var(--header-height) - 80px);
+}
+
 /* Base variables - overridden by layout modes and breakpoints */
 .grid-container {
   --columns: 2;

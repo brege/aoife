@@ -11,8 +11,8 @@ interface AppHeaderProps {
   onGridLayoutModeChange: (mode: GridLayoutMode) => void;
   fitToScreen: boolean;
   onFitToScreenChange: (enabled: boolean) => void;
-  isSearchPanelVisible: boolean;
-  onSearchPanelToggle: (visible: boolean) => void;
+  isBuilderMode: boolean;
+  onBuilderModeToggle: (enabled: boolean) => void;
 }
 
 const AppHeader: React.FC<AppHeaderProps> = ({
@@ -21,8 +21,8 @@ const AppHeader: React.FC<AppHeaderProps> = ({
   onGridLayoutModeChange,
   fitToScreen,
   onFitToScreenChange,
-  isSearchPanelVisible,
-  onSearchPanelToggle,
+  isBuilderMode,
+  onBuilderModeToggle,
 }) => {
   return (
     <div className="app-header">
@@ -37,8 +37,8 @@ const AppHeader: React.FC<AppHeaderProps> = ({
           onGridLayoutModeChange={onGridLayoutModeChange}
           fitToScreen={fitToScreen}
           onFitToScreenChange={onFitToScreenChange}
-          isSearchPanelVisible={isSearchPanelVisible}
-          onSearchPanelToggle={onSearchPanelToggle}
+          isBuilderMode={isBuilderMode}
+          onBuilderModeToggle={onBuilderModeToggle}
         />
       </div>
     </div>
