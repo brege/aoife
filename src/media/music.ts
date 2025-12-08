@@ -53,7 +53,11 @@ class CoverArtArchiveSource implements CoverArtSource {
     try {
       const response = await axios.head(
         `https://coverartarchive.org/release/${releaseId}/front`,
-        { timeout: 3000, maxRedirects: 0, validateStatus: (s) => s < 400 },
+        {
+          timeout: 1500,
+          maxRedirects: 1,
+          validateStatus: (s) => s < 500,
+        },
       );
       return response.status === 200 || response.status === 307;
     } catch {
