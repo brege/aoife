@@ -7,8 +7,8 @@
 }
 
 .hamburger-button {
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border-color);
+  background: transparent;
+  border: none;
   border-radius: var(--border-radius-md);
   padding: var(--spacing-md);
   cursor: pointer;
@@ -19,21 +19,27 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  box-shadow: none;
+}
+
+.hamburger-button.open {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
 }
 
-.hamburger-button:hover {
+.hamburger-button.open:hover {
   background: var(--bg-secondary);
 }
 
-.hamburger-button:focus-visible {
-  outline: 2px solid var(--accent-blue);
-  outline-offset: 2px;
-}
-
-.hamburger-button:active {
+.hamburger-button.open:active {
   transform: translateY(1px);
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+}
+
+.hamburger-button:focus-visible {
+  outline: 2px solid var(--accent-color);
+  outline-offset: 2px;
 }
 
 .hamburger-icon {
@@ -74,7 +80,7 @@
   right: 0;
   background: var(--bg-primary);
   border-radius: var(--border-radius-lg);
-  width: 280px;
+  width: 340px;
   max-height: 70vh;
   overflow-y: auto;
   box-shadow: var(--shadow-lg);
@@ -96,8 +102,9 @@
 
 .menu-header {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-start;
   align-items: center;
+  gap: var(--spacing-md);
   padding: var(--spacing-xl) var(--spacing-xl) var(--spacing-md)
     var(--spacing-xl);
   border-bottom: 1px solid var(--border-color);
@@ -110,75 +117,6 @@
   font-weight: 600;
 }
 
-.close-button {
-  background: none;
-  border: none;
-  color: var(--text-muted);
-  font-size: 24px;
-  cursor: pointer;
-  padding: var(--spacing-xs);
-  line-height: 1;
-  transition: color var(--transition-fast);
-}
-
-.close-button:hover {
-  color: var(--text-primary);
-}
-
-.menu-section {
-  padding: var(--spacing-xl);
-  border-bottom: 1px solid var(--border-color);
-}
-
-.menu-section:last-child {
-  border-bottom: none;
-}
-
-.menu-section h4 {
-  color: var(--text-secondary);
-  margin: 0 0 var(--spacing-md) 0;
-  font-size: 14px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.menu-option {
-  display: block;
-  width: 100%;
-  background: var(--bg-tertiary);
-  color: var(--text-primary);
-  border: none;
-  border-radius: var(--border-radius-sm);
-  padding: 10px var(--spacing-lg);
-  margin-bottom: var(--spacing-sm);
-  cursor: pointer;
-  font-size: 14px;
-  text-align: left;
-  transition: background-color var(--transition-fast);
-}
-
-.menu-option:hover {
-  background: var(--primary-lighter);
-}
-
-.menu-option.danger {
-  background: var(--accent-red-alpha);
-}
-
-.menu-option.danger:hover {
-  background: var(--accent-red-alpha-hover);
-}
-
-.menu-option.active {
-  background: var(--accent-blue);
-  color: var(--text-primary);
-}
-
-.menu-option.active:hover {
-  background: var(--accent-blue-hover);
-}
-
 .media-type-current {
   color: var(--text-muted);
   font-size: 12px;
@@ -186,11 +124,61 @@
   font-style: italic;
 }
 
-.menu-placeholder {
-  color: var(--text-placeholder);
-  font-size: 13px;
-  font-style: italic;
-  margin: 0;
+.menu-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-xl);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.menu-icon-button {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--border-radius-sm);
+  border: none;
+  background: transparent;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform var(--transition-fast);
+  flex-shrink: 0;
+  padding: 0;
+}
+
+.menu-icon-button:hover {
+  opacity: 0.7;
+}
+
+.menu-icon-button:active {
+  transform: translateY(1px);
+}
+
+.menu-icon-button.active {
+  opacity: 1;
+  background: rgba(0, 0, 0, 0.1);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.menu-icon-button.danger {
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+}
+
+.menu-icon-button.danger:hover {
+  background: var(--accent-red-alpha);
+}
+
+.menu-icon-button.danger:active {
+  background: var(--accent-red-alpha-hover);
+}
+
+.menu-icon-button svg {
+  width: 24px;
+  height: 24px;
 }
 
 /* Grid Configuration Specific Styles */
@@ -228,6 +216,7 @@
 .config-label {
   font-size: 14px;
   color: var(--text-primary);
+  white-space: nowrap;
 }
 
 .column-stepper {
