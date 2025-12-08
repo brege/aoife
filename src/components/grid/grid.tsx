@@ -1,7 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
 import './grid.css';
 import logger from '../../lib/logger';
+import type { MediaType } from '../../media/types';
 import { type MediaItem, TMDB_IMAGE_BASE } from '../../media/types';
+import { MEDIA_TYPE_ICONS } from '../search/dropdown';
 import CloseIcon from '../ui/close';
 
 interface Grid2x2Props {
@@ -194,6 +196,9 @@ const Grid2x2: React.FC<Grid2x2Props> = ({
                   >
                     <CloseIcon />
                   </button>
+                  <div className="media-type-badge">
+                    {MEDIA_TYPE_ICONS[item.type as MediaType]}
+                  </div>
                 </div>
               </div>
             );
@@ -260,6 +265,9 @@ const Grid2x2: React.FC<Grid2x2Props> = ({
                     >
                       <CloseIcon />
                     </button>
+                    <div className="media-type-badge">
+                      {MEDIA_TYPE_ICONS[media.type as MediaType]}
+                    </div>
                   </div>
                 </div>
               ))}

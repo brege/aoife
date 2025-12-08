@@ -62,11 +62,6 @@
   color: inherit;
 }
 
-.grid-builder .grid-item {
-  max-width: var(--thumbnail-max);
-  max-height: var(--thumbnail-max);
-}
-
 .grid-presentation .grid-item {
   flex-shrink: 0;
 }
@@ -74,6 +69,17 @@
 .grid-item.filled {
   background-color: #1a1a1a;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.grid-builder .grid-item {
+  flex: 0 0 auto;
+  max-width: var(--thumbnail-max);
+  max-height: var(--thumbnail-max);
+}
+
+.grid-builder .grid-item.filled {
+  width: auto;
+  height: auto;
 }
 
 .grid-item.filled:hover {
@@ -195,6 +201,32 @@
 .grid-item.filled:focus-within .grid-close-button {
   opacity: 1;
   pointer-events: auto;
+}
+
+.media-type-badge {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  background: rgba(0, 0, 0, 0.8);
+  border-radius: 4px;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  pointer-events: none;
+}
+
+.media-type-badge svg {
+  width: 16px;
+  height: 16px;
+  color: white;
+}
+
+.grid-item.filled:hover .media-type-badge {
+  opacity: 1;
 }
 
 .alternate-poster-button {

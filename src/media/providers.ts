@@ -34,14 +34,14 @@ const booksProvider: MediaProviderConfig = {
     {
       id: 'title',
       label: 'Title',
-      placeholder: 'Search for a book title...',
+      placeholder: 'Title...',
       type: 'text',
       required: true,
     },
     {
       id: 'author',
       label: 'Author',
-      placeholder: 'Author name',
+      placeholder: 'Author...',
       type: 'text',
       required: false,
     },
@@ -64,29 +64,21 @@ const musicProvider: MediaProviderConfig = {
   resultLabel: 'album',
   searchFields: [
     {
-      id: 'query',
-      label: 'Search',
-      placeholder: 'Search for an album or artist...',
-      type: 'text',
-      required: false,
-    },
-    {
       id: 'artist',
       label: 'Artist',
-      placeholder: 'Artist name',
+      placeholder: 'Artist...',
       type: 'text',
       required: false,
     },
     {
       id: 'album',
       label: 'Album',
-      placeholder: 'Album title',
+      placeholder: 'Album...',
       type: 'text',
       required: false,
     },
   ],
   defaultSearchValues: {
-    query: '',
     artist: '',
     album: '',
   },

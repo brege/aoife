@@ -1,5 +1,6 @@
 import type React from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { IoSettingsOutline } from 'react-icons/io5';
 import '../../app/styles/global.css';
 import './search.css';
 import { type CliMenuState, useCliBridge } from '../../lib/cli';
@@ -710,8 +711,9 @@ const MediaSearch: React.FC = () => {
                       type="button"
                       onClick={() => setShowCustomMediaForm(true)}
                       className="add-custom-button"
+                      aria-label="Add custom media"
                     >
-                      Add Custom
+                      <IoSettingsOutline size={28} />
                     </button>
                   )}
                 </div>
@@ -789,6 +791,46 @@ const MediaSearch: React.FC = () => {
                           )}
                         </div>
                       )}
+                      {selectedMediaType === 'books' && (
+                        <div className="movie-details">
+                          {result.source === 'OpenLibrary' &&
+                            typeof result.metadata?.openLibraryKey ===
+                              'string' && (
+                              <a
+                                href={`https://openlibrary.org${result.metadata.openLibraryKey}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="tmdb-link"
+                              >
+                                [openlibrary]
+                              </a>
+                            )}
+                          {result.source === 'GoogleBooks' &&
+                            typeof result.metadata?.volumeId === 'string' && (
+                              <a
+                                href={`https://books.google.com/books?id=${result.metadata.volumeId}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="tmdb-link"
+                              >
+                                [googlebooks]
+                              </a>
+                            )}
+                        </div>
+                      )}
+                      {selectedMediaType === 'music' &&
+                        typeof result.metadata?.mbid === 'string' && (
+                          <div className="movie-details">
+                            <a
+                              href={`https://musicbrainz.org/release/${result.metadata.mbid}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="tmdb-link"
+                            >
+                              [musicbrainz]
+                            </a>
+                          </div>
+                        )}
                     </div>
                     <button
                       type="button"

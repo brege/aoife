@@ -12,14 +12,20 @@ interface DropdownProps {
   onChange: (type: MediaType) => void;
 }
 
+export const MEDIA_TYPE_ICONS: Record<MediaType, React.ReactNode> = {
+  movies: <GiFilmStrip />,
+  books: <PiBookOpenTextLight />,
+  music: <PiMusicNotesFill />,
+};
+
 const MEDIA_TYPES: Array<{
   type: MediaType;
   label: string;
   icon: React.ReactNode;
 }> = [
-  { type: 'movies', label: 'Movies', icon: <GiFilmStrip /> },
-  { type: 'books', label: 'Books', icon: <PiBookOpenTextLight /> },
-  { type: 'music', label: 'Music', icon: <PiMusicNotesFill /> },
+  { type: 'movies', label: 'Movies', icon: MEDIA_TYPE_ICONS.movies },
+  { type: 'books', label: 'Books', icon: MEDIA_TYPE_ICONS.books },
+  { type: 'music', label: 'Music', icon: MEDIA_TYPE_ICONS.music },
 ];
 
 const Dropdown: React.FC<DropdownProps> = ({ value, onChange }) => {
