@@ -34,6 +34,12 @@ const formatSearchSummary = (
   return parts.join(' • ');
 };
 
+const constrainAspectRatio = (aspectRatio: number): number => {
+  const MIN_RATIO = 0.5;
+  const MAX_RATIO = 2;
+  return Math.max(MIN_RATIO, Math.min(MAX_RATIO, aspectRatio));
+};
+
 const MediaSearch: React.FC = () => {
   useEffect(() => {
     logger.setDebugMode(true);
@@ -52,6 +58,9 @@ const MediaSearch: React.FC = () => {
     provider.defaultSearchValues,
   );
   const [searchResults, setSearchResults] = useState<MediaItem[]>([]);
+  const [searchResultAspectRatios, setSearchResultAspectRatios] = useState<
+    Record<string | number, number>
+  >({});
   const [gridItems, setGridItems] = useState<MediaItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -130,6 +139,7 @@ const MediaSearch: React.FC = () => {
       context: 'MediaSearch.closeSearchResults',
     });
     setSearchResults([]);
+    setSearchResultAspectRatios({});
   };
   useEscapeKey(closeSearchResults);
 
@@ -137,6 +147,21 @@ const MediaSearch: React.FC = () => {
     setShowCustomMediaForm(false);
   }, []);
   useEscapeKey(closeCustomMediaForm);
+
+  const handleSearchResultImageLoad = useCallback(
+    (resultId: string | number, event: React.SyntheticEvent<HTMLImageElement>) => {
+      const img = event.currentTarget;
+      if (img.naturalWidth > 0 && img.naturalHeight > 0) {
+        const aspectRatio = img.naturalWidth / img.naturalHeight;
+        const constrainedRatio = constrainAspectRatio(aspectRatio);
+        setSearchResultAspectRatios((prev) => ({
+          ...prev,
+          [resultId]: constrainedRatio,
+        }));
+      }
+    },
+    [],
+  );
 
   const runSearch = useCallback(
     async (values: MediaSearchValues) => {
@@ -751,6 +776,14 @@ const MediaSearch: React.FC = () => {
                         src={result.coverThumbnailUrl || result.coverUrl || ''}
                         alt={`${result.title} cover`}
                         className="search-result-poster"
+                        onLoad={(e) => handleSearchResultImageLoad(result.id, e)}
+                        style={
+                          searchResultAspectRatios[result.id]
+                            ? {
+                                aspectRatio: searchResultAspectRatios[result.id],
+                              }
+                            : undefined
+                        }
                       />
                     ) : (
                       <div className="search-result-placeholder">+</div>

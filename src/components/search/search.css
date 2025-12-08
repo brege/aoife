@@ -213,7 +213,7 @@
 
 .search-result-poster {
   width: 46px;
-  height: 69px;
+  aspect-ratio: auto;
   object-fit: cover;
   border-radius: 8px;
 }
@@ -234,10 +234,11 @@
 
 .movie-item img {
   width: 46px;
-  height: 69px;
+  aspect-ratio: auto;
   object-fit: cover;
   border-radius: 4px;
   margin-right: 10px;
+  flex-shrink: 0;
 }
 
 .movie-item-info {
