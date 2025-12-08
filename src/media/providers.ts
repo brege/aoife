@@ -1,6 +1,6 @@
 import type { MediaProviderConfig, MediaType } from './types';
 
-const tmdbProvider: MediaProviderConfig = {
+const tmdbMoviesProvider: MediaProviderConfig = {
   type: 'movies',
   id: 'tmdb-movies',
   label: 'Movies',
@@ -11,6 +11,30 @@ const tmdbProvider: MediaProviderConfig = {
       id: 'query',
       label: 'Movie Title',
       placeholder: 'Search for a movie...',
+      type: 'text',
+      required: true,
+      description: 'Uses TMDB search API on original title and common aliases.',
+    },
+  ],
+  defaultSearchValues: {
+    query: '',
+  },
+  supportsCustomEntries: true,
+  supportsAlternateCovers: true,
+  aspectRatio: '2:3',
+};
+
+const tmdbTvProvider: MediaProviderConfig = {
+  type: 'tv',
+  id: 'tmdb-tv',
+  label: 'TV Shows',
+  description: 'Search TV shows via The Movie Database (TMDB) cover API.',
+  resultLabel: 'tv show',
+  searchFields: [
+    {
+      id: 'query',
+      label: 'TV Show Title',
+      placeholder: 'Search for a TV show...',
       type: 'text',
       required: true,
       description: 'Uses TMDB search API on original title and common aliases.',
@@ -88,7 +112,8 @@ const musicProvider: MediaProviderConfig = {
 };
 
 export const mediaProviders: Record<MediaType, MediaProviderConfig> = {
-  movies: tmdbProvider,
+  movies: tmdbMoviesProvider,
+  tv: tmdbTvProvider,
   books: booksProvider,
   music: musicProvider,
 };

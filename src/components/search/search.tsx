@@ -761,24 +761,27 @@ const MediaSearch: React.FC = () => {
                           result.year ? ` (${result.year})` : ''
                         }`}
                       </span>
-                      {selectedMediaType === 'movies' && (
+                      {(selectedMediaType === 'movies' ||
+                        selectedMediaType === 'tv') && (
                         <div className="movie-details">
                           <a
-                            href={`https://www.themoviedb.org/movie/${result.id}`}
+                            href={`https://www.themoviedb.org/${selectedMediaType === 'tv' ? 'tv' : 'movie'}/${result.id}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="tmdb-link"
                           >
                             [tmdb]
                           </a>
-                          <a
-                            href={`https://letterboxd.com/tmdb/${result.id}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="tmdb-link"
-                          >
-                            [letterboxd]
-                          </a>
+                          {selectedMediaType === 'movies' && (
+                            <a
+                              href={`https://letterboxd.com/tmdb/${result.id}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="tmdb-link"
+                            >
+                              [letterboxd]
+                            </a>
+                          )}
                           {imdbId && (
                             <a
                               href={`https://www.imdb.com/title/${imdbId}/`}

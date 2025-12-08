@@ -1,4 +1,4 @@
-export type MediaType = 'movies' | 'books' | 'music';
+export type MediaType = 'movies' | 'tv' | 'books' | 'music';
 
 export const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p';
 

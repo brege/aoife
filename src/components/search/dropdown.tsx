@@ -1,9 +1,11 @@
 import type React from 'react';
 import { useEffect, useRef, useState } from 'react';
 import { GiFilmStrip } from 'react-icons/gi';
-import { PiBookOpenTextLight, PiMusicNotesFill } from 'react-icons/pi';
-// import { PiTelevision } from 'react-icons/pi';
-// import { IoGameControllerOutline } from 'react-icons/io5';
+import {
+  PiBookOpenTextLight,
+  PiMusicNotesFill,
+  PiTelevisionSimpleBold,
+} from 'react-icons/pi';
 import type { MediaType } from '../../media/types';
 import './dropdown.css';
 
@@ -14,6 +16,7 @@ interface DropdownProps {
 
 export const MEDIA_TYPE_ICONS: Record<MediaType, React.ReactNode> = {
   movies: <GiFilmStrip />,
+  tv: <PiTelevisionSimpleBold />,
   books: <PiBookOpenTextLight />,
   music: <PiMusicNotesFill />,
 };
@@ -24,6 +27,7 @@ const MEDIA_TYPES: Array<{
   icon: React.ReactNode;
 }> = [
   { type: 'movies', label: 'Movies', icon: MEDIA_TYPE_ICONS.movies },
+  { type: 'tv', label: 'TV Shows', icon: MEDIA_TYPE_ICONS.tv },
   { type: 'books', label: 'Books', icon: MEDIA_TYPE_ICONS.books },
   { type: 'music', label: 'Music', icon: MEDIA_TYPE_ICONS.music },
 ];

@@ -1,19 +1,19 @@
 {
-  "timestamp": "2025-12-08T00:15:38.672Z",
+  "timestamp": "2025-12-08T16:08:09.022Z",
   "viewport": {
     "width": 980,
     "height": 1835
   },
   "container": {
     "width": 600,
-    "height": 300,
-    "computedStyle": "200px",
+    "height": 200,
+    "computedStyle": "none",
     "className": "grid-container",
-    "posterWidth": "clamp(120px, 25vw, 200px)",
+    "posterWidth": "",
     "gap": "16px",
     "allStyles": {
       "width": "600px",
-      "maxWidth": "100%",
+      "maxWidth": "none",
       "minWidth": "0px"
     }
   },
@@ -22,9 +22,9 @@
     {
       "index": 0,
       "width": 200,
-      "height": 300,
+      "height": 200,
       "computedWidth": "200px",
-      "computedMaxWidth": "none"
+      "computedMaxWidth": "200px"
     }
   ],
   "analysis": {

@@ -21,7 +21,16 @@ export function getMediaService(mediaType: MediaType): MediaService {
       if (!apiKey) {
         throw new Error('TMDB API key not configured');
       }
-      service = new TMDBService(apiKey);
+      service = new TMDBService(apiKey, 'movies');
+      break;
+    }
+
+    case 'tv': {
+      const apiKey = import.meta.env.VITE_TMDB_API_KEY;
+      if (!apiKey) {
+        throw new Error('TMDB API key not configured');
+      }
+      service = new TMDBService(apiKey, 'tv');
       break;
     }
 
