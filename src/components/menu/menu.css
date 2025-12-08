@@ -143,7 +143,9 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: background-color var(--transition-fast), transform var(--transition-fast);
+  transition:
+    background-color var(--transition-fast),
+    transform var(--transition-fast);
   flex-shrink: 0;
   padding: 0;
 }

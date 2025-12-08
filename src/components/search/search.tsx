@@ -15,6 +15,7 @@ import type {
 import Grid2x2 from '../grid/grid';
 import CloseIcon from '../ui/close';
 import AppHeader from '../ui/header';
+import Dropdown from './dropdown';
 import CustomMediaForm from './form';
 
 const GRID_STORAGE_KEY = 'gridItems';
@@ -81,7 +82,6 @@ const MediaSearch: React.FC = () => {
   const [showCustomMediaForm, setShowCustomMediaForm] = useState(false);
   const [lastSearchSummary, setLastSearchSummary] = useState('');
   const searchInputRef = useRef<HTMLInputElement>(null);
-  const mediaTypeOptions: MediaType[] = ['movies', 'books', 'music'];
   const [isBuilderMode, setIsBuilderMode] = useState(true);
 
   useEffect(() => {
@@ -224,7 +224,9 @@ const MediaSearch: React.FC = () => {
           },
           position: gridItems.length,
           gridCount: updatedGrid.length,
-          hasAlternateCovers: Boolean(mediaWithCovers.alternateCoverUrls?.length),
+          hasAlternateCovers: Boolean(
+            mediaWithCovers.alternateCoverUrls?.length,
+          ),
           timestamp: Date.now(),
         },
       );
@@ -257,7 +259,11 @@ const MediaSearch: React.FC = () => {
   );
 
   const fetchAlternateCovers = useCallback(
-    async (mediaId: string | number, mediaType: MediaType, storedCovers?: string[]) => {
+    async (
+      mediaId: string | number,
+      mediaType: MediaType,
+      storedCovers?: string[],
+    ) => {
       try {
         const service = getMediaService(mediaType);
         const covers = await service.getAlternateCovers(mediaId);
@@ -579,10 +585,7 @@ const MediaSearch: React.FC = () => {
 
   const searchSummary = lastSearchSummary || provider.label;
 
-  const handleMediaTypeChange = (
-    event: React.ChangeEvent<HTMLSelectElement>,
-  ) => {
-    const type = event.target.value as MediaType;
+  const handleMediaTypeChange = (type: MediaType) => {
     setSelectedMediaType(type);
   };
 
@@ -644,7 +647,11 @@ const MediaSearch: React.FC = () => {
                 );
                 setActivePosterItemId(item.id);
 
-                fetchAlternateCovers(item.id, item.type as MediaType, item.alternateCoverUrls);
+                fetchAlternateCovers(
+                  item.id,
+                  item.type as MediaType,
+                  item.alternateCoverUrls,
+                );
                 setShowPosterGrid(true);
               }}
               showPosterGrid={showPosterGrid}
@@ -660,18 +667,10 @@ const MediaSearch: React.FC = () => {
             />
             {isBuilderMode && (
               <form onSubmit={handleSearch} className="search-form">
-                <select
-                  className="search-select"
+                <Dropdown
                   value={selectedMediaType}
                   onChange={handleMediaTypeChange}
-                  aria-label="Media type"
-                >
-                  {mediaTypeOptions.map((type) => (
-                    <option key={type} value={type}>
-                      {type.charAt(0).toUpperCase() + type.slice(1)}
-                    </option>
-                  ))}
-                </select>
+                />
                 {provider.searchFields.map((field, index) => (
                   <input
                     key={field.id}
