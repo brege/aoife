@@ -9,6 +9,9 @@ interface MenuClearProps {
 
 const MenuClear: React.FC<MenuClearProps> = ({ onClearGrid, onMenuClose }) => {
   const handleClear = () => {
+    if (!window.confirm('Are you sure you want to clear the grid?')) {
+      return;
+    }
     onClearGrid();
     onMenuClose();
     logger.info('Grid cleared via menu clear component', {
