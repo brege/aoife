@@ -111,11 +111,44 @@ const musicProvider: MediaProviderConfig = {
   aspectRatio: '1:1',
 };
 
+const gamesProvider: MediaProviderConfig = {
+  type: 'games',
+  id: 'thegamesdb-games',
+  label: 'Games',
+  description: 'Search video games via The Games Database (TGDB) with platform filtering.',
+  resultLabel: 'game',
+  searchFields: [
+    {
+      id: 'query',
+      label: 'Game Title',
+      placeholder: 'Search for a game...',
+      type: 'text',
+      required: true,
+    },
+    {
+      id: 'platform',
+      label: 'Platform',
+      placeholder: 'Platform...',
+      type: 'text',
+      required: false,
+      description: 'Filter by platform (optional)',
+    },
+  ],
+  defaultSearchValues: {
+    query: '',
+    platform: '',
+  },
+  supportsCustomEntries: true,
+  supportsAlternateCovers: true,
+  aspectRatio: 'auto',
+};
+
 export const mediaProviders: Record<MediaType, MediaProviderConfig> = {
   movies: tmdbMoviesProvider,
   tv: tmdbTvProvider,
   books: booksProvider,
   music: musicProvider,
+  games: gamesProvider,
 };
 
 export function getMediaProvider(mediaType: MediaType): MediaProviderConfig {

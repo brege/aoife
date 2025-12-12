@@ -1,4 +1,5 @@
 import { BooksService } from './books';
+import { GamesService } from './games';
 import { MusicService } from './music';
 import type { MediaService } from './service';
 import { TMDBService } from './tmdb';
@@ -40,6 +41,10 @@ export function getMediaService(mediaType: MediaType): MediaService {
 
     case 'music':
       service = new MusicService();
+      break;
+
+    case 'games':
+      service = new GamesService();
       break;
 
     default:

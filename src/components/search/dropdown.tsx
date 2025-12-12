@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { GiFilmStrip } from 'react-icons/gi';
 import {
   PiBookOpenTextLight,
+  PiGameControllerBold,
   PiMusicNotesFill,
   PiTelevisionSimpleBold,
 } from 'react-icons/pi';
@@ -19,6 +20,7 @@ export const MEDIA_TYPE_ICONS: Record<MediaType, React.ReactNode> = {
   tv: <PiTelevisionSimpleBold />,
   books: <PiBookOpenTextLight />,
   music: <PiMusicNotesFill />,
+  games: <PiGameControllerBold />,
 };
 
 const MEDIA_TYPES: Array<{
@@ -30,6 +32,7 @@ const MEDIA_TYPES: Array<{
   { type: 'tv', label: 'TV Shows', icon: MEDIA_TYPE_ICONS.tv },
   { type: 'books', label: 'Books', icon: MEDIA_TYPE_ICONS.books },
   { type: 'music', label: 'Music', icon: MEDIA_TYPE_ICONS.music },
+  { type: 'games', label: 'Games', icon: MEDIA_TYPE_ICONS.games },
 ];
 
 const Dropdown: React.FC<DropdownProps> = ({ value, onChange }) => {

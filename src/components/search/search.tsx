@@ -18,6 +18,7 @@ import CloseIcon from '../ui/close';
 import AppHeader from '../ui/header';
 import Dropdown from './dropdown';
 import CustomMediaForm from './form';
+import { PlatformAutocomplete } from './platformautocomplete';
 
 const GRID_STORAGE_KEY = 'gridItems';
 const COLUMNS_STORAGE_KEY = 'gridColumns';
@@ -707,21 +708,37 @@ const MediaSearch: React.FC = () => {
                   value={selectedMediaType}
                   onChange={handleMediaTypeChange}
                 />
-                {provider.searchFields.map((field, index) => (
-                  <input
-                    key={field.id}
-                    ref={index === 0 ? searchInputRef : undefined}
-                    type="text"
-                    value={searchValues[field.id] ?? ''}
-                    onChange={(e) =>
-                      handleFieldChange(field.id, e.target.value)
-                    }
-                    placeholder={field.placeholder}
-                    aria-label={field.label}
-                    className="search-input"
-                    required={field.required}
-                  />
-                ))}
+                {provider.searchFields.map((field, index) => {
+                  if (field.id === 'platform' && selectedMediaType === 'games') {
+                    return (
+                      <PlatformAutocomplete
+                        key={field.id}
+                        value={searchValues[field.id] ?? ''}
+                        onChange={(value) =>
+                          handleFieldChange(field.id, value)
+                        }
+                        placeholder={field.placeholder}
+                        ariaLabel={field.label}
+                      />
+                    );
+                  }
+
+                  return (
+                    <input
+                      key={field.id}
+                      ref={index === 0 ? searchInputRef : undefined}
+                      type="text"
+                      value={searchValues[field.id] ?? ''}
+                      onChange={(e) =>
+                        handleFieldChange(field.id, e.target.value)
+                      }
+                      placeholder={field.placeholder}
+                      aria-label={field.label}
+                      className="search-input"
+                      required={field.required}
+                    />
+                  );
+                })}
                 <div className="search-buttons-row">
                   <button
                     type="submit"
