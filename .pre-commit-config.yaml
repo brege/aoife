@@ -1,0 +1,21 @@
+repos:
+  - repo: local
+    hooks:
+      - id: biome
+        name: biome
+        entry: npm run lint
+        language: system
+        types: [javascript]
+        files: \.(ts|tsx|js|jsx)$
+
+      - id: ruff-check
+        name: ruff check
+        entry: ruff check
+        language: system
+        types: [python]
+
+      - id: ruff-format
+        name: ruff format
+        entry: ruff format
+        language: system
+        types: [python]

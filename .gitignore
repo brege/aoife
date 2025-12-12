@@ -8,6 +8,9 @@ build/
 # api keys
 .env
 
+# test artifacts
+tools/cypress/fixtures/measurements.json
+
 # populated templates
 backend/systemd/aoife.service
 backend/nginx/aoife

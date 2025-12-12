@@ -1,17 +1,20 @@
-# <div align=center> aoife | [demo](https://aoife.brege.com/) </div>
+# <div align=center> aoife | [demo](https://aoife.brege.org) </div>
 
 A multi-media poster matrix for creating year-in-review galleries of movies, TV shows, books, music albums, video games, and more.
 
-Click [for the prototype](https://aoife.brege.com/).
+Play with [the prototype](https://aoife.brege.org)!
 
 ## Features
 
 - Search and collect posters using different media APIs
-- Dual-mode display: compact building mode and adaptive gallery view
-- Responsive grid layout
-- Alternate poster selection and editable title
+- Compact builder mode and adaptive, clean gallery view
+- Responsive and configurable grid layout 
+- Alternate poster selection and editable titles
 
 ## Examples
+
+Ever wanted to share a screenshot of your favorite things you read, saw or watched?
+**aoife** fetches poster and cover art into a minimalist grid to share with your friends.
 
 <table>
   <tr><td colspan="3"><b>Mobile</b></td></tr>
@@ -21,14 +24,11 @@ Click [for the prototype](https://aoife.brege.com/).
     <td><img src="docs/img/mobile-films.png" width="180"></td>
   </tr>
 </table>
-
-
 <br>
-
 <table>
   <tr><td colspan="3"><b>Desktop</b></td></tr>
   <tr>
-    <td colspan="2"><img src="docs/img/desktop-options.png" width="282"></td>
+    <td><img src="docs/img/desktop-options.png" width="282"></td>
     <td><img src="docs/img/desktop-builder.png" width="283"></td>
     <td><img src="docs/img/desktop-custom.png" width="283"></td>
   </tr>
@@ -45,11 +45,13 @@ npm install
 npm run dev
 ```
 
-This is a [Vite](https://vitejs.dev/) server in React, which will print the local URL and port number to console.
+This will start a [Vite](https://vitejs.dev/) React server, which will print the local URL and port number to console.
 
-Add your TMDB API key to `.env`:
+API Keys are not included in the repo. They are configured in a `.env` file.
+
 ```
-VITE_TMDB_API_KEY=your_key_here
+VITE_TMDB_API_KEY=abcdefghijklmnopqrstuvwxyz
+VITE_GAMESDB_PUBLIC_KEY=zyxwvutsrqponmlkjihgfedcba
 ```
 
 ## Development
