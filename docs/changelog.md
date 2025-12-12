@@ -1,5 +1,10 @@
 # Changelog
 
+## 2025-12-12
+
+- Added backend/ code for production mode using gunicorn at aoife.brege.org (protoype)
+- Wrangle dev-mode vs. production mode logic with environment variable and __stubs__
+
 ## 2025-12-11
 
 - Added video game support via The Games Database API with platform filtering and keyboard navigation

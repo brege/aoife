@@ -1,12 +1,19 @@
 # Roadmap
 
-**aoife** is a poster and artwork display tool. 
+**aoife** is a poster and artwork display tool.
 
-It currently supports movies, TV shows, books, music albums, video games, and custom media. Each can be searched via their respective APIs, alternate covers can be selected, and custom entries can be added with manual image uploads or image URLs.
+| Media Types  | APIs                      |
+|:-------------|:--------------------------|
+| movies       | TMDb                      |
+| TV shows     | TMDb                      |
+| books        | OpenLibrary, Google Books |
+| music albums | MusicBrainz               |
+| video games  | GamesDB                   |
+| custom media | Manual Upload, URL        |
 
-The goal is to support more media types without constant rebuilding of the core system. The architecture provides: a pluggable service layer, a responsive grid that adapts to different aspect ratios, and a custom entry fallback.
+The goal is to support more media types without constant rebuilding of the core system. 
 
-## Candidate Next Sources
+## Candidate Media Types
 
 - **Board games** - BoardGameGeek API
 - **Anime/Manga** - Jikan API
