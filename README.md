@@ -1,6 +1,8 @@
-# aoife
+# <div align=center> aoife | [demo](https://aoife.brege.com/) </div>
 
-A clean, responsive media collection tool for creating year-in-review, favorite films, etc galleries.
+A multi-media poster matrix for creating year-in-review galleries of movies, TV shows, books, music albums, video games, and more.
+
+Click [for the prototype](https://aoife.brege.com/).
 
 ## Features
 

@@ -1,0 +1,17 @@
+[Unit]
+Description=Gunicorn Service for Aoife Flask Backend
+Requires=nginx.service
+After=nginx.service
+
+[Service]
+User=__user__
+WorkingDirectory=__workdir__
+EnvironmentFile=__workdir__/.env
+ExecStart=__workdir__/.venv/bin/gunicorn --bind 127.0.0.1:__port__ --workers 2 backend:app
+Restart=always
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=aoife-backend
+
+[Install]
+WantedBy=multi-user.target

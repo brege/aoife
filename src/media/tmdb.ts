@@ -24,13 +24,11 @@ const buildPosterUrl = (
 };
 
 export class TMDBService extends MediaService {
-  private readonly apiKey: string;
-  private readonly baseUrl = 'https://api.themoviedb.org/3';
+  private readonly baseUrl = '/api/tmdb';
   private readonly mediaType: 'movies' | 'tv';
 
-  constructor(apiKey: string, mediaType: 'movies' | 'tv' = 'movies') {
+  constructor(_apiKey: string, mediaType: 'movies' | 'tv' = 'movies') {
     super();
-    this.apiKey = apiKey;
     this.mediaType = mediaType;
   }
 
@@ -62,10 +60,9 @@ export class TMDBService extends MediaService {
       }
 
       const response = await axios.get(
-        `${this.baseUrl}/${this.getSearchEndpoint()}`,
+        `${this.baseUrl}/3/${this.getSearchEndpoint()}`,
         {
           params: {
-            api_key: this.apiKey,
             query: query,
           },
         },
@@ -105,12 +102,7 @@ export class TMDBService extends MediaService {
   async getDetails(id: string | number): Promise<MediaSearchResult | null> {
     try {
       const response = await axios.get(
-        `${this.baseUrl}/${this.getDetailsEndpoint(id)}`,
-        {
-          params: {
-            api_key: this.apiKey,
-          },
-        },
+        `${this.baseUrl}/3/${this.getDetailsEndpoint(id)}`,
       );
 
       const data: TmdbDetails = response.data;
@@ -144,12 +136,7 @@ export class TMDBService extends MediaService {
   async getAlternateCovers(id: string | number): Promise<string[]> {
     try {
       const response = await axios.get(
-        `${this.baseUrl}/${this.getImagesEndpoint(id)}`,
-        {
-          params: {
-            api_key: this.apiKey,
-          },
-        },
+        `${this.baseUrl}/3/${this.getImagesEndpoint(id)}`,
       );
       return response.data.posters
         .map((poster: { file_path: string }) =>

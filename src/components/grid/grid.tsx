@@ -185,7 +185,6 @@ const Grid2x2: React.FC<Grid2x2Props> = ({
                       src={getCoverSrc(item) || ''}
                       alt={`${item.title} cover`}
                       className="grid-poster"
-                      style={{ title: `${item.title}${item.year ? ` (${item.year})` : ''}` }}
                       onLoad={(e) => handleImageLoad(item, e)}
                     />
                   </button>
@@ -254,7 +253,6 @@ const Grid2x2: React.FC<Grid2x2Props> = ({
                         src={getCoverSrc(media) || ''}
                         alt={`${media.title} cover`}
                         className="grid-poster"
-                        style={{ title: `${media.title}${media.year ? ` (${media.year})` : ''}` }}
                         onLoad={(e) => handleImageLoad(media, e)}
                       />
                     </button>

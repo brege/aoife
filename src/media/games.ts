@@ -35,7 +35,7 @@ type GameImagesResponse = {
 };
 
 export class GamesService extends MediaService {
-  private readonly proxyBaseUrl = '/api/games';
+  private readonly baseUrl = '/api/gamesdb';
   private readonly imageBaseUrl = 'https://cdn.thegamesdb.net/images';
 
   async search(values: MediaSearchValues): Promise<MediaSearchResult[]> {
@@ -49,7 +49,7 @@ export class GamesService extends MediaService {
       params.platform = values.platform;
     }
 
-    const response = await axios.get(`${this.proxyBaseUrl}/search`, {
+    const response = await axios.get(`${this.baseUrl}/Games/ByGameName`, {
       params,
     });
 
@@ -61,8 +61,8 @@ export class GamesService extends MediaService {
 
     const fetchImageUrl = async (gameId: number): Promise<string | null> => {
       try {
-        const imageResponse = await axios.get(`${this.proxyBaseUrl}/images`, {
-          params: { id: gameId },
+        const imageResponse = await axios.get(`${this.baseUrl}/Games/Images`, {
+          params: { games_id: gameId },
         });
 
         const imageData = imageResponse.data.data as GameImagesResponse['data'];
@@ -116,10 +116,7 @@ export class GamesService extends MediaService {
 
   async getDetails(id: string | number): Promise<MediaSearchResult | null> {
     const response = await axios.get(`${this.baseUrl}/Games/ByGameID`, {
-      params: {
-        id,
-        apikey: this.apiKey,
-      },
+      params: { id },
     });
 
     if (!response.data.data?.games || !response.data.data.games[0]) {
@@ -153,10 +150,7 @@ export class GamesService extends MediaService {
   async getAlternateCovers(id: string | number): Promise<string[]> {
     try {
       const response = await axios.get(`${this.baseUrl}/Games/Images`, {
-        params: {
-          games_id: id,
-          apikey: this.apiKey,
-        },
+        params: { games_id: id },
       });
 
       const imageData = response.data.data as GameImagesResponse['data'];
@@ -210,10 +204,7 @@ export class GamesService extends MediaService {
   ): Promise<string | null> {
     try {
       const response = await axios.get(`${this.baseUrl}/Games/Images`, {
-        params: {
-          games_id: id,
-          apikey: this.apiKey,
-        },
+        params: { games_id: id },
       });
 
       const imageData = response.data.data as GameImagesResponse['data'];

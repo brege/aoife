@@ -16,7 +16,6 @@ interface PlatformAutocompleteProps {
 }
 
 export function PlatformAutocomplete({
-  value,
   onChange,
   placeholder,
   ariaLabel,

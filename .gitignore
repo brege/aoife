@@ -1,10 +1,13 @@
-# Dependencies
+# dependencies
 node_modules/
 
-# Build outputs
+# build artifacts
 dist/
 build/
 
-# Environment variables
+# api keys
 .env
 
+# populated templates
+backend/systemd/aoife.service
+backend/nginx/aoife

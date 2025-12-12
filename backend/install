@@ -1,0 +1,34 @@
+#!/bin/bash
+set -e
+
+# create/update python venv
+echo "[install] Setting up Python environment..."
+if [ ! -d ".venv" ]; then
+  python3 -m venv .venv
+fi
+.venv/bin/python -m pip install -r requirements.txt -q
+
+# install/update systemd service
+echo "[install] Installing systemd service..."
+sudo cp systemd/aoife.service /etc/systemd/system/aoife.service
+sudo systemctl daemon-reload
+
+# install/update nginx config
+echo "[install] Installing nginx config..."
+sudo cp nginx/aoife /etc/nginx/sites-available/aoife
+sudo ln -sf /etc/nginx/sites-available/aoife /etc/nginx/sites-enabled/aoife
+
+# test and reload nginx
+echo "[install] Testing nginx config..."
+sudo nginx -t
+echo "[install] Reloading nginx..."
+sudo systemctl reload nginx
+
+# restart flask
+echo "[install] Restarting aoife service..."
+sudo systemctl restart aoife
+
+# verify
+echo ""
+echo "Installation complete!"
+echo ""

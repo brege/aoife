@@ -44,11 +44,11 @@ export class CustomMediaService extends MediaService {
     ];
   }
 
-  async getDetails(id: string | number): Promise<MediaSearchResult | null> {
+  async getDetails(_id: string | number): Promise<MediaSearchResult | null> {
     return null;
   }
 
-  async getAlternateCovers(id: string | number): Promise<string[]> {
+  async getAlternateCovers(_id: string | number): Promise<string[]> {
     return [];
   }
 }

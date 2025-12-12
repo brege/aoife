@@ -92,8 +92,9 @@ export function useCliBridge(props: CliBridgeProps) {
     }
 
     // Connect to WebSocket server
-    const ws = new WebSocket(`ws://localhost:${wsPort}`);
-    wsRef.current = ws;
+    try {
+      const ws = new WebSocket(`ws://localhost:${wsPort}`);
+      wsRef.current = ws;
 
     ws.onopen = () => {
       logger.info('[CLI-Bridge] Connected to CLI WebSocket server', {
@@ -183,18 +184,24 @@ export function useCliBridge(props: CliBridgeProps) {
       });
     };
 
-    ws.onerror = (error) => {
-      logger.error('[CLI-Bridge] WebSocket error', {
-        context: 'useCliBridge',
-        error: String(error),
-      });
-    };
+      ws.onerror = (error) => {
+        logger.error('[CLI-Bridge] WebSocket error', {
+          context: 'useCliBridge',
+          error: String(error),
+        });
+      };
 
-    return () => {
-      if (ws.readyState === WebSocket.OPEN) {
-        ws.close();
-      }
-    };
+      return () => {
+        if (ws.readyState === WebSocket.OPEN) {
+          ws.close();
+        }
+      };
+    } catch (error) {
+      logger.warn('[CLI-Bridge] WebSocket not available', {
+        context: 'useCliBridge',
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
   }, []); // Empty dependency array to prevent reconnections
 
   return {

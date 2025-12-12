@@ -417,6 +417,7 @@ export default defineConfig({
     },
   ],
   server: {
+    allowedHosts: ['aoife.brege.org'],
     proxy: {
       '/api': {
         target: 'https://api.themoviedb.org',
