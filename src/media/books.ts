@@ -82,15 +82,21 @@ export class BooksService extends MediaService {
     }
 
     try {
-      const [olPage0, olPage1, gbPage0, gbPage1] = await Promise.all([
+      const results = await Promise.allSettled([
         this.searchOpenLibrary(title, author, 10, 0),
         this.searchOpenLibrary(title, author, 10, 10),
         this.searchGoogleBooks(title, author, 10, 0),
         this.searchGoogleBooks(title, author, 10, 10),
       ]);
 
-      const openLibraryResults = [...olPage0, ...olPage1];
-      const googleBooksResults = [...gbPage0, ...gbPage1];
+      const openLibraryResults = [
+        ...(results[0].status === 'fulfilled' ? results[0].value : []),
+        ...(results[1].status === 'fulfilled' ? results[1].value : []),
+      ];
+      const googleBooksResults = [
+        ...(results[2].status === 'fulfilled' ? results[2].value : []),
+        ...(results[3].status === 'fulfilled' ? results[3].value : []),
+      ];
 
       const allResults = [...openLibraryResults, ...googleBooksResults];
 
@@ -168,7 +174,7 @@ export class BooksService extends MediaService {
     try {
       const searchUrl = `https://openlibrary.org/search.json?title=${encodeURIComponent(title)}&author=${encodeURIComponent(author)}&limit=${limit}&offset=${offset}`;
       const response = await axios.get<OpenLibrarySearchResponse>(searchUrl, {
-        timeout: 5000,
+        timeout: 2000,
       });
 
       return (response.data.docs || [])
@@ -211,7 +217,7 @@ export class BooksService extends MediaService {
       const query = `intitle:"${title}" inauthor:"${author}"`;
       const searchUrl = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=${limit}&startIndex=${offset}`;
       const response = await axios.get<GoogleBooksSearchResponse>(searchUrl, {
-        timeout: 5000,
+        timeout: 2000,
       });
 
       return (response.data.items || [])
@@ -270,7 +276,7 @@ export class BooksService extends MediaService {
         description?: string | { value: string };
         subjects?: string[];
       }>(workUrl, {
-        timeout: 5000,
+        timeout: 2000,
       });
 
       const work = response.data;
@@ -311,7 +317,7 @@ export class BooksService extends MediaService {
     try {
       const apiUrl = `https://www.googleapis.com/books/v1/volumes/${encodeURIComponent(volumeId)}`;
       const response = await axios.get<GoogleBooksVolume>(apiUrl, {
-        timeout: 5000,
+        timeout: 2000,
       });
 
       const volumeInfo = response.data.volumeInfo;
