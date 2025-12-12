@@ -2,6 +2,9 @@ from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 import requests
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 app = Flask(__name__, static_folder="dist", static_url_path="")
 CORS(app)
@@ -34,19 +37,21 @@ def proxy_tmdb(subpath):
 # Proxy GamesDB requests
 @app.route("/api/gamesdb/<path:subpath>", methods=["GET", "POST"])
 def proxy_gamesdb(subpath):
-    headers = {"Client-ID": GAMESDB_KEY}
     try:
         if request.method == "POST":
+            params = dict(request.args)
+            params["apikey"] = GAMESDB_KEY
             resp = requests.post(
                 f"https://api.thegamesdb.net/{subpath}",
                 json=request.json,
-                headers=headers,
+                params=params,
             )
         else:
+            params = dict(request.args)
+            params["apikey"] = GAMESDB_KEY
             resp = requests.get(
                 f"https://api.thegamesdb.net/{subpath}",
-                params=dict(request.args),
-                headers=headers,
+                params=params,
             )
         return jsonify(resp.json()), resp.status_code
     except Exception as e:

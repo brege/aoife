@@ -438,6 +438,38 @@ export default defineConfig({
               });
           }
         });
+
+        server.middlewares.use('/api/gamesdb', (req, res) => {
+          const apiKey =
+            '46deb66fcbd4eb0d8887e1ac84876fe3b6cacfb956312e5d6e3e37d8ef798728';
+          const url = new URL(req.url || '', 'http://localhost');
+          const subpath = url.pathname.replace('/api/gamesdb', '');
+          const params = new URLSearchParams(url.search);
+          params.append('apikey', apiKey);
+
+          const fullUrl = `https://api.thegamesdb.net${subpath}?${params.toString()}`;
+
+          https
+            .get(fullUrl, (apiRes: IncomingMessage) => {
+              let data = '';
+              apiRes.on('data', (chunk: string) => {
+                data += chunk;
+              });
+              apiRes.on('end', () => {
+                res.writeHead(apiRes.statusCode || 200, {
+                  'Content-Type': 'application/json',
+                });
+                res.end(data);
+              });
+            })
+            .on('error', (err: Error) => {
+              console.error('[GAMESDB PROXY ERROR]', err);
+              res.writeHead(500, { 'Content-Type': 'application/json' });
+              res.end(
+                JSON.stringify({ error: 'Failed to fetch from GamesDB' }),
+              );
+            });
+        });
       },
     },
   ],

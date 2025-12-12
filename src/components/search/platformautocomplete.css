@@ -19,10 +19,16 @@
 }
 
 .platform-option {
+  display: block;
+  width: 100%;
   padding: 12px 16px;
   cursor: pointer;
   transition: background-color 0.2s;
   color: #e0e0e0;
+  text-align: left;
+  border: none;
+  background-color: inherit;
+  font: inherit;
 }
 
 .platform-option:hover {

@@ -27,12 +27,14 @@ export function PlatformAutocomplete({
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const optionRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const optionRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
   useEffect(() => {
     const fetchPlatforms = async () => {
       try {
-        const response = await axios.get('/api/games/platforms');
+        const response = await axios.get(
+          '/api/gamesdb/v1/Platforms?page_size=100',
+        );
         const platformsData = response.data.data.platforms;
         const platformList = Object.values(platformsData).map(
           (platform: unknown) => ({

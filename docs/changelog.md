@@ -3,7 +3,7 @@
 ## 2025-12-12
 
 - Added backend/ code for production mode using gunicorn at aoife.brege.org (protoype)
-- Wrangle dev-mode vs. production mode logic with environment variable and __stubs__
+- Wrangle dev-mode vs. production mode logic with environment variable, __stubs__, and proper API endpoints
 
 ## 2025-12-11
 
