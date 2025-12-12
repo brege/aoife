@@ -5,6 +5,7 @@ import type { MediaType } from '../../media/types';
 import { type MediaItem, TMDB_IMAGE_BASE } from '../../media/types';
 import { MEDIA_TYPE_ICONS } from '../search/dropdown';
 import CloseIcon from '../ui/close';
+import { CustomImage } from '../ui/customimage';
 
 interface Grid2x2Props {
   items: MediaItem[];
@@ -180,11 +181,11 @@ const Grid2x2: React.FC<Grid2x2Props> = ({
                     onClick={() => onPosterClick(item)}
                     aria-label={`View poster for ${item.title}`}
                   >
-                    <img
+                    <CustomImage
                       src={getCoverSrc(item) || ''}
                       alt={`${item.title} cover`}
                       className="grid-poster"
-                      title={`${item.title}${item.year ? ` (${item.year})` : ''}`}
+                      style={{ title: `${item.title}${item.year ? ` (${item.year})` : ''}` }}
                       onLoad={(e) => handleImageLoad(item, e)}
                     />
                   </button>
@@ -249,11 +250,11 @@ const Grid2x2: React.FC<Grid2x2Props> = ({
                       onClick={() => onPosterClick(media)}
                       aria-label={`View poster for ${media.title}`}
                     >
-                      <img
+                      <CustomImage
                         src={getCoverSrc(media) || ''}
                         alt={`${media.title} cover`}
                         className="grid-poster"
-                        title={`${media.title}${media.year ? ` (${media.year})` : ''}`}
+                        style={{ title: `${media.title}${media.year ? ` (${media.year})` : ''}` }}
                         onLoad={(e) => handleImageLoad(media, e)}
                       />
                     </button>

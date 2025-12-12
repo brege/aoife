@@ -1,11 +1,11 @@
 import type React from 'react';
 import { useEffect, useRef, useState } from 'react';
+import { MdDashboardCustomize } from 'react-icons/md';
 import { GiFilmStrip } from 'react-icons/gi';
 import {
   PiBookOpenTextLight,
   PiGameControllerBold,
   PiMusicNotesFill,
-  PiPlus,
   PiTelevisionSimpleBold,
 } from 'react-icons/pi';
 import type { MediaType } from '../../media/types';
@@ -22,7 +22,7 @@ export const MEDIA_TYPE_ICONS: Record<MediaType, React.ReactNode> = {
   books: <PiBookOpenTextLight />,
   music: <PiMusicNotesFill />,
   games: <PiGameControllerBold />,
-  custom: <PiPlus />,
+  custom: <MdDashboardCustomize />,
 };
 
 const MEDIA_TYPES: Array<{

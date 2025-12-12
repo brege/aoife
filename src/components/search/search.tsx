@@ -1,5 +1,6 @@
 import type React from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { MdDriveFolderUpload } from 'react-icons/md';
 import '../../app/styles/global.css';
 import './search.css';
 import { type CliMenuState, useCliBridge } from '../../lib/api';
@@ -7,6 +8,7 @@ import useEscapeKey from '../../lib/escape';
 import logger from '../../lib/logger';
 import { getMediaService } from '../../media/factory';
 import { getMediaProvider } from '../../media/providers';
+import { storeImage } from '../../lib/indexeddb';
 import type {
   MediaItem,
   MediaSearchValues,
@@ -207,7 +209,10 @@ const MediaSearch: React.FC = () => {
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
-    await runSearch(searchValues);
+    const results = await runSearch(searchValues);
+    if (selectedMediaType === 'custom' && results.length > 0) {
+      handleAddMedia(results[0], results);
+    }
   };
 
   const handleFieldChange = (fieldId: string, value: string) => {
@@ -217,9 +222,31 @@ const MediaSearch: React.FC = () => {
     }));
   };
 
+  const handleCoverImageUpload = useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (file) {
+        const imageId = `img-${Date.now()}-${file.name}`;
+        await storeImage(imageId, file);
+        handleFieldChange('cover', imageId);
+        if (!searchValues.query) {
+          const nameWithoutExt = file.name.replace(/\.[^/.]+$/, '');
+          handleFieldChange('query', nameWithoutExt);
+        }
+      }
+    },
+    [searchValues.query],
+  );
+
   const handleAddMedia = useCallback(
     (media: MediaItem, availableCovers?: MediaItem[]) => {
-      const mediaWithCovers = { ...media };
+      let mediaWithCovers = { ...media };
+
+      if (selectedMediaType === 'custom' && searchValues.cover?.startsWith('img-')) {
+        mediaWithCovers.coverUrl = searchValues.cover;
+        mediaWithCovers.coverThumbnailUrl = searchValues.cover;
+      }
+
       const coversSource = availableCovers ?? searchResults;
       if (coversSource.length > 0) {
         const coverUrls = coversSource
@@ -253,7 +280,7 @@ const MediaSearch: React.FC = () => {
         },
       );
     },
-    [gridItems, provider.defaultSearchValues, searchResults, persistGrid],
+    [gridItems, provider.defaultSearchValues, searchResults, persistGrid, selectedMediaType, searchValues],
   );
 
   const handleRemoveMedia = useCallback(
@@ -669,6 +696,44 @@ const MediaSearch: React.FC = () => {
                     );
                   }
 
+                  if (field.id === 'cover' && selectedMediaType === 'custom') {
+                    return (
+                      <div key={field.id} className="input-with-button">
+                        <input
+                          ref={index === 0 ? searchInputRef : undefined}
+                          type="text"
+                          value={searchValues[field.id] ?? ''}
+                          onChange={(e) =>
+                            handleFieldChange(field.id, e.target.value)
+                          }
+                          placeholder={field.placeholder}
+                          aria-label={field.label}
+                          className="search-input"
+                          required={field.required}
+                        />
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleCoverImageUpload}
+                          style={{ display: 'none' }}
+                          id="cover-file-input"
+                          aria-label="Upload cover image"
+                        />
+                        <button
+                          type="button"
+                          onClick={() =>
+                            document.getElementById('cover-file-input')?.click()
+                          }
+                          className="icon-button"
+                          aria-label="Upload image"
+                          title="Upload image"
+                        >
+                          <MdDriveFolderUpload size={20} />
+                        </button>
+                      </div>
+                    );
+                  }
+
                   return (
                     <input
                       key={field.id}
@@ -691,18 +756,25 @@ const MediaSearch: React.FC = () => {
                     className="search-button"
                     disabled={isLoading}
                     onClick={() => {
+                      const action = selectedMediaType === 'custom' ? 'Upload' : 'Search';
                       logger.info(
-                        `SEARCH: Searching for "${formatSearchSummary(searchValues, provider.searchFields)}"`,
+                        `${action}: ${formatSearchSummary(searchValues, provider.searchFields)}`,
                         {
                           context: 'MediaSearch.SearchButton',
-                          action: 'search_submit',
+                          action: selectedMediaType === 'custom' ? 'custom_upload' : 'search_submit',
                           values: searchValues,
                           timestamp: Date.now(),
                         },
                       );
                     }}
                   >
-                    {isLoading ? 'Searching...' : 'Search'}
+                    {selectedMediaType === 'custom'
+                      ? isLoading
+                        ? 'Uploading...'
+                        : 'Upload'
+                      : isLoading
+                        ? 'Searching...'
+                        : 'Search'}
                   </button>
                 </div>
               </form>
@@ -710,7 +782,7 @@ const MediaSearch: React.FC = () => {
           </div>
           {isLoading && <p>Loading...</p>}
           {error && <p className="error">{error}</p>}
-          {searchResults.length > 0 && (
+          {searchResults.length > 0 && selectedMediaType !== 'custom' && (
             <div className="search-results">
               <button
                 type="button"

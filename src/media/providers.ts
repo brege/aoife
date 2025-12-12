@@ -153,16 +153,16 @@ const customProvider: MediaProviderConfig = {
     {
       id: 'query',
       label: 'Name',
-      placeholder: 'Name...',
+      placeholder: 'Name (optional)',
       type: 'text',
-      required: true,
+      required: false,
     },
     {
       id: 'cover',
-      label: 'Cover URL',
-      placeholder: 'Image URL...',
+      label: 'Cover Image',
+      placeholder: 'Image URL or upload...',
       type: 'text',
-      required: true,
+      required: false,
     },
   ],
   defaultSearchValues: {
