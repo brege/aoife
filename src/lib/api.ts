@@ -85,6 +85,11 @@ export function useCliBridge(props: CliBridgeProps) {
   propsRef.current = props;
 
   useEffect(() => {
+    // Only connect to CLI bridge in development
+    if (!import.meta.env.DEV) {
+      return;
+    }
+
     const wsPort = import.meta.env.VITE_WS_PORT ?? '8080';
     // Only connect if not already connected
     if (wsRef.current?.readyState === WebSocket.OPEN) {
