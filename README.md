@@ -28,6 +28,7 @@ A clean, responsive media collection tool for creating year-in-review, favorite 
   <tr>
     <td colspan="2"><img src="docs/img/desktop-options.png" width="282"></td>
     <td><img src="docs/img/desktop-builder.png" width="283"></td>
+    <td><img src="docs/img/desktop-custom.png" width="283"></td>
   </tr>
 </table>
 
