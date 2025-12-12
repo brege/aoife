@@ -1,6 +1,5 @@
 import type React from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { IoSettingsOutline } from 'react-icons/io5';
 import '../../app/styles/global.css';
 import './search.css';
 import { type CliMenuState, useCliBridge } from '../../lib/api';
@@ -17,7 +16,6 @@ import Grid2x2 from '../grid/grid';
 import CloseIcon from '../ui/close';
 import AppHeader from '../ui/header';
 import Dropdown from './dropdown';
-import CustomMediaForm from './form';
 import { PlatformAutocomplete } from './platformautocomplete';
 
 const GRID_STORAGE_KEY = 'gridItems';
@@ -90,7 +88,6 @@ const MediaSearch: React.FC = () => {
     }
     return 2;
   });
-  const [showCustomMediaForm, setShowCustomMediaForm] = useState(false);
   const [lastSearchSummary, setLastSearchSummary] = useState('');
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [isBuilderMode, setIsBuilderMode] = useState(true);
@@ -143,11 +140,6 @@ const MediaSearch: React.FC = () => {
     setSearchResultAspectRatios({});
   };
   useEscapeKey(closeSearchResults);
-
-  const closeCustomMediaForm = useCallback(() => {
-    setShowCustomMediaForm(false);
-  }, []);
-  useEscapeKey(closeCustomMediaForm);
 
   const handleSearchResultImageLoad = useCallback(
     (
@@ -370,29 +362,6 @@ const MediaSearch: React.FC = () => {
     [persistGrid],
   );
 
-  const handleAddCustomMedia = (media: {
-    title: string;
-    year: string;
-    coverUrl: string;
-  }) => {
-    const parsedYear = media.year ? parseInt(media.year, 10) : undefined;
-    const newMedia: MediaItem = {
-      id: Date.now(),
-      type: selectedMediaType,
-      title: media.title,
-      subtitle: media.year,
-      year: Number.isNaN(parsedYear) ? undefined : parsedYear,
-      coverUrl: media.coverUrl,
-      coverThumbnailUrl: media.coverUrl,
-      customEntry: true,
-      metadata: {
-        year: media.year,
-      },
-    };
-
-    handleAddMedia(newMedia);
-    setShowCustomMediaForm(false);
-  };
 
   const handleCliSearch = async (query: string, mediaType?: string) => {
     if (!query) return;
@@ -528,24 +497,6 @@ const MediaSearch: React.FC = () => {
     return debugInfo;
   }, []);
 
-  const handleCustomFormOverlayClick = useCallback(
-    (event: React.MouseEvent<HTMLDivElement>) => {
-      if (event.target === event.currentTarget) {
-        closeCustomMediaForm();
-      }
-    },
-    [closeCustomMediaForm],
-  );
-
-  const handleCustomFormOverlayKeyDown = useCallback(
-    (event: React.KeyboardEvent<HTMLDivElement>) => {
-      if (event.key === 'Escape') {
-        event.preventDefault();
-        closeCustomMediaForm();
-      }
-    },
-    [closeCustomMediaForm],
-  );
 
   const handleCliAddFirstResult = async (query: string) => {
     if (!query) return;
@@ -632,11 +583,6 @@ const MediaSearch: React.FC = () => {
     }
   }, [isBuilderMode]);
 
-  useEffect(() => {
-    if (!isBuilderMode) {
-      setShowCustomMediaForm(false);
-    }
-  }, [isBuilderMode]);
 
   const handleBuilderModeToggle = useCallback((enabled: boolean) => {
     setIsBuilderMode(enabled);
@@ -758,16 +704,6 @@ const MediaSearch: React.FC = () => {
                   >
                     {isLoading ? 'Searching...' : 'Search'}
                   </button>
-                  {!searchResults.length && (
-                    <button
-                      type="button"
-                      onClick={() => setShowCustomMediaForm(true)}
-                      className="add-custom-button"
-                      aria-label="Add custom media"
-                    >
-                      <IoSettingsOutline size={28} />
-                    </button>
-                  )}
                 </div>
               </form>
             )}
@@ -916,26 +852,6 @@ const MediaSearch: React.FC = () => {
           )}
         </div>
       </div>
-
-      {showCustomMediaForm && (
-        <div
-          className="custom-form-overlay"
-          role="dialog"
-          aria-modal="true"
-          tabIndex={-1}
-          aria-label="Custom media form"
-          onClick={handleCustomFormOverlayClick}
-          onKeyDown={handleCustomFormOverlayKeyDown}
-        >
-          <div className="custom-form-container">
-            <CustomMediaForm
-              mediaType={selectedMediaType}
-              onAddCustomMedia={handleAddCustomMedia}
-              onCancel={closeCustomMediaForm}
-            />
-          </div>
-        </div>
-      )}
     </div>
   );
 };

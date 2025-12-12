@@ -5,6 +5,7 @@ import {
   PiBookOpenTextLight,
   PiGameControllerBold,
   PiMusicNotesFill,
+  PiPlus,
   PiTelevisionSimpleBold,
 } from 'react-icons/pi';
 import type { MediaType } from '../../media/types';
@@ -21,6 +22,7 @@ export const MEDIA_TYPE_ICONS: Record<MediaType, React.ReactNode> = {
   books: <PiBookOpenTextLight />,
   music: <PiMusicNotesFill />,
   games: <PiGameControllerBold />,
+  custom: <PiPlus />,
 };
 
 const MEDIA_TYPES: Array<{
@@ -33,6 +35,7 @@ const MEDIA_TYPES: Array<{
   { type: 'books', label: 'Books', icon: MEDIA_TYPE_ICONS.books },
   { type: 'music', label: 'Music', icon: MEDIA_TYPE_ICONS.music },
   { type: 'games', label: 'Games', icon: MEDIA_TYPE_ICONS.games },
+  { type: 'custom', label: 'Custom', icon: MEDIA_TYPE_ICONS.custom },
 ];
 
 const Dropdown: React.FC<DropdownProps> = ({ value, onChange }) => {

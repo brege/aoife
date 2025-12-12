@@ -143,12 +143,44 @@ const gamesProvider: MediaProviderConfig = {
   aspectRatio: 'auto',
 };
 
+const customProvider: MediaProviderConfig = {
+  type: 'custom',
+  id: 'custom-media',
+  label: 'Custom',
+  description: 'Add your own media with a name and cover image.',
+  resultLabel: 'custom item',
+  searchFields: [
+    {
+      id: 'query',
+      label: 'Name',
+      placeholder: 'Name...',
+      type: 'text',
+      required: true,
+    },
+    {
+      id: 'cover',
+      label: 'Cover URL',
+      placeholder: 'Image URL...',
+      type: 'text',
+      required: true,
+    },
+  ],
+  defaultSearchValues: {
+    query: '',
+    cover: '',
+  },
+  supportsCustomEntries: false,
+  supportsAlternateCovers: false,
+  aspectRatio: 'auto',
+};
+
 export const mediaProviders: Record<MediaType, MediaProviderConfig> = {
   movies: tmdbMoviesProvider,
   tv: tmdbTvProvider,
   books: booksProvider,
   music: musicProvider,
   games: gamesProvider,
+  custom: customProvider,
 };
 
 export function getMediaProvider(mediaType: MediaType): MediaProviderConfig {
