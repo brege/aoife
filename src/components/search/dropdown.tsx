@@ -1,7 +1,7 @@
 import type React from 'react';
 import { useEffect, useRef, useState } from 'react';
-import { MdDashboardCustomize } from 'react-icons/md';
 import { GiFilmStrip } from 'react-icons/gi';
+import { MdDashboardCustomize } from 'react-icons/md';
 import {
   PiBookOpenTextLight,
   PiGameControllerBold,

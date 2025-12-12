@@ -1,4 +1,5 @@
-import https from 'https';
+import type { IncomingMessage } from 'node:http';
+import https from 'node:https';
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
 import { type WebSocket, WebSocketServer } from 'ws';
@@ -329,13 +330,22 @@ export default defineConfig({
 
         server.middlewares.use('/api/games/search', (req, res) => {
           if (req.method === 'GET') {
-            const apiKey = '46deb66fcbd4eb0d8887e1ac84876fe3b6cacfb956312e5d6e3e37d8ef798728';
-            const query = new URL(req.url || '', 'http://localhost').searchParams.get('q');
-            const platform = new URL(req.url || '', 'http://localhost').searchParams.get('platform');
+            const apiKey =
+              '46deb66fcbd4eb0d8887e1ac84876fe3b6cacfb956312e5d6e3e37d8ef798728';
+            const query = new URL(
+              req.url || '',
+              'http://localhost',
+            ).searchParams.get('q');
+            const platform = new URL(
+              req.url || '',
+              'http://localhost',
+            ).searchParams.get('platform');
 
             if (!query) {
               res.writeHead(400, { 'Content-Type': 'application/json' });
-              res.end(JSON.stringify({ error: 'Query parameter "q" is required' }));
+              res.end(
+                JSON.stringify({ error: 'Query parameter "q" is required' }),
+              );
               return;
             }
 
@@ -345,72 +355,87 @@ export default defineConfig({
               url += `&filter[platform]=${encodeURIComponent(platform)}`;
             }
 
-            https.get(url, (apiRes: any) => {
-              let data = '';
-              apiRes.on('data', (chunk: string) => {
-                data += chunk;
+            https
+              .get(url, (apiRes: IncomingMessage) => {
+                let data = '';
+                apiRes.on('data', (chunk: string) => {
+                  data += chunk;
+                });
+                apiRes.on('end', () => {
+                  res.writeHead(200, { 'Content-Type': 'application/json' });
+                  res.end(data);
+                });
+              })
+              .on('error', (err: Error) => {
+                console.error('[GAMES SEARCH ERROR]', err);
+                res.writeHead(500, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: 'Failed to search games' }));
               });
-              apiRes.on('end', () => {
-                res.writeHead(200, { 'Content-Type': 'application/json' });
-                res.end(data);
-              });
-            }).on('error', (err: any) => {
-              console.error('[GAMES SEARCH ERROR]', err);
-              res.writeHead(500, { 'Content-Type': 'application/json' });
-              res.end(JSON.stringify({ error: 'Failed to search games' }));
-            });
           }
         });
 
         server.middlewares.use('/api/games/platforms', (req, res) => {
           if (req.method === 'GET') {
-            const apiKey = '46deb66fcbd4eb0d8887e1ac84876fe3b6cacfb956312e5d6e3e37d8ef798728';
+            const apiKey =
+              '46deb66fcbd4eb0d8887e1ac84876fe3b6cacfb956312e5d6e3e37d8ef798728';
             const url = `https://api.thegamesdb.net/v1/Platforms?apikey=${apiKey}&page_size=100`;
 
-            https.get(url, (apiRes: any) => {
-              let data = '';
-              apiRes.on('data', (chunk: string) => {
-                data += chunk;
+            https
+              .get(url, (apiRes: IncomingMessage) => {
+                let data = '';
+                apiRes.on('data', (chunk: string) => {
+                  data += chunk;
+                });
+                apiRes.on('end', () => {
+                  res.writeHead(200, { 'Content-Type': 'application/json' });
+                  res.end(data);
+                });
+              })
+              .on('error', (err: Error) => {
+                console.error('[PLATFORMS ERROR]', err);
+                res.writeHead(500, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: 'Failed to fetch platforms' }));
               });
-              apiRes.on('end', () => {
-                res.writeHead(200, { 'Content-Type': 'application/json' });
-                res.end(data);
-              });
-            }).on('error', (err: any) => {
-              console.error('[PLATFORMS ERROR]', err);
-              res.writeHead(500, { 'Content-Type': 'application/json' });
-              res.end(JSON.stringify({ error: 'Failed to fetch platforms' }));
-            });
           }
         });
 
         server.middlewares.use('/api/games/images', (req, res) => {
           if (req.method === 'GET') {
-            const apiKey = '46deb66fcbd4eb0d8887e1ac84876fe3b6cacfb956312e5d6e3e37d8ef798728';
-            const gameId = new URL(req.url || '', 'http://localhost').searchParams.get('id');
+            const apiKey =
+              '46deb66fcbd4eb0d8887e1ac84876fe3b6cacfb956312e5d6e3e37d8ef798728';
+            const gameId = new URL(
+              req.url || '',
+              'http://localhost',
+            ).searchParams.get('id');
 
             if (!gameId) {
               res.writeHead(400, { 'Content-Type': 'application/json' });
-              res.end(JSON.stringify({ error: 'Query parameter "id" is required' }));
+              res.end(
+                JSON.stringify({ error: 'Query parameter "id" is required' }),
+              );
               return;
             }
 
             const url = `https://api.thegamesdb.net/v1/Games/Images?games_id=${gameId}&apikey=${apiKey}`;
 
-            https.get(url, (apiRes: any) => {
-              let data = '';
-              apiRes.on('data', (chunk: string) => {
-                data += chunk;
+            https
+              .get(url, (apiRes: IncomingMessage) => {
+                let data = '';
+                apiRes.on('data', (chunk: string) => {
+                  data += chunk;
+                });
+                apiRes.on('end', () => {
+                  res.writeHead(200, { 'Content-Type': 'application/json' });
+                  res.end(data);
+                });
+              })
+              .on('error', (err: Error) => {
+                console.error('[GAMES IMAGES ERROR]', err);
+                res.writeHead(500, { 'Content-Type': 'application/json' });
+                res.end(
+                  JSON.stringify({ error: 'Failed to fetch game images' }),
+                );
               });
-              apiRes.on('end', () => {
-                res.writeHead(200, { 'Content-Type': 'application/json' });
-                res.end(data);
-              });
-            }).on('error', (err: any) => {
-              console.error('[GAMES IMAGES ERROR]', err);
-              res.writeHead(500, { 'Content-Type': 'application/json' });
-              res.end(JSON.stringify({ error: 'Failed to fetch game images' }));
-            });
           }
         });
       },

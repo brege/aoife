@@ -1,6 +1,6 @@
-import { getImage, createBlobURL } from '../lib/indexeddb';
+import { createBlobURL, getImage } from '../lib/indexeddb';
 import { type MediaSearchResult, MediaService } from './service';
-import { type MediaSearchValues } from './types';
+import type { MediaSearchValues } from './types';
 
 export class CustomMediaService extends MediaService {
   async search(values: MediaSearchValues): Promise<MediaSearchResult[]> {

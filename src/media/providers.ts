@@ -115,7 +115,8 @@ const gamesProvider: MediaProviderConfig = {
   type: 'games',
   id: 'thegamesdb-games',
   label: 'Games',
-  description: 'Search video games via The Games Database (TGDB) with platform filtering.',
+  description:
+    'Search video games via The Games Database (TGDB) with platform filtering.',
   resultLabel: 'game',
   searchFields: [
     {

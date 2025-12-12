@@ -25,7 +25,10 @@ const initDB = async (): Promise<IDBDatabase> => {
   });
 };
 
-export const storeImage = async (imageId: string, blob: Blob): Promise<void> => {
+export const storeImage = async (
+  imageId: string,
+  blob: Blob,
+): Promise<void> => {
   const database = await initDB();
   return new Promise((resolve, reject) => {
     const transaction = database.transaction([STORE_NAME], 'readwrite');

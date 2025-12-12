@@ -5,10 +5,10 @@ import '../../app/styles/global.css';
 import './search.css';
 import { type CliMenuState, useCliBridge } from '../../lib/api';
 import useEscapeKey from '../../lib/escape';
+import { storeImage } from '../../lib/indexeddb';
 import logger from '../../lib/logger';
 import { getMediaService } from '../../media/factory';
 import { getMediaProvider } from '../../media/providers';
-import { storeImage } from '../../lib/indexeddb';
 import type {
   MediaItem,
   MediaSearchValues,
@@ -215,12 +215,12 @@ const MediaSearch: React.FC = () => {
     }
   };
 
-  const handleFieldChange = (fieldId: string, value: string) => {
+  const handleFieldChange = useCallback((fieldId: string, value: string) => {
     setSearchValues((prev) => ({
       ...prev,
       [fieldId]: value,
     }));
-  };
+  }, []);
 
   const handleCoverImageUpload = useCallback(
     async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -235,14 +235,17 @@ const MediaSearch: React.FC = () => {
         }
       }
     },
-    [searchValues.query],
+    [searchValues.query, handleFieldChange],
   );
 
   const handleAddMedia = useCallback(
     (media: MediaItem, availableCovers?: MediaItem[]) => {
-      let mediaWithCovers = { ...media };
+      const mediaWithCovers = { ...media };
 
-      if (selectedMediaType === 'custom' && searchValues.cover?.startsWith('img-')) {
+      if (
+        selectedMediaType === 'custom' &&
+        searchValues.cover?.startsWith('img-')
+      ) {
         mediaWithCovers.coverUrl = searchValues.cover;
         mediaWithCovers.coverThumbnailUrl = searchValues.cover;
       }
@@ -280,7 +283,14 @@ const MediaSearch: React.FC = () => {
         },
       );
     },
-    [gridItems, provider.defaultSearchValues, searchResults, persistGrid, selectedMediaType, searchValues],
+    [
+      gridItems,
+      provider.defaultSearchValues,
+      searchResults,
+      persistGrid,
+      selectedMediaType,
+      searchValues,
+    ],
   );
 
   const handleRemoveMedia = useCallback(
@@ -388,7 +398,6 @@ const MediaSearch: React.FC = () => {
     },
     [persistGrid],
   );
-
 
   const handleCliSearch = async (query: string, mediaType?: string) => {
     if (!query) return;
@@ -524,7 +533,6 @@ const MediaSearch: React.FC = () => {
     return debugInfo;
   }, []);
 
-
   const handleCliAddFirstResult = async (query: string) => {
     if (!query) return;
     const primaryFieldId = provider.searchFields[0]?.id ?? 'query';
@@ -610,7 +618,6 @@ const MediaSearch: React.FC = () => {
     }
   }, [isBuilderMode]);
 
-
   const handleBuilderModeToggle = useCallback((enabled: boolean) => {
     setIsBuilderMode(enabled);
     logger.info(
@@ -682,14 +689,15 @@ const MediaSearch: React.FC = () => {
                   onChange={handleMediaTypeChange}
                 />
                 {provider.searchFields.map((field, index) => {
-                  if (field.id === 'platform' && selectedMediaType === 'games') {
+                  if (
+                    field.id === 'platform' &&
+                    selectedMediaType === 'games'
+                  ) {
                     return (
                       <PlatformAutocomplete
                         key={field.id}
                         value={searchValues[field.id] ?? ''}
-                        onChange={(value) =>
-                          handleFieldChange(field.id, value)
-                        }
+                        onChange={(value) => handleFieldChange(field.id, value)}
                         placeholder={field.placeholder}
                         ariaLabel={field.label}
                       />
@@ -756,12 +764,16 @@ const MediaSearch: React.FC = () => {
                     className="search-button"
                     disabled={isLoading}
                     onClick={() => {
-                      const action = selectedMediaType === 'custom' ? 'Upload' : 'Search';
+                      const action =
+                        selectedMediaType === 'custom' ? 'Upload' : 'Search';
                       logger.info(
                         `${action}: ${formatSearchSummary(searchValues, provider.searchFields)}`,
                         {
                           context: 'MediaSearch.SearchButton',
-                          action: selectedMediaType === 'custom' ? 'custom_upload' : 'search_submit',
+                          action:
+                            selectedMediaType === 'custom'
+                              ? 'custom_upload'
+                              : 'search_submit',
                           values: searchValues,
                           timestamp: Date.now(),
                         },

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { getImage, createBlobURL, revokeBlobURL } from '../../lib/indexeddb';
+import { createBlobURL, getImage, revokeBlobURL } from '../../lib/indexeddb';
 
 interface CustomImageProps {
   src?: string;

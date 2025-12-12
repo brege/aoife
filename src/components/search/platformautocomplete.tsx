@@ -1,5 +1,5 @@
-import { useEffect, useState, useRef, useCallback } from 'react';
 import axios from 'axios';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useDropdownNavigation } from '../../lib/escape';
 import './platformautocomplete.css';
 
@@ -35,7 +35,7 @@ export function PlatformAutocomplete({
         const response = await axios.get('/api/games/platforms');
         const platformsData = response.data.data.platforms;
         const platformList = Object.values(platformsData).map(
-          (platform: any) => ({
+          (platform: unknown) => ({
             id: (platform as Platform).id.toString(),
             name: (platform as Platform).name,
           }),
@@ -65,13 +65,16 @@ export function PlatformAutocomplete({
     setInputValue(e.target.value);
   };
 
-  const handleSelectPlatform = (platform: Platform) => {
-    setInputValue(platform.name);
-    onChange(platform.id);
-    setShowDropdown(false);
-  };
+  const handleSelectPlatform = useCallback(
+    (platform: Platform) => {
+      setInputValue(platform.name);
+      onChange(platform.id);
+      setShowDropdown(false);
+    },
+    [onChange],
+  );
 
-  const handleClickOutside = (e: MouseEvent) => {
+  const handleClickOutside = useCallback((e: MouseEvent) => {
     if (
       dropdownRef.current &&
       !dropdownRef.current.contains(e.target as Node) &&
@@ -80,7 +83,7 @@ export function PlatformAutocomplete({
     ) {
       setShowDropdown(false);
     }
-  };
+  }, []);
 
   const handleMoveDown = useCallback(() => {
     if (!showDropdown) {
@@ -100,7 +103,7 @@ export function PlatformAutocomplete({
     if (highlightedIndex >= 0 && highlightedIndex < filteredPlatforms.length) {
       handleSelectPlatform(filteredPlatforms[highlightedIndex]);
     }
-  }, [highlightedIndex, filteredPlatforms]);
+  }, [highlightedIndex, filteredPlatforms, handleSelectPlatform]);
 
   const handleCloseDropdown = useCallback(() => {
     setShowDropdown(false);
@@ -128,7 +131,7 @@ export function PlatformAutocomplete({
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, []);
+  }, [handleClickOutside]);
 
   return (
     <div className="platform-autocomplete">
@@ -146,16 +149,17 @@ export function PlatformAutocomplete({
       {showDropdown && filteredPlatforms.length > 0 && (
         <div ref={dropdownRef} className="platform-dropdown">
           {filteredPlatforms.slice(0, 10).map((platform, index) => (
-            <div
+            <button
               key={platform.id}
               ref={(el) => {
                 optionRefs.current[index] = el;
               }}
               className={`platform-option ${index === highlightedIndex ? 'highlighted' : ''}`}
               onClick={() => handleSelectPlatform(platform)}
+              type="button"
             >
               {platform.name}
-            </div>
+            </button>
           ))}
         </div>
       )}

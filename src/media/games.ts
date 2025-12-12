@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { type MediaSearchResult, MediaService } from './service';
-import { type MediaSearchValues } from './types';
+import type { MediaSearchValues } from './types';
 
 type Game = {
   id: number;
@@ -86,10 +86,7 @@ export class GamesService extends MediaService {
 
     const concurrencyLimit = 5;
     const imagePromises = gameList.map((game) => fetchImageUrl(game.id));
-    const imageUrls = await this.promiseLimit(
-      concurrencyLimit,
-      imagePromises,
-    );
+    const imageUrls = await this.promiseLimit(concurrencyLimit, imagePromises);
 
     const results = gameList.map((game, index) => {
       const year = game.release_date
@@ -161,7 +158,10 @@ export class GamesService extends MediaService {
       const boxarts = imageData.images[id as string] || [];
       return boxarts
         .filter((image) => image.type === 'boxart')
-        .map((image) => `${this.imageBaseUrl}/boxart/${image.side}/${image.filename}`)
+        .map(
+          (image) =>
+            `${this.imageBaseUrl}/boxart/${image.side}/${image.filename}`,
+        )
         .slice(0, 10);
     } catch {
       return [];
