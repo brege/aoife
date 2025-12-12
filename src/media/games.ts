@@ -35,7 +35,7 @@ type GameImagesResponse = {
 };
 
 export class GamesService extends MediaService {
-  private readonly baseUrl = '/api/gamesdb';
+  private readonly baseUrl = '/api/gamesdb/v1';
   private readonly imageBaseUrl = 'https://cdn.thegamesdb.net/images';
 
   async search(values: MediaSearchValues): Promise<MediaSearchResult[]> {
@@ -44,9 +44,9 @@ export class GamesService extends MediaService {
       return [];
     }
 
-    const params: Record<string, string> = { q: query };
+    const params: Record<string, string> = { name: query };
     if (values.platform) {
-      params.platform = values.platform;
+      params.filter = `platform=${values.platform}`;
     }
 
     const response = await axios.get(`${this.baseUrl}/Games/ByGameName`, {
