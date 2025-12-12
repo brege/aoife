@@ -1,5 +1,12 @@
 # Changelog
 
+## 2025-12-11
+
+- Added video game support via The Games Database API with platform filtering and keyboard navigation
+- Implemented custom media with image uploads/URLs stored in IndexedDB
+- Made custom media name and cover fields optional with auto-naming from filenames
+- Auto-add custom items directly to grid without intermediate search results display
+
 ## 2025-12-08
 
 - Added TV show support via TMDB (reuses existing movie infrastructure)
