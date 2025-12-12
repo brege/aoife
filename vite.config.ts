@@ -18,6 +18,9 @@ export default defineConfig({
         const wss = new WebSocketServer({ port: wsPort });
         let reactClient: WebSocket | null = null;
 
+        // In-memory grid state for API testing
+        const gridState: any[] = [];
+
         wss.on('connection', (ws) => {
           console.log('[WS] React client connected');
           reactClient = ws;
@@ -40,7 +43,7 @@ export default defineConfig({
 
           if (path === '/search' && req.method === 'GET') {
             const query = url.searchParams.get('q');
-            const mediaType = url.searchParams.get('type');
+            const mediaType = url.searchParams.get('type') || 'movies';
             if (!query) {
               res.writeHead(400, { 'Content-Type': 'application/json' });
               res.end(
@@ -49,29 +52,22 @@ export default defineConfig({
               return;
             }
 
-            if (reactClient) {
-              console.log(
-                `[API] Sending search request to React: "${query}"${mediaType ? ` (${mediaType})` : ''}`,
-              );
-              const message: Record<string, unknown> = {
-                type: 'SEARCH',
-                query,
-              };
-              if (mediaType) message.mediaType = mediaType;
-              reactClient.send(JSON.stringify(message));
-              res.writeHead(200, { 'Content-Type': 'application/json' });
-              res.end(
-                JSON.stringify({
-                  status: 'sent',
-                  query,
-                  mediaType: mediaType || 'current',
-                  message: 'Search request sent to React app',
-                }),
-              );
-            } else {
-              res.writeHead(503, { 'Content-Type': 'application/json' });
-              res.end(JSON.stringify({ error: 'React app not connected' }));
-            }
+            (async () => {
+              try {
+                const { getMediaService } = await import('./src/media/factory');
+                const { getMediaProvider } = await import('./src/media/providers');
+                const service = getMediaService(mediaType as any);
+                const provider = getMediaProvider(mediaType as any);
+                const primaryField = provider.searchFields[0]?.id || 'query';
+                const results = await service.search({ [primaryField]: query });
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify(results));
+              } catch (err) {
+                const error = err instanceof Error ? err.message : String(err);
+                res.writeHead(500, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: `Search failed: ${error}` }));
+              }
+            })();
           } else if (path === '/add' && req.method === 'POST') {
             let body = '';
             req.on('data', (chunk) => {
@@ -80,20 +76,10 @@ export default defineConfig({
             req.on('end', () => {
               try {
                 const mediaItem = JSON.parse(body);
-                if (reactClient) {
-                  console.log(
-                    `[API] Sending add request to React:`,
-                    mediaItem.title || mediaItem.id,
-                  );
-                  reactClient.send(
-                    JSON.stringify({ type: 'ADD_MEDIA', media: mediaItem }),
-                  );
-                  res.writeHead(200, { 'Content-Type': 'application/json' });
-                  res.end(JSON.stringify({ status: 'sent', item: mediaItem }));
-                } else {
-                  res.writeHead(503, { 'Content-Type': 'application/json' });
-                  res.end(JSON.stringify({ error: 'React app not connected' }));
-                }
+                gridState.push(mediaItem);
+                console.log(`[API] Added item to grid:`, mediaItem.title || mediaItem.id);
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ status: 'added', item: mediaItem }));
               } catch {
                 res.writeHead(400, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ error: 'Invalid JSON body' }));
@@ -122,30 +108,19 @@ export default defineConfig({
             }
           } else if (path.startsWith('/remove/') && req.method === 'DELETE') {
             const id = path.replace('/remove/', '');
-            if (reactClient) {
-              console.log(`[API] Sending remove request to React: ${id}`);
-              reactClient.send(JSON.stringify({ type: 'REMOVE_MEDIA', id }));
+            const index = gridState.findIndex(item => String(item.id) === String(id));
+            if (index >= 0) {
+              const removed = gridState.splice(index, 1)[0];
+              console.log(`[API] Removed item from grid:`, removed.title || removed.id);
               res.writeHead(200, { 'Content-Type': 'application/json' });
-              res.end(JSON.stringify({ status: 'sent', id }));
+              res.end(JSON.stringify({ status: 'removed', id, item: removed }));
             } else {
-              res.writeHead(503, { 'Content-Type': 'application/json' });
-              res.end(JSON.stringify({ error: 'React app not connected' }));
+              res.writeHead(404, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({ error: 'Item not found' }));
             }
           } else if (path === '/grid' && req.method === 'GET') {
-            if (reactClient) {
-              console.log(`[API] Requesting grid state from React`);
-              reactClient.send(JSON.stringify({ type: 'GET_GRID_STATE' }));
-              res.writeHead(200, { 'Content-Type': 'application/json' });
-              res.end(
-                JSON.stringify({
-                  status: 'requested',
-                  message: 'Grid state request sent to React app',
-                }),
-              );
-            } else {
-              res.writeHead(503, { 'Content-Type': 'application/json' });
-              res.end(JSON.stringify({ error: 'React app not connected' }));
-            }
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify(gridState));
           } else if (path === '/clear' && req.method === 'DELETE') {
             if (reactClient) {
               console.log(`[API] Clearing grid via React`);

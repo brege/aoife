@@ -1,0 +1,158 @@
+---
+# Aoife E2E Test Harness - Structured workflows for testing and benchmarking
+# Supports lifecycle workflows: setup → execute → verify → teardown
+
+workflows:
+  - name: grid_operations
+    description: Test grid add, retrieve, and remove operations
+    enabled: true
+    level: integration
+    scenarios:
+      - test_id: grid_001
+        description: Add single item to empty grid
+        type: operation
+        operation: add
+        payload:
+          id: 123
+          title: Inception
+          year: 2010
+          type: movies
+          coverUrl: https://example.com/inception.jpg
+        expectations:
+          statusCode: 200
+          status: added
+        measurements:
+          - name: add_latency
+            type: duration
+
+      - test_id: grid_002
+        description: Add second item
+        type: operation
+        operation: add
+        payload:
+          id: 456
+          title: Breaking Bad
+          year: 2008
+          type: tv
+          coverUrl: https://example.com/breaking-bad.jpg
+        expectations:
+          statusCode: 200
+        measurements:
+          - name: add_latency
+            type: duration
+
+      - test_id: grid_003
+        description: Retrieve grid with 2 items
+        type: operation
+        operation: getGrid
+        expectations:
+          statusCode: 200
+          arrayLength: 2
+        measurements:
+          - name: grid_retrieval_latency
+            type: duration
+          - name: payload_size
+            type: bytes
+
+      - test_id: grid_004
+        description: Remove first item
+        type: operation
+        operation: remove
+        payload:
+          id: 123
+        expectations:
+          statusCode: 200
+          status: removed
+        measurements:
+          - name: remove_latency
+            type: duration
+
+      - test_id: grid_005
+        description: Verify grid size after removal
+        type: operation
+        operation: getGrid
+        expectations:
+          statusCode: 200
+          arrayLength: 1
+        measurements:
+          - name: grid_retrieval_latency
+            type: duration
+
+      - test_id: grid_006
+        description: Handle missing item gracefully
+        type: operation
+        operation: remove
+        payload:
+          id: 99999
+        expectations:
+          statusCode: 404
+        measurements:
+          - name: error_handling_latency
+            type: duration
+
+  - name: search_and_add_workflows
+    description: Real API search operations + add (e2e smoke tests)
+    enabled: true
+    level: e2e
+    requires_env:
+      - TMDB_API_KEY
+    scenarios:
+      - test_id: search_001
+        description: Search movies on TMDB
+        type: operation
+        operation: search
+        payload:
+          mediaType: movies
+          query: inception
+        expectations:
+          statusCode: 200
+        measurements:
+          - name: tmdb_search_latency
+            type: duration
+          - name: results_count
+            type: count
+
+      - test_id: search_add_001
+        description: Search movie and add to grid
+        type: workflow
+        steps:
+          - operation: search
+            payload:
+              mediaType: movies
+              query: interstellar
+          - operation: add
+            payload:
+              use_first_result: true
+        expectations:
+          statusCode: 200
+        measurements:
+          - name: search_to_add_latency
+            type: duration
+
+      - test_id: search_tv_001
+        description: Search TV shows on TMDB
+        type: operation
+        operation: search
+        payload:
+          mediaType: tv
+          query: breaking bad
+        expectations:
+          statusCode: 200
+        measurements:
+          - name: tmdb_tv_search_latency
+            type: duration
+
+benchmarks:
+  enabled: true
+  persist: true
+  output: test/measurements.json
+  metrics:
+    - latency_percentiles: [p50, p95, p99]
+    - throughput: requests_per_second
+    - payload_analysis: true
+
+reporting:
+  format: json
+  verbose: true
+  include_measurements: true
+  ci_friendly: true

@@ -1,0 +1,7 @@
+{
+  "spec": ["test/setup.js", "test/**/*.test.js"],
+  "timeout": 30000,
+  "ui": "bdd",
+  "color": true,
+  "reporter": "spec"
+}
