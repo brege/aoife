@@ -88,8 +88,7 @@ const getExternalLinks = (
         label: 'Open Library',
         domain: 'openlibrary.org',
       });
-    }
-    if (
+    } else if (
       result.source === 'GoogleBooks' &&
       typeof result.metadata?.volumeId === 'string'
     ) {
@@ -106,6 +105,14 @@ const getExternalLinks = (
       href: `https://musicbrainz.org/release/${result.metadata.mbid}`,
       label: 'MusicBrainz',
       domain: 'musicbrainz.org',
+    });
+  }
+
+  if (mediaType === 'games') {
+    links.push({
+      href: `https://thegamesdb.net/game.php?id=${result.id}`,
+      label: 'TheGamesDB',
+      domain: 'thegamesdb.net',
     });
   }
 
@@ -442,6 +449,7 @@ const MediaSearch: React.FC = () => {
     });
     setShowPosterGrid(false);
     setActivePosterItemId(null);
+    setAlternateCoverUrls([]);
   };
 
   const handleSelectAlternatePoster = (url: string) => {

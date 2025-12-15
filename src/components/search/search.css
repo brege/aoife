@@ -186,12 +186,12 @@
 }
 
 .search-close-button {
-  position: sticky;
+  position: absolute;
   top: 12px;
-  float: right;
+  right: 12px;
   width: 32px;
   height: 32px;
-  margin: 0 0 8px 8px;
+  margin: 0;
   padding: 0;
   border: none;
   border-radius: 50%;
@@ -202,6 +202,7 @@
   cursor: pointer;
   transition: transform 0.2s ease, background-color 0.2s ease;
   color: white;
+  z-index: 100;
 }
 
 .search-close-button:hover {
