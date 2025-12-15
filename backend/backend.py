@@ -58,6 +58,22 @@ def proxy_gamesdb(subpath):
         return jsonify({"error": str(e)}), 500
 
 
+# Proxy GamesDB CDN images
+@app.route("/api/gamesdb/images/<path:subpath>", methods=["GET"])
+def proxy_gamesdb_images(subpath):
+    try:
+        resp = requests.get(f"https://cdn.thegamesdb.net/images/large/{subpath}")
+        return (
+            resp.content,
+            resp.status_code,
+            {
+                "Content-Type": resp.headers.get("Content-Type", "image/jpeg"),
+            },
+        )
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 # Logging endpoint (optional telemetry)
 @app.route("/api/log", methods=["POST"])
 def log_event():

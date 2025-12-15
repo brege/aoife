@@ -1,10 +1,12 @@
 import type { IncomingMessage } from 'node:http';
 import https from 'node:https';
 import react from '@vitejs/plugin-react';
-import { defineConfig } from 'vite';
+import { defineConfig, loadEnv } from 'vite';
 import { type WebSocket, WebSocketServer } from 'ws';
 
 // https://vite.dev/config/
+const env = loadEnv('development', process.cwd());
+
 export default defineConfig({
   plugins: [
     react(),
@@ -70,7 +72,7 @@ export default defineConfig({
             })();
           } else if (path.startsWith('/tmdb/') && req.method === 'GET') {
             const tmdbKey =
-              process.env.VITE_TMDB_API_KEY || process.env.TMDB_API_KEY;
+              env.VITE_TMDB_API_KEY || process.env.VITE_TMDB_API_KEY || process.env.TMDB_API_KEY;
             if (!tmdbKey) {
               res.writeHead(500, { 'Content-Type': 'application/json' });
               res.end(JSON.stringify({ error: 'TMDB API key not configured' }));

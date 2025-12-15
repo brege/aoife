@@ -34,19 +34,40 @@ type GameImagesResponse = {
   };
 };
 
+interface SearchCache {
+  params: string;
+  results: MediaSearchResult[];
+  timestamp: number;
+}
+
 export class GamesService extends MediaService {
   private readonly baseUrl = '/api/gamesdb/v1';
-  private readonly imageBaseUrl = 'https://cdn.thegamesdb.net/images';
+  private readonly imageBaseUrl = '/api/gamesdb/images';
+  private searchCache: SearchCache | null = null;
+  private readonly CACHE_TTL = 5 * 60 * 1000;
+  private itemToSearchParams = new Map<string | number, string>();
 
   async search(values: MediaSearchValues): Promise<MediaSearchResult[]> {
     const query = values.query || values.title;
+    const platform = values.platform || '';
     if (!query) {
       return [];
     }
 
+    const cacheKey = `${query}|${platform}`;
+
+    // Check cache
+    if (
+      this.searchCache &&
+      this.searchCache.params === cacheKey &&
+      Date.now() - this.searchCache.timestamp < this.CACHE_TTL
+    ) {
+      return this.searchCache.results.slice(0, 10);
+    }
+
     const params: Record<string, string> = { name: query };
-    if (values.platform) {
-      params.filter = `platform=${values.platform}`;
+    if (platform) {
+      params[`filter[platform]`] = platform;
     }
 
     const response = await axios.get(`${this.baseUrl}/Games/ByGameName`, {
@@ -75,8 +96,8 @@ export class GamesService extends MediaService {
           (image) => image.type === 'boxart' && image.side === 'front',
         );
 
-        if (boxart && imageData.base_url) {
-          return `${imageData.base_url.large}${boxart.filename}`;
+        if (boxart) {
+          return `${this.imageBaseUrl}/${boxart.filename}`;
         }
       } catch {
         return null;
@@ -108,64 +129,45 @@ export class GamesService extends MediaService {
       };
     });
 
-    return results;
-  }
+    // Cache all results
+    this.searchCache = {
+      params: cacheKey,
+      results,
+      timestamp: Date.now(),
+    };
 
-  async getDetails(id: string | number): Promise<MediaSearchResult | null> {
-    const response = await axios.get(`${this.baseUrl}/Games/ByGameID`, {
-      params: { id },
+    // Map each item ID to its search params for later lookup
+    results.forEach((item) => {
+      this.itemToSearchParams.set(item.id, cacheKey);
     });
 
-    if (!response.data.data?.games || !response.data.data.games[0]) {
-      return null;
-    }
+    return results.slice(0, 10);
+  }
 
-    const game = response.data.data.games[0] as Game;
-    const year = game.release_date
-      ? new Date(game.release_date).getFullYear()
-      : undefined;
-
-    const coverUrl = await this.getBoxart(Number(id), 'front');
-
-    return {
-      id: game.id,
-      title: game.game_title,
-      subtitle: year ? year.toString() : undefined,
-      year,
-      type: 'games' as const,
-      coverUrl,
-      coverThumbnailUrl: coverUrl,
-      metadata: {
-        overview: game.overview,
-        rating: game.rating,
-        release_date: game.release_date,
-        isCustom: false,
-      },
-    };
+  async getDetails(_id: string | number): Promise<MediaSearchResult | null> {
+    return null;
   }
 
   async getAlternateCovers(id: string | number): Promise<string[]> {
-    try {
-      const response = await axios.get(`${this.baseUrl}/Games/Images`, {
-        params: { games_id: id },
-      });
-
-      const imageData = response.data.data as GameImagesResponse['data'];
-      if (!imageData?.images) {
-        return [];
-      }
-
-      const boxarts = imageData.images[id as string] || [];
-      return boxarts
-        .filter((image) => image.type === 'boxart')
-        .map(
-          (image) =>
-            `${this.imageBaseUrl}/boxart/${image.side}/${image.filename}`,
-        )
-        .slice(0, 10);
-    } catch {
+    const cacheKey = this.itemToSearchParams.get(id);
+    if (!cacheKey) {
       return [];
     }
+
+    if (
+      this.searchCache &&
+      this.searchCache.params === cacheKey &&
+      Date.now() - this.searchCache.timestamp < this.CACHE_TTL
+    ) {
+      const otherResults = this.searchCache.results.filter(
+        (item) => item.id !== id,
+      );
+      return otherResults
+        .filter((item) => item.coverUrl)
+        .map((item) => item.coverUrl as string);
+    }
+
+    return [];
   }
 
   private async promiseLimit<T>(
@@ -198,30 +200,4 @@ export class GamesService extends MediaService {
     });
   }
 
-  private async getBoxart(
-    id: number,
-    side: 'front' | 'back' = 'front',
-  ): Promise<string | null> {
-    try {
-      const response = await axios.get(`${this.baseUrl}/Games/Images`, {
-        params: { games_id: id },
-      });
-
-      const imageData = response.data.data as GameImagesResponse['data'];
-      if (!imageData?.images) {
-        return null;
-      }
-
-      const boxarts = imageData.images[id.toString()] || [];
-      const boxart = boxarts.find(
-        (image) => image.type === 'boxart' && image.side === side,
-      );
-
-      return boxart
-        ? `${this.imageBaseUrl}/boxart/${boxart.side}/${boxart.filename}`
-        : null;
-    } catch {
-      return null;
-    }
-  }
 }

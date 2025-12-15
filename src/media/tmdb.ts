@@ -24,17 +24,12 @@ const buildPosterUrl = (
 };
 
 export class TMDBService extends MediaService {
-  private readonly baseUrl = 'https://api.themoviedb.org/3';
-  private readonly apiKey: string;
+  private readonly baseUrl = '/api/tmdb';
   private readonly mediaType: 'movies' | 'tv';
 
-  constructor(apiKey?: string, mediaType: 'movies' | 'tv' = 'movies') {
+  constructor(_apiKey: string, mediaType: 'movies' | 'tv' = 'movies') {
     super();
     this.mediaType = mediaType;
-    this.apiKey = apiKey || import.meta.env.VITE_TMDB_API_KEY || '';
-    if (!this.apiKey) {
-      throw new Error('VITE_TMDB_API_KEY is required for TMDB searches');
-    }
   }
 
   private getSearchEndpoint(): string {
@@ -65,11 +60,10 @@ export class TMDBService extends MediaService {
       }
 
       const response = await axios.get(
-        `${this.baseUrl}/${this.getSearchEndpoint()}`,
+        `${this.baseUrl}/3/${this.getSearchEndpoint()}`,
         {
           params: {
             query: query,
-            api_key: this.apiKey,
           },
         },
       );
@@ -108,12 +102,7 @@ export class TMDBService extends MediaService {
   async getDetails(id: string | number): Promise<MediaSearchResult | null> {
     try {
       const response = await axios.get(
-        `${this.baseUrl}/${this.getDetailsEndpoint(id)}`,
-        {
-          params: {
-            api_key: this.apiKey,
-          },
-        },
+        `${this.baseUrl}/3/${this.getDetailsEndpoint(id)}`,
       );
 
       const data: TmdbDetails = response.data;
@@ -146,14 +135,17 @@ export class TMDBService extends MediaService {
 
   async getAlternateCovers(id: string | number): Promise<string[]> {
     try {
-      const response = await axios.get(
-        `${this.baseUrl}/${this.getImagesEndpoint(id)}`,
-        {
-          params: {
-            api_key: this.apiKey,
-          },
-        },
-      );
+      const endpoint = `${this.baseUrl}/3/${this.getImagesEndpoint(id)}`;
+      const response = await axios.get(endpoint);
+
+      if (!response.data.posters || !Array.isArray(response.data.posters)) {
+        console.warn(
+          `No posters found for ${this.mediaType} ${id}. Response:`,
+          response.data,
+        );
+        return [];
+      }
+
       return response.data.posters
         .map((poster: { file_path: string }) =>
           buildPosterUrl(poster.file_path, 'w500'),
@@ -161,8 +153,8 @@ export class TMDBService extends MediaService {
         .filter((url: string | null): url is string => Boolean(url));
     } catch (error) {
       console.error(
-        `Error fetching alternate posters for ${this.mediaType}:`,
-        error,
+        `Error fetching alternate posters for ${this.mediaType} ${id} from ${this.baseUrl}/3/${this.getImagesEndpoint(id)}:`,
+        error instanceof Error ? error.message : String(error),
       );
       return [];
     }

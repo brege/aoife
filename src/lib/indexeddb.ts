@@ -1,3 +1,5 @@
+/// <reference lib="dom" />
+
 const DB_NAME = 'aoife';
 const STORE_NAME = 'images';
 const DB_VERSION = 1;

@@ -1,3 +1,5 @@
+/// <reference types="vite/client" />
+
 import { BooksService } from './books';
 import { CustomMediaService } from './custom';
 import { GamesService } from './games';
