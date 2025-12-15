@@ -60,9 +60,13 @@ function addFromResults(payload) {
   const ensureResults = runSearch ? searchMedia(payload) : cy.wrap(null);
 
   return ensureResults
+    .then(() => {
+      cy.get('.search-results', { timeout: 10000 }).should('be.visible');
+    })
     .then(() =>
       cy.get('.add-button', { timeout: 15000 }).first().click({ force: true }),
     )
+    .then(() => cy.wait(500))
     .then(() => cy.get('.grid-item.filled', { timeout: 30000 }))
     .then((gridItems) => {
       const addedTitle =

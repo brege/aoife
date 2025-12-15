@@ -7,6 +7,9 @@ import { type WebSocket, WebSocketServer } from 'ws';
 // https://vite.dev/config/
 const env = loadEnv('development', process.cwd());
 
+const getTmdbKey = () =>
+  env.VITE_TMDB_API_KEY || process.env.VITE_TMDB_API_KEY || process.env.TMDB_API_KEY;
+
 export default defineConfig({
   plugins: [
     react(),
@@ -71,8 +74,7 @@ export default defineConfig({
               }
             })();
           } else if (path.startsWith('/tmdb/') && req.method === 'GET') {
-            const tmdbKey =
-              env.VITE_TMDB_API_KEY || process.env.VITE_TMDB_API_KEY || process.env.TMDB_API_KEY;
+            const tmdbKey = getTmdbKey();
             if (!tmdbKey) {
               res.writeHead(500, { 'Content-Type': 'application/json' });
               res.end(JSON.stringify({ error: 'TMDB API key not configured' }));

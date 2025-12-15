@@ -27,8 +27,13 @@ ensureViteAlias('TMDB_API_KEY');
 
 function ensureViteAlias(key) {
   const viteKey = `VITE_${key}`;
+  // Set VITE_ version from non-VITE_ version if needed
   if (process.env[key] && !process.env[viteKey]) {
     process.env[viteKey] = process.env[key];
+  }
+  // Also ensure the non-VITE_ version exists from VITE_ version for compatibility
+  if (process.env[viteKey] && !process.env[key]) {
+    process.env[key] = process.env[viteKey];
   }
 }
 
