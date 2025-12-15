@@ -19,7 +19,7 @@ interface Grid2x2Props {
   onPlaceholderClick: () => void;
   columns: number;
   minRows: number;
-  placeholderLabel: string;
+  placeholderLabel?: string;
   isBuilderMode?: boolean;
   onAspectRatioUpdate?: (mediaId: string | number, aspectRatio: number) => void;
 }
@@ -225,6 +225,10 @@ const Grid2x2: React.FC<Grid2x2Props> = ({
                 </div>
               </div>
             );
+          }
+
+          if (!placeholderLabel) {
+            return null;
           }
 
           return (

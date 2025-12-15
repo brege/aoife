@@ -699,7 +699,7 @@ const MediaSearch: React.FC = () => {
               onPlaceholderClick={() => searchInputRef.current?.focus()}
               columns={columns}
               minRows={minRows}
-              placeholderLabel={provider.resultLabel}
+              placeholderLabel={gridItems.length === 0 ? provider.resultLabel : undefined}
               isBuilderMode={isBuilderMode}
               onAspectRatioUpdate={handleAspectRatioUpdate}
             />
@@ -807,7 +807,7 @@ const MediaSearch: React.FC = () => {
                         : 'Upload'
                       : isLoading
                         ? 'Searching...'
-                        : 'Search'}
+                        : `Add ${provider.label}`}
                   </button>
                 </div>
               </form>
