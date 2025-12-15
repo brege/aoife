@@ -186,6 +186,10 @@
   height: 24px;
 }
 
+.menu-view-toggle {
+  margin-left: auto;
+}
+
 /* Grid Configuration Specific Styles */
 .menu-grid-config-section {
   padding: var(--spacing-xl);
@@ -261,6 +265,44 @@
   color: var(--text-primary);
   min-width: 40px;
   text-align: center;
+}
+
+.menu-about {
+  padding: var(--spacing-xl);
+  border-top: 1px solid var(--border-color);
+}
+
+.menu-about-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: var(--spacing-sm);
+  letter-spacing: 0.4px;
+}
+
+.menu-about-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+  color: var(--text-primary);
+}
+
+.menu-about-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  color: var(--accent-color);
+  text-decoration: none;
+}
+
+.menu-about-link:hover {
+  text-decoration: underline;
+}
+
+.menu-about-version {
+  color: var(--text-muted);
+  font-weight: 600;
 }
 
 /* Responsive Design */

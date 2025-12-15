@@ -2,7 +2,10 @@ import type React from 'react';
 import { useEffect, useRef, useState } from 'react';
 import { FiGrid } from 'react-icons/fi';
 import { HiOutlinePencilAlt } from 'react-icons/hi';
+import { FaGithub } from 'react-icons/fa';
+import { VscSourceControl } from 'react-icons/vsc';
 import './menu.css';
+import packageJson from '../../../package.json';
 import logger from '../../lib/logger';
 import { useModalClosed, useModalManager } from '../../lib/modalmanager';
 import MenuClear from './clear';
@@ -89,6 +92,8 @@ const Menu: React.FC<MenuProps> = ({
     closeMenu();
   };
 
+  const appVersion = packageJson.version ?? '';
+
   return (
     <div className="hamburger-menu-container">
       <button
@@ -108,9 +113,10 @@ const Menu: React.FC<MenuProps> = ({
       {isOpen && (
         <div className="menu-dropdown" ref={menuRef}>
           <div className="menu-actions">
+            <MenuClear onClearGrid={onClearGrid} onMenuClose={closeMenu} />
             <button
               type="button"
-              className={`menu-icon-button${isBuilderMode ? ' active' : ''}`}
+              className={`menu-icon-button menu-view-toggle${isBuilderMode ? ' active' : ''}`}
               aria-pressed={isBuilderMode}
               aria-label="Toggle editor"
               title={isBuilderMode ? 'Show grid' : 'Show editor'}
@@ -122,8 +128,6 @@ const Menu: React.FC<MenuProps> = ({
                 <HiOutlinePencilAlt size={20} />
               )}
             </button>
-
-            <MenuClear onClearGrid={onClearGrid} onMenuClose={closeMenu} />
           </div>
 
           <MenuConfig
@@ -133,6 +137,32 @@ const Menu: React.FC<MenuProps> = ({
             minRows={minRows}
             onMinRowsChange={onMinRowsChange}
           />
+
+          <div className="menu-about menu-grid-config-section">
+            <div className="grid-config-header">
+              <h3>About</h3>
+            </div>
+            <div className="menu-about-row">
+              <a
+                className="menu-about-link"
+                href="https://github.com/brege/aoife"
+                target="_blank"
+                rel="noreferrer"
+              >
+                <FaGithub aria-hidden="true" focusable="false" />
+                <span>aoife</span>
+              </a>
+              <a
+                className="menu-about-link menu-about-version"
+                href="https://github.com/brege/aoife"
+                target="_blank"
+                rel="noreferrer"
+              >
+                <VscSourceControl aria-hidden="true" focusable="false" />
+                <span>v{appVersion}</span>
+              </a>
+            </div>
+          </div>
         </div>
       )}
     </div>
