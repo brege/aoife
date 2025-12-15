@@ -19,11 +19,14 @@ export function getMediaService(mediaType: MediaType): MediaService {
 
   switch (mediaType) {
     case 'movies':
-      service = new TMDBService('', 'movies');
+      service = new TMDBService(
+        import.meta.env.VITE_TMDB_API_KEY || '',
+        'movies',
+      );
       break;
 
     case 'tv':
-      service = new TMDBService('', 'tv');
+      service = new TMDBService(import.meta.env.VITE_TMDB_API_KEY || '', 'tv');
       break;
 
     case 'books':

@@ -1,99 +1,125 @@
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { expect } from 'chai';
-import { readFileSync } from 'fs';
+import cypress from 'cypress';
 import yaml from 'js-yaml';
-import { dirname, join } from 'path';
-import { fileURLToPath } from 'url';
-import { add, getGrid, remove, search } from './integration/client.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
+const rootDir = resolve(__dirname, '..');
 const configPath = join(__dirname, 'config.yaml');
+const envPath = join(rootDir, '.env');
 const config = yaml.load(readFileSync(configPath, 'utf8'));
+const measurementsPath = resolve(
+  rootDir,
+  config.benchmarks?.output || 'test/measurements.json',
+);
+const cypressConfigDir = join(rootDir, '.cypress-config');
 
-const operations = {
-  add,
-  remove,
-  getGrid,
-};
+loadEnvFile();
+ensureViteAlias('TMDB_API_KEY');
 
-describe('E2E Test Workflows', function () {
-  this.timeout(30000);
+function ensureViteAlias(key) {
+  const viteKey = `VITE_${key}`;
+  if (process.env[key] && !process.env[viteKey]) {
+    process.env[viteKey] = process.env[key];
+  }
+}
+
+function loadEnvFile() {
+  if (!existsSync(envPath)) return;
+  const lines = readFileSync(envPath, 'utf8').split('\n');
+  lines.forEach((line) => {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) return;
+    const eqIndex = trimmed.indexOf('=');
+    if (eqIndex === -1) return;
+    const key = trimmed.slice(0, eqIndex).trim();
+    const value = trimmed.slice(eqIndex + 1).trim();
+    if (!process.env[key]) {
+      process.env[key] = value;
+    }
+    if (!key.startsWith('VITE_')) {
+      const viteKey = `VITE_${key}`;
+      if (!process.env[viteKey]) {
+        process.env[viteKey] = value;
+      }
+    }
+  });
+}
+
+function resetMeasurements() {
+  if (existsSync(measurementsPath)) {
+    rmSync(measurementsPath);
+  }
+  writeFileSync(measurementsPath, JSON.stringify({ workflows: [] }, null, 2));
+}
+
+function ensureCypressDirs() {
+  if (!existsSync(cypressConfigDir)) {
+    mkdirSync(cypressConfigDir, { recursive: true });
+  }
+  process.env.XDG_CONFIG_HOME = cypressConfigDir;
+  process.env.ELECTRON_DISABLE_GPU = '1';
+}
+
+describe('YAML workflows via Cypress', function () {
+  this.timeout(240000);
+
+  before(() => {
+    if (config.benchmarks?.enabled !== false) {
+      resetMeasurements();
+    }
+    ensureCypressDirs();
+  });
 
   config.workflows.forEach((workflow) => {
-    if (!workflow.enabled) return;
-
-    // Check if required env vars are available (convert to VITE_ prefix)
-    const missingEnv =
-      workflow.requires_env?.filter((v) => !process.env[`VITE_${v}`]) || [];
-    if (missingEnv.length > 0) {
-      console.log(
-        `⚠️  Skipping "${workflow.name}" - missing env: ${missingEnv.map((v) => `VITE_${v}`).join(', ')}`,
-      );
+    if (!workflow.enabled) {
+      it.skip(`${workflow.name} (disabled)`, () => {});
       return;
     }
 
-    describe(workflow.name, () => {
-      workflow.scenarios.forEach((scenario) => {
-        if (scenario.skip) return;
+    (workflow.requires_env || []).forEach((key) => {
+      ensureViteAlias(key);
+    });
 
-        it(`${scenario.test_id}: ${scenario.description}`, async () => {
-          const startTime = performance.now();
-          let response;
-
-          try {
-            if (scenario.operation === 'getGrid') {
-              response = await operations.getGrid();
-            } else if (scenario.operation === 'add') {
-              response = await operations.add(scenario.payload);
-            } else if (scenario.operation === 'remove') {
-              response = await operations.remove(scenario.payload.id);
-            } else if (scenario.operation === 'search') {
-              response = await search(
-                scenario.payload.query,
-                scenario.payload.mediaType,
-              );
-            }
-
-            const duration = performance.now() - startTime;
-
-            // Verify expectations
-            if (scenario.expectations) {
-              expect(response.statusCode).to.equal(
-                scenario.expectations.statusCode,
-              );
-
-              if (scenario.expectations.status) {
-                expect(response.data.status).to.equal(
-                  scenario.expectations.status,
-                );
-              }
-
-              if (scenario.expectations.arrayLength !== undefined) {
-                expect(response.data).to.be.an('array');
-                expect(response.data.length).to.equal(
-                  scenario.expectations.arrayLength,
-                );
-              }
-            }
-
-            // Record measurements
-            if (scenario.measurements && config.benchmarks?.enabled) {
-              scenario.measurements.forEach((metric) => {
-                if (metric.type === 'duration') {
-                  console.log(`    [${metric.name}] ${duration.toFixed(2)}ms`);
-                } else if (
-                  metric.type === 'count' &&
-                  Array.isArray(response.data)
-                ) {
-                  console.log(`    [${metric.name}] ${response.data.length}`);
-                }
-              });
-            }
-          } catch (err) {
-            console.error(`    Error in ${scenario.test_id}:`, err.message);
-            throw err;
-          }
-        });
+    const missingEnv =
+      workflow.requires_env?.filter(
+        (key) => !process.env[`VITE_${key}`] && !process.env[key],
+      ) || [];
+    if (missingEnv.length > 0) {
+      it(`${workflow.name} [${workflow.level}] (missing env)`, () => {
+        throw new Error(
+          `Missing required env vars: ${missingEnv
+            .map((key) => `VITE_${key}`)
+            .join(', ')}`,
+        );
       });
+      return;
+    }
+
+    it(`${workflow.name} [${workflow.level}]`, async () => {
+      const run = await cypress.run({
+        configFile: 'tools/cypress.config.js',
+        spec: 'tools/cypress/e2e/workflow.cy.js',
+        env: {
+          workflow: JSON.stringify(workflow),
+          measurementsPath,
+          VITE_TMDB_API_KEY: process.env.VITE_TMDB_API_KEY,
+        },
+      });
+
+      const failed = run?.totalFailed ?? run?.failures ?? 1;
+      expect(failed).to.equal(
+        0,
+        `Cypress failures for workflow ${workflow.name}`,
+      );
     });
   });
 });

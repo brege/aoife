@@ -1,4 +1,4 @@
-import http from 'http';
+import http from 'node:http';
 
 const BASE_URL = 'http://localhost:5173';
 

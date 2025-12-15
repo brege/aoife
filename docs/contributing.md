@@ -56,3 +56,29 @@ curl -X DELETE http://localhost:8080/api/clear
 ### Changelog
 
 [changelog](changelog.md)
+
+### Test Coverage Matrix
+
+This section is currently evolving and breaking.
+
+Current tests:
+- `grid_operations`: 
+  - search add TITLE
+  - search add TITLE
+  - remove both via UI
+  - verify grid state
+- `search_and_add_workflows`: 
+  - search movies TITLE
+  - search+add-first-result TITLE
+  - search TV TITLE
+
+Coverage (✔ = covered, ○ = missing):
+| Media type | Search | Add from search | Add custom | Remove | Grid fetch |
+| ---------- | ------ | --------------- | ---------- | ------ | ---------- |
+| Movies     | ✔ | ✔ | ○ | ○ | ○ |
+| TV         | ✔ | ○ | ○ | ○ | ○ |
+| Custom     | ○ | ○ | ✔ | ✔ | ✔ |
+| Books      | ○ | ○ | ○ | ○ | ○ |
+| Music      | ○ | ○ | ○ | ○ | ○ |
+| Games      | ○ | ○ | ○ | ○ | ○ |
+

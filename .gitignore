@@ -9,7 +9,8 @@ build/
 .env
 
 # test artifacts
-tools/cypress/fixtures/measurements.json
+measurements.json
+.cypress-config/
 
 # populated templates
 backend/systemd/aoife.service

@@ -68,6 +68,37 @@ export default defineConfig({
                 res.end(JSON.stringify({ error: `Search failed: ${error}` }));
               }
             })();
+          } else if (path.startsWith('/tmdb/') && req.method === 'GET') {
+            const tmdbKey =
+              process.env.VITE_TMDB_API_KEY || process.env.TMDB_API_KEY;
+            if (!tmdbKey) {
+              res.writeHead(500, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({ error: 'TMDB API key not configured' }));
+              return;
+            }
+
+            const params = new URLSearchParams(url.searchParams);
+            params.set('api_key', tmdbKey);
+            const tmdbPath = path.replace('/tmdb', '');
+            const targetUrl = `https://api.themoviedb.org${tmdbPath}?${params.toString()}`;
+
+            const tmdbReq = https.get(targetUrl, (tmdbRes) => {
+              let body = '';
+              tmdbRes.on('data', (chunk) => {
+                body += chunk;
+              });
+              tmdbRes.on('end', () => {
+                res.writeHead(tmdbRes.statusCode || 500, {
+                  'Content-Type': 'application/json',
+                });
+                res.end(body);
+              });
+            });
+
+            tmdbReq.on('error', (error) => {
+              res.writeHead(502, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({ error: String(error) }));
+            });
           } else if (path === '/add' && req.method === 'POST') {
             let body = '';
             req.on('data', (chunk) => {
