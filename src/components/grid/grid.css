@@ -193,8 +193,36 @@
 }
 
 .grid-close-button {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 32px;
+  height: 32px;
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  transition: all 0.2s ease;
+  z-index: 10;
   opacity: 0;
   pointer-events: none;
+}
+
+.grid-close-button:hover {
+  background: rgba(220, 38, 38, 0.9);
+}
+
+.grid-close-button svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  display: block;
+  color: white;
 }
 
 .grid-item.filled:hover .grid-close-button,
@@ -293,6 +321,16 @@
   height: 40px;
   z-index: calc(var(--z-overlay) + 1);
   border-radius: 6px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.poster-grid-overlay .close-button svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
 }
 
 @media (max-width: 600px) {
@@ -321,6 +359,18 @@
   }
 
   .close-button svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .grid-close-button {
+    width: 28px;
+    height: 28px;
+    top: 6px;
+    right: 6px;
+  }
+
+  .grid-close-button svg {
     width: 14px;
     height: 14px;
   }

@@ -4,7 +4,7 @@ import logger from '../../lib/logger';
 import type { MediaType } from '../../media/types';
 import { type MediaItem, TMDB_IMAGE_BASE } from '../../media/types';
 import { MEDIA_TYPE_ICONS } from '../search/dropdown';
-import CloseIcon from '../ui/close';
+import { MdClose } from 'react-icons/md';
 import { CustomImage } from '../ui/customimage';
 import { useModalManager } from '../../lib/modalmanager';
 
@@ -213,11 +213,11 @@ const Grid2x2: React.FC<Grid2x2Props> = ({
                   </button>
                   <button
                     type="button"
-                    className="close-button grid-close-button"
+                    className="grid-close-button"
                     onClick={() => onRemoveMedia(item.id)}
                     aria-label={`Remove ${item.title}`}
                   >
-                    <CloseIcon />
+                    <MdClose aria-hidden="true" focusable="false" />
                   </button>
                   <div className="media-type-badge">
                     {MEDIA_TYPE_ICONS[item.type as MediaType]}
@@ -285,11 +285,11 @@ const Grid2x2: React.FC<Grid2x2Props> = ({
                     </button>
                     <button
                       type="button"
-                      className="close-button grid-close-button"
+                      className="grid-close-button"
                       onClick={() => onRemoveMedia(media.id)}
                       aria-label={`Remove ${media.title}`}
                     >
-                      <CloseIcon />
+                      <MdClose aria-hidden="true" focusable="false" />
                     </button>
                     <div className="media-type-badge">
                       {MEDIA_TYPE_ICONS[media.type as MediaType]}
@@ -324,7 +324,7 @@ const Grid2x2: React.FC<Grid2x2Props> = ({
               }
             }}
           >
-            <CloseIcon />
+            <MdClose aria-hidden="true" focusable="false" />
           </button>
           <h2 className="poster-grid-title">Alternate Covers</h2>
           <div className="poster-grid">
