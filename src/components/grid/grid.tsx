@@ -6,6 +6,7 @@ import { type MediaItem, TMDB_IMAGE_BASE } from '../../media/types';
 import { MEDIA_TYPE_ICONS } from '../search/dropdown';
 import CloseIcon from '../ui/close';
 import { CustomImage } from '../ui/customimage';
+import { useModalManager } from '../../lib/modalmanager';
 
 interface Grid2x2Props {
   items: MediaItem[];
@@ -121,6 +122,28 @@ const Grid2x2: React.FC<Grid2x2Props> = ({
     window.addEventListener('resize', updateDimensions);
     return () => window.removeEventListener('resize', updateDimensions);
   }, [isBuilderMode]);
+
+  const { openModal, closeModal } = useModalManager();
+
+  useEffect(() => {
+    if (showPosterGrid) {
+      openModal('posterGrid');
+    } else {
+      closeModal('posterGrid');
+    }
+  }, [showPosterGrid, openModal, closeModal]);
+
+  useEffect(() => {
+    const handleModalClosed = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      if (customEvent.detail.modal === 'posterGrid') {
+        onClosePosterGrid();
+      }
+    };
+
+    window.addEventListener('modalClosed', handleModalClosed);
+    return () => window.removeEventListener('modalClosed', handleModalClosed);
+  }, [onClosePosterGrid]);
 
   const gap = 16;
   const rowLayouts = React.useMemo(() => {

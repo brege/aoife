@@ -4,6 +4,7 @@ import { FiGrid } from 'react-icons/fi';
 import { HiOutlinePencilAlt } from 'react-icons/hi';
 import './menu.css';
 import logger from '../../lib/logger';
+import { useModalManager } from '../../lib/modalmanager';
 import MenuClear from './clear';
 import MenuConfig from './config';
 
@@ -29,6 +30,7 @@ const Menu: React.FC<MenuProps> = ({
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
+  const { openModal, closeModal } = useModalManager();
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -50,6 +52,26 @@ const Menu: React.FC<MenuProps> = ({
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [isOpen]);
+
+  useEffect(() => {
+    if (isOpen) {
+      openModal('hamburger');
+    } else {
+      closeModal('hamburger');
+    }
+  }, [isOpen, openModal, closeModal]);
+
+  useEffect(() => {
+    const handleModalClosed = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      if (customEvent.detail.modal === 'hamburger') {
+        setIsOpen(false);
+      }
+    };
+
+    window.addEventListener('modalClosed', handleModalClosed);
+    return () => window.removeEventListener('modalClosed', handleModalClosed);
+  }, []);
 
   const toggleMenu = () => {
     const newState = !isOpen;

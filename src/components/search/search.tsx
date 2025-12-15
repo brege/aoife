@@ -4,7 +4,7 @@ import { MdDriveFolderUpload } from 'react-icons/md';
 import '../../app/styles/global.css';
 import './search.css';
 import { type CliMenuState, useCliBridge } from '../../lib/api';
-import useEscapeKey from '../../lib/escape';
+import { useModalManager } from '../../lib/modalmanager';
 import { storeImage } from '../../lib/indexeddb';
 import logger from '../../lib/logger';
 import { getMediaService } from '../../media/factory';
@@ -134,6 +134,8 @@ const MediaSearch: React.FC = () => {
     localStorage.setItem(MIN_ROWS_STORAGE_KEY, String(minRows));
   }, [minRows]);
 
+  const { openModal, closeModal } = useModalManager();
+
   const closeSearchResults = () => {
     logger.debug('Closing search results', {
       context: 'MediaSearch.closeSearchResults',
@@ -141,7 +143,26 @@ const MediaSearch: React.FC = () => {
     setSearchResults([]);
     setSearchResultAspectRatios({});
   };
-  useEscapeKey(closeSearchResults);
+
+  useEffect(() => {
+    if (searchResults.length > 0) {
+      openModal('searchResults');
+    } else {
+      closeModal('searchResults');
+    }
+  }, [searchResults.length, openModal, closeModal]);
+
+  useEffect(() => {
+    const handleModalClosed = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      if (customEvent.detail.modal === 'searchResults') {
+        closeSearchResults();
+      }
+    };
+
+    window.addEventListener('modalClosed', handleModalClosed);
+    return () => window.removeEventListener('modalClosed', handleModalClosed);
+  }, []);
 
   const handleSearchResultImageLoad = useCallback(
     (
