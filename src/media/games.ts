@@ -19,12 +19,12 @@ type GameImage = {
 };
 
 type ImageBaseUrl = {
-  original: string;
-  small: string;
-  thumb: string;
-  cropped_center_thumb: string;
-  medium: string;
-  large: string;
+  original?: string;
+  small?: string;
+  thumb?: string;
+  cropped_center_thumb?: string;
+  medium?: string;
+  large?: string;
 };
 
 type GameImagesResponse = {
@@ -62,7 +62,7 @@ export class GamesService extends MediaService {
       this.searchCache.params === cacheKey &&
       Date.now() - this.searchCache.timestamp < this.CACHE_TTL
     ) {
-      return this.searchCache.results.slice(0, 10);
+      return this.searchCache.results.slice(0, 25);
     }
 
     const params: Record<string, string> = { name: query };
@@ -80,29 +80,51 @@ export class GamesService extends MediaService {
 
     const gameList = response.data.data.games as Game[];
 
-    const fetchImageUrl = async (gameId: number): Promise<string | null> => {
+    const buildImageUrl = (
+      baseUrl: ImageBaseUrl | undefined,
+      filename: string,
+      size: keyof ImageBaseUrl = 'original',
+    ): string => {
+      if (filename.startsWith('http://') || filename.startsWith('https://')) {
+        return filename;
+      }
+
+      const base = baseUrl?.[size] ?? baseUrl?.original;
+      if (base) {
+        return `${base}/${filename}`;
+      }
+
+      return `${this.imageBaseUrl}/${filename}`;
+    };
+
+    const fetchImageUrl = async (
+      gameId: number,
+    ): Promise<{ full?: string; thumb?: string }> => {
       try {
         const imageResponse = await axios.get(`${this.baseUrl}/Games/Images`, {
           params: { games_id: gameId },
         });
 
         const imageData = imageResponse.data.data as GameImagesResponse['data'];
-        if (!imageData?.images?.[gameId.toString()]) {
-          return null;
-        }
+        const baseUrl = imageData?.base_url;
+        const imageList = imageData?.images?.[gameId.toString()];
+        if (!imageList) return {};
 
-        const images = imageData.images[gameId.toString()];
-        const boxart = images.find(
+        const boxart = imageList.find(
           (image) => image.type === 'boxart' && image.side === 'front',
         );
+        const firstBox = boxart ?? imageList.find((img) => img.type === 'boxart');
 
-        if (boxart) {
-          return `${this.imageBaseUrl}/${boxart.filename}`;
+        if (firstBox) {
+          return {
+            full: buildImageUrl(baseUrl, firstBox.filename, 'original'),
+            thumb: buildImageUrl(baseUrl, firstBox.filename, 'medium'),
+          };
         }
       } catch {
-        return null;
+        return {};
       }
-      return null;
+      return {};
     };
 
     const concurrencyLimit = 5;
@@ -114,19 +136,22 @@ export class GamesService extends MediaService {
         ? new Date(game.release_date).getFullYear()
         : undefined;
 
-      return {
+      const image = imageUrls[index] ?? {};
+
+      const mapped = {
         id: game.id,
         title: game.game_title,
         subtitle: year ? year.toString() : undefined,
         year,
         type: 'games' as const,
-        coverUrl: imageUrls[index],
-        coverThumbnailUrl: imageUrls[index],
+        coverUrl: image.full,
+        coverThumbnailUrl: image.thumb ?? image.full,
         metadata: {
           release_date: game.release_date,
           isCustom: false,
         },
       };
+      return mapped;
     });
 
     // Cache all results
@@ -141,7 +166,7 @@ export class GamesService extends MediaService {
       this.itemToSearchParams.set(item.id, cacheKey);
     });
 
-    return results.slice(0, 10);
+    return results.slice(0, 25);
   }
 
   async getDetails(_id: string | number): Promise<MediaSearchResult | null> {

@@ -181,19 +181,17 @@
   background-color: #1f2933;
   border-radius: 12px;
   z-index: var(--z-dropdown);
-  box-shadow:
-    0 10px 30px rgba(0, 0, 0, 0.5),
-    0 0 0 1px rgba(255, 255, 255, 0.1);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.1);
   transition: all 0.3s ease;
 }
 
 .search-close-button {
-  position: absolute;
+  position: sticky;
   top: 12px;
-  right: 12px;
+  float: right;
   width: 32px;
   height: 32px;
-  margin: 0;
+  margin: 0 0 8px 8px;
   padding: 0;
   border: none;
   border-radius: 50%;
@@ -266,6 +264,7 @@
     transform 0.15s ease,
     box-shadow 0.2s ease,
     background-color 0.2s ease;
+  align-items: stretch;
 }
 
 .poster-picker-card:hover {
@@ -276,10 +275,10 @@
 
 .poster-picker-image {
   width: 100%;
-  height: 100%;
-  object-fit: cover;
+  height: auto;
+  object-fit: contain;
   display: block;
-  aspect-ratio: 2 / 3;
+  background: #0f1720;
 }
 
 .poster-picker-empty {
@@ -322,9 +321,8 @@
 .search-result-poster-large {
   width: 100%;
   height: auto;
-  object-fit: cover;
+  object-fit: contain;
   border-radius: 10px;
-  aspect-ratio: 2 / 3;
   background: #0f1720;
 }
 
