@@ -15,7 +15,7 @@ import type {
   MediaType,
 } from '../../media/types';
 import Grid2x2 from '../grid/grid';
-import CloseIcon from '../ui/close';
+import { MdClose } from 'react-icons/md';
 import AppHeader from '../ui/header';
 import Dropdown from './dropdown';
 import { PlatformAutocomplete } from './platformautocomplete';
@@ -819,10 +819,11 @@ const MediaSearch: React.FC = () => {
             <div className="search-results">
               <button
                 type="button"
-                className="close-button"
+                className="search-close-button"
                 onClick={closeSearchResults}
+                aria-label="Close search results"
               >
-                <CloseIcon />
+                <MdClose aria-hidden="true" focusable="false" />
               </button>
               <h3 className="search-results-subtitle">
                 Results for: "
