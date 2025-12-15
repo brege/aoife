@@ -197,24 +197,6 @@
   color: white;
 }
 
-.poster-grid-close-button {
-  position: fixed;
-  top: calc(var(--header-height) + 8px);
-  right: 8px;
-  width: 40px;
-  height: 40px;
-  border-radius: 6px;
-  background: rgba(220, 38, 38, 0.9);
-  z-index: calc(var(--z-overlay) + 1);
-  opacity: 1;
-  pointer-events: auto;
-}
-
-.poster-grid-close-button svg {
-  width: 18px;
-  height: 18px;
-}
-
 .grid-item.filled:hover .grid-close-button,
 .grid-item.filled:focus-within .grid-close-button {
   opacity: 1;
@@ -254,54 +236,6 @@
   cursor: pointer;
 }
 
-.poster-grid-overlay {
-  position: fixed;
-  top: var(--header-height);
-  left: 0;
-  width: 100vw;
-  height: calc(100vh - var(--header-height));
-  background: rgba(0, 0, 0, 0.95);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-start;
-  z-index: var(--z-overlay);
-  padding: 20px;
-  overflow-y: auto;
-}
-
-.poster-grid-title {
-  color: white;
-  font-size: 24px;
-  margin-bottom: 20px;
-  text-align: center;
-}
-
-.poster-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 20px;
-  width: 90vw;
-  max-width: 1200px;
-  max-height: 60vh;
-  overflow-y: auto;
-  padding: 20px;
-  justify-content: center;
-}
-
-.alternate-poster {
-  width: 100%;
-  height: auto;
-  object-fit: cover;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: transform 0.2s ease;
-}
-
-.alternate-poster:hover {
-  transform: scale(1.05);
-}
-
 @media (max-width: 600px) {
   .grid-2x2.grid-builder {
     padding: var(--spacing-md);
@@ -330,10 +264,5 @@
   .grid-close-button svg {
     width: 14px;
     height: 14px;
-  }
-
-  .poster-grid {
-    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-    gap: var(--spacing-md);
   }
 }

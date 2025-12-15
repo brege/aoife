@@ -245,6 +245,53 @@
   box-shadow: 0 6px 14px rgba(0, 0, 0, 0.25);
 }
 
+.poster-picker {
+  max-width: 1000px;
+}
+
+.poster-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+}
+
+.poster-picker-card {
+  border: none;
+  padding: 0;
+  background: #1f2933;
+  border-radius: 12px;
+  overflow: hidden;
+  cursor: pointer;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.poster-picker-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.25);
+  background: #2c3e50;
+}
+
+.poster-picker-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  aspect-ratio: 2 / 3;
+}
+
+.poster-picker-empty {
+  grid-column: 1 / -1;
+  background: #1f2933;
+  border: 1px dashed #3b4a5f;
+  border-radius: 12px;
+  color: #c5ced9;
+  padding: 32px;
+  text-align: center;
+}
+
 .search-results-subtitle {
   margin: 0 0 15px 0;
   padding: 5px 10px;

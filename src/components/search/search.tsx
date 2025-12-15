@@ -141,6 +141,10 @@ const MediaSearch: React.FC = () => {
   const [activePosterItemId, setActivePosterItemId] = useState<
     string | number | null
   >(null);
+  const activePosterItem = useMemo(
+    () => gridItems.find((item) => item.id === activePosterItemId) ?? null,
+    [gridItems, activePosterItemId],
+  );
   const [columns, setColumns] = useState(() => {
     const stored = localStorage.getItem(COLUMNS_STORAGE_KEY);
     if (stored) {
@@ -468,6 +472,16 @@ const MediaSearch: React.FC = () => {
     setActivePosterItemId(null);
   };
 
+  useEffect(() => {
+    if (showPosterGrid) {
+      openModal('posterGrid');
+    } else {
+      closeModal('posterGrid');
+    }
+  }, [showPosterGrid, openModal, closeModal]);
+
+  useModalClosed('posterGrid', handleClosePosterGrid);
+
   const handleAspectRatioUpdate = useCallback(
     (mediaId: string | number, aspectRatio: number) => {
       setGridItems((current) => {
@@ -753,10 +767,6 @@ const MediaSearch: React.FC = () => {
                 );
                 setShowPosterGrid(true);
               }}
-              showPosterGrid={showPosterGrid}
-              alternatePosterUrls={alternateCoverUrls}
-              onSelectAlternatePoster={handleSelectAlternatePoster}
-              onClosePosterGrid={handleClosePosterGrid}
               onPlaceholderClick={() => searchInputRef.current?.focus()}
               columns={columns}
               minRows={minRows}
@@ -876,7 +886,58 @@ const MediaSearch: React.FC = () => {
           </div>
           {isLoading && <p>Loading...</p>}
           {error && <p className="error">{error}</p>}
-          {searchResults.length > 0 && selectedMediaType !== 'custom' && (
+          {showPosterGrid && (
+            <div className="search-results poster-picker">
+              <button
+                type="button"
+                className="search-close-button"
+                onClick={handleClosePosterGrid}
+                aria-label="Close alternate covers"
+              >
+                <MdClose aria-hidden="true" focusable="false" />
+              </button>
+              <h3 className="search-results-subtitle">
+                Alternate covers
+                {activePosterItem ? ` - ${activePosterItem.title}` : ''}
+              </h3>
+              <div className="poster-picker-grid">
+                {alternateCoverUrls.length === 0 ? (
+                  <div className="poster-picker-empty">No alternate covers</div>
+                ) : (
+                  alternateCoverUrls.map((url, index) => (
+                    <button
+                      key={url}
+                      type="button"
+                      className="poster-picker-card"
+                      onClick={() => {
+                        logger.info(
+                          `POSTER: Selected alternate poster ${index + 1}`,
+                          {
+                            context: 'Grid2x2.onSelectAlternatePoster',
+                            action: 'poster_change',
+                            posterIndex: index + 1,
+                            posterPath: url,
+                            timestamp: Date.now(),
+                          },
+                        );
+                        handleSelectAlternatePoster(url);
+                      }}
+                      aria-label={`Use alternate cover ${index + 1}`}
+                    >
+                      <img
+                        src={url}
+                        alt={`Alternate cover ${index + 1}`}
+                        className="poster-picker-image"
+                      />
+                    </button>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
+          {!showPosterGrid &&
+            searchResults.length > 0 &&
+            selectedMediaType !== 'custom' && (
             <div className="search-results">
               <button
                 type="button"
@@ -978,8 +1039,8 @@ const MediaSearch: React.FC = () => {
                   );
                 })}
               </div>
-            </div>
-          )}
+              </div>
+            )}
         </div>
       </div>
     </div>

@@ -6,16 +6,11 @@ import { type MediaItem, TMDB_IMAGE_BASE } from '../../media/types';
 import { MEDIA_TYPE_ICONS } from '../search/dropdown';
 import { MdClose } from 'react-icons/md';
 import { CustomImage } from '../ui/customimage';
-import { useModalClosed, useModalManager } from '../../lib/modalmanager';
 
 interface Grid2x2Props {
   items: MediaItem[];
   onRemoveMedia: (mediaId: string | number) => void;
   onPosterClick: (media: MediaItem) => void;
-  showPosterGrid: boolean;
-  alternatePosterUrls: string[];
-  onSelectAlternatePoster: (url: string) => void;
-  onClosePosterGrid: () => void;
   onPlaceholderClick: () => void;
   columns: number;
   minRows: number;
@@ -88,10 +83,6 @@ const Grid2x2: React.FC<Grid2x2Props> = ({
   items,
   onRemoveMedia,
   onPosterClick,
-  showPosterGrid,
-  alternatePosterUrls,
-  onSelectAlternatePoster,
-  onClosePosterGrid,
   onPlaceholderClick,
   columns,
   minRows,
@@ -122,18 +113,6 @@ const Grid2x2: React.FC<Grid2x2Props> = ({
     window.addEventListener('resize', updateDimensions);
     return () => window.removeEventListener('resize', updateDimensions);
   }, [isBuilderMode]);
-
-  const { openModal, closeModal } = useModalManager();
-
-  useEffect(() => {
-    if (showPosterGrid) {
-      openModal('posterGrid');
-    } else {
-      closeModal('posterGrid');
-    }
-  }, [showPosterGrid, openModal, closeModal]);
-
-  useModalClosed('posterGrid', onClosePosterGrid);
 
   const gap = 16;
   const rowLayouts = React.useMemo(() => {
@@ -300,55 +279,6 @@ const Grid2x2: React.FC<Grid2x2Props> = ({
       className={`grid-2x2 ${isBuilderMode ? 'grid-builder' : 'grid-presentation'}`}
     >
       {isBuilderMode ? renderBuilderMode() : renderPresentationMode()}
-
-      {showPosterGrid && (
-        <div className="poster-grid-overlay">
-          <button
-            type="button"
-            className="grid-close-button poster-grid-close-button"
-            onClick={onClosePosterGrid}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter' || event.key === ' ') {
-                event.preventDefault();
-                onClosePosterGrid();
-              }
-            }}
-          >
-            <MdClose aria-hidden="true" focusable="false" />
-          </button>
-          <h2 className="poster-grid-title">Alternate Covers</h2>
-          <div className="poster-grid">
-            {alternatePosterUrls.map((url, index) => (
-              <button
-                key={url}
-                type="button"
-                className="alternate-poster-button"
-                onClick={() => {
-                  logger.info(
-                    `POSTER: Selected alternate poster ${index + 1}`,
-                    {
-                      context: 'Grid2x2.onSelectAlternatePoster',
-                      action: 'poster_change',
-                      posterIndex: index + 1,
-                      posterPath: url,
-                      timestamp: Date.now(),
-                    },
-                  );
-                  onSelectAlternatePoster(url);
-                }}
-                aria-label={`Select alternate cover ${index + 1}`}
-              >
-                <img
-                  src={url}
-                  alt={`Alternate cover ${index + 1}`}
-                  className="alternate-poster"
-                  title={`Alternate Cover ${index + 1}`}
-                />
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 };
