@@ -14,17 +14,29 @@ const state = {
 function setMediaType(mediaType) {
   if (!mediaType) return cy.wrap(null);
 
-  return cy.get('.dropdown-button').then(($button) => {
-    const current = $button.find('.dropdown-label').text().trim();
-    const expected =
-      mediaType === 'tv'
-        ? 'TV Shows'
-        : mediaType[0].toUpperCase() + mediaType.slice(1);
-    if (current === expected) return;
+  return cy
+    .get('body')
+    .then(($body) => {
+      if ($body.find('.search-results').length > 0) {
+        return cy.get('.search-close-button').click({ force: true });
+      }
+      return cy.wrap(null);
+    })
+    .then(() =>
+      cy.get('.dropdown-button').then(($button) => {
+        const current = $button.find('.dropdown-label').text().trim();
+        const expected =
+          mediaType === 'tv'
+            ? 'TV Shows'
+            : mediaType[0].toUpperCase() + mediaType.slice(1);
+        if (current === expected) return;
 
-    cy.wrap($button).click();
-    cy.contains('.dropdown-option-label', expected, { timeout: 5000 }).click();
-  });
+        cy.wrap($button).click();
+        cy.contains('.dropdown-option-label', expected, {
+          timeout: 5000,
+        }).click();
+      }),
+    );
 }
 
 function searchMedia(payload) {
@@ -41,13 +53,17 @@ function searchMedia(payload) {
         .type(query, { force: true }),
     )
     .then(() => cy.get('.search-button').click())
-    .then(() => cy.get('.search-results .movie-item', { timeout: 20000 }))
+    .then(() =>
+      cy.get('.search-results .search-result-card', { timeout: 20000 }),
+    )
     .then((items) => {
       const results = items.toArray().map((el) => {
-        const title = el.querySelector('.movie-title')?.textContent?.trim();
-        const href = el.querySelector('.tmdb-link')?.getAttribute('href') || '';
-        const idMatch = href.match(/\/(\d+)/);
-        return { title: title || '', id: idMatch ? idMatch[1] : undefined };
+        const title =
+          el.getAttribute('data-media-title') ||
+          el.querySelector('.search-result-name')?.textContent?.trim() ||
+          '';
+        const idAttr = el.getAttribute('data-media-id') || '';
+        return { title, id: idAttr || undefined };
       });
       state.lastSearchResults = results;
       return results;
@@ -64,7 +80,7 @@ function addFromResults(payload) {
       cy.get('.search-results', { timeout: 10000 }).should('be.visible');
     })
     .then(() =>
-      cy.get('.add-button', { timeout: 15000 }).first().click({ force: true }),
+      cy.get('.search-result-card', { timeout: 15000 }).first().click(),
     )
     .then(() => cy.wait(500))
     .then(() => cy.get('.grid-item.filled', { timeout: 30000 }))

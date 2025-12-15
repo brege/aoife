@@ -979,6 +979,8 @@ const MediaSearch: React.FC = () => {
                       key={result.id}
                       type="button"
                       className="search-result-card"
+                      data-media-id={result.id}
+                      data-media-title={result.title}
                       onClick={() => handleAddMedia(result, searchResults)}
                       aria-label={`Add ${result.title}`}
                     >
