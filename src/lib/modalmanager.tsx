@@ -54,3 +54,17 @@ export const useModalManager = () => {
   }
   return context;
 };
+
+export const useModalClosed = (modal: Modal, onClose: () => void) => {
+  useEffect(() => {
+    const handleModalClosed = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      if (customEvent.detail?.modal === modal) {
+        onClose();
+      }
+    };
+
+    window.addEventListener('modalClosed', handleModalClosed);
+    return () => window.removeEventListener('modalClosed', handleModalClosed);
+  }, [modal, onClose]);
+};

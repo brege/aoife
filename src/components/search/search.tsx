@@ -4,7 +4,7 @@ import { MdDriveFolderUpload } from 'react-icons/md';
 import '../../app/styles/global.css';
 import './search.css';
 import { type CliMenuState, useCliBridge } from '../../lib/api';
-import { useModalManager } from '../../lib/modalmanager';
+import { useModalClosed, useModalManager } from '../../lib/modalmanager';
 import { storeImage } from '../../lib/indexeddb';
 import logger from '../../lib/logger';
 import { getMediaService } from '../../media/factory';
@@ -152,17 +152,7 @@ const MediaSearch: React.FC = () => {
     }
   }, [searchResults.length, openModal, closeModal]);
 
-  useEffect(() => {
-    const handleModalClosed = (event: Event) => {
-      const customEvent = event as CustomEvent;
-      if (customEvent.detail.modal === 'searchResults') {
-        closeSearchResults();
-      }
-    };
-
-    window.addEventListener('modalClosed', handleModalClosed);
-    return () => window.removeEventListener('modalClosed', handleModalClosed);
-  }, []);
+  useModalClosed('searchResults', closeSearchResults);
 
   const handleSearchResultImageLoad = useCallback(
     (

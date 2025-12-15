@@ -2,6 +2,7 @@ import axios from 'axios';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useDropdownNavigation } from '../../lib/escape';
 import './platformautocomplete.css';
+import { useOnClickOutside } from '../ui/useonclickoutside';
 
 type Platform = {
   id: string;
@@ -25,6 +26,7 @@ export function PlatformAutocomplete({
   const [showDropdown, setShowDropdown] = useState(false);
   const [inputValue, setInputValue] = useState('');
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
+  const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const optionRefs = useRef<(HTMLButtonElement | null)[]>([]);
@@ -76,15 +78,8 @@ export function PlatformAutocomplete({
     [onChange],
   );
 
-  const handleClickOutside = useCallback((e: MouseEvent) => {
-    if (
-      dropdownRef.current &&
-      !dropdownRef.current.contains(e.target as Node) &&
-      inputRef.current &&
-      !inputRef.current.contains(e.target as Node)
-    ) {
-      setShowDropdown(false);
-    }
+  const handleClickOutside = useCallback(() => {
+    setShowDropdown(false);
   }, []);
 
   const handleMoveDown = useCallback(() => {
@@ -128,15 +123,10 @@ export function PlatformAutocomplete({
     }
   }, [highlightedIndex]);
 
-  useEffect(() => {
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [handleClickOutside]);
+  useOnClickOutside(containerRef, handleClickOutside, showDropdown);
 
   return (
-    <div className="platform-autocomplete">
+    <div className="platform-autocomplete" ref={containerRef}>
       <input
         ref={inputRef}
         type="text"

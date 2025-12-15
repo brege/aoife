@@ -6,7 +6,7 @@ import { type MediaItem, TMDB_IMAGE_BASE } from '../../media/types';
 import { MEDIA_TYPE_ICONS } from '../search/dropdown';
 import { MdClose } from 'react-icons/md';
 import { CustomImage } from '../ui/customimage';
-import { useModalManager } from '../../lib/modalmanager';
+import { useModalClosed, useModalManager } from '../../lib/modalmanager';
 
 interface Grid2x2Props {
   items: MediaItem[];
@@ -133,17 +133,7 @@ const Grid2x2: React.FC<Grid2x2Props> = ({
     }
   }, [showPosterGrid, openModal, closeModal]);
 
-  useEffect(() => {
-    const handleModalClosed = (event: Event) => {
-      const customEvent = event as CustomEvent;
-      if (customEvent.detail.modal === 'posterGrid') {
-        onClosePosterGrid();
-      }
-    };
-
-    window.addEventListener('modalClosed', handleModalClosed);
-    return () => window.removeEventListener('modalClosed', handleModalClosed);
-  }, [onClosePosterGrid]);
+  useModalClosed('posterGrid', onClosePosterGrid);
 
   const gap = 16;
   const rowLayouts = React.useMemo(() => {
@@ -315,7 +305,7 @@ const Grid2x2: React.FC<Grid2x2Props> = ({
         <div className="poster-grid-overlay">
           <button
             type="button"
-            className="close-button"
+            className="grid-close-button poster-grid-close-button"
             onClick={onClosePosterGrid}
             onKeyDown={(event) => {
               if (event.key === 'Enter' || event.key === ' ') {

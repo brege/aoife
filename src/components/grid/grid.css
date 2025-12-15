@@ -164,34 +164,6 @@
   transform: scale(1.1);
 }
 
-.close-button {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  background: rgba(0, 0, 0, 0.8);
-  border: none;
-  border-radius: 50%;
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  z-index: 10;
-}
-
-.close-button:hover {
-  background: rgba(220, 38, 38, 0.9);
-  transform: scale(1.1);
-}
-
-.close-button svg {
-  width: 16px;
-  height: 16px;
-  color: white;
-}
-
 .grid-close-button {
   position: absolute;
   top: 8px;
@@ -223,6 +195,24 @@
   flex-shrink: 0;
   display: block;
   color: white;
+}
+
+.poster-grid-close-button {
+  position: fixed;
+  top: calc(var(--header-height) + 8px);
+  right: 8px;
+  width: 40px;
+  height: 40px;
+  border-radius: 6px;
+  background: rgba(220, 38, 38, 0.9);
+  z-index: calc(var(--z-overlay) + 1);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.poster-grid-close-button svg {
+  width: 18px;
+  height: 18px;
 }
 
 .grid-item.filled:hover .grid-close-button,
@@ -312,27 +302,6 @@
   transform: scale(1.05);
 }
 
-.poster-grid-overlay .close-button {
-  position: fixed;
-  top: calc(var(--header-height) + 8px);
-  right: 8px;
-  background: rgba(220, 38, 38, 0.9);
-  width: 40px;
-  height: 40px;
-  z-index: calc(var(--z-overlay) + 1);
-  border-radius: 6px;
-  padding: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.poster-grid-overlay .close-button svg {
-  width: 18px;
-  height: 18px;
-  flex-shrink: 0;
-}
-
 @media (max-width: 600px) {
   .grid-2x2.grid-builder {
     padding: var(--spacing-md);
@@ -349,18 +318,6 @@
 
   .placeholder-content {
     font-size: 24px;
-  }
-
-  .close-button {
-    width: 28px;
-    height: 28px;
-    top: 6px;
-    right: 6px;
-  }
-
-  .close-button svg {
-    width: 14px;
-    height: 14px;
   }
 
   .grid-close-button {

@@ -1,5 +1,5 @@
 import type React from 'react';
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { GiFilmStrip } from 'react-icons/gi';
 import { MdDashboardCustomize } from 'react-icons/md';
 import {
@@ -10,6 +10,7 @@ import {
 } from 'react-icons/pi';
 import type { MediaType } from '../../media/types';
 import './dropdown.css';
+import { useOnClickOutside } from '../ui/useonclickoutside';
 
 interface DropdownProps {
   value: MediaType;
@@ -42,24 +43,7 @@ const Dropdown: React.FC<DropdownProps> = ({ value, onChange }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
-      ) {
-        setIsOpen(false);
-      }
-    };
-
-    if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [isOpen]);
+  useOnClickOutside(dropdownRef, () => setIsOpen(false), isOpen);
 
   const handleSelect = (type: MediaType) => {
     onChange(type);
