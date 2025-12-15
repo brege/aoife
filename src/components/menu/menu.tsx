@@ -73,7 +73,6 @@ const Menu: React.FC<MenuProps> = ({
 
   const handleModeSelect = (builderModeEnabled: boolean) => {
     if (isBuilderMode === builderModeEnabled) {
-      closeMenu();
       return;
     }
 
@@ -89,7 +88,6 @@ const Menu: React.FC<MenuProps> = ({
         timestamp: Date.now(),
       },
     );
-    closeMenu();
   };
 
   const appVersion = packageJson.version ?? '';

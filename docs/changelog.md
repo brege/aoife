@@ -1,9 +1,29 @@
 # Changelog
 
+## 2025-12-15
+
+- Redesigned poster/cover selection with visual picker interface and large thumbnail previews
+- Refactored alternative cover picker into drawer component for better UX
+- Fixed close button positioning across search results, grid items, and video game posters
+- Removed old bespoke close button components in favor of consistent styling
+- Reduced duplicate click handlers and competing close button conflicts
+- Fixed failing end-to-end tests
+
+## 2025-12-14
+
+- Added modal manager for keyboard navigation (Esc key to close modals and search results)
+- Removed template stub after adding first media item to grid
+- Fixed TMDb and GamesDB API proxy routing through Aoife API instead of direct client calls
+
 ## 2025-12-12
 
-- Added backend/ code for production mode using gunicorn at aoife.brege.org (protoype)
-- Wrangle dev-mode vs. production mode logic with environment variable, __stubs__, and proper API endpoints
+- Added backend server for production prototype deployment (gunicorn, Flask, reverse proxy setup)
+- Implemented mocha E2E test suite with GitHub Actions CI/CD workflows
+- Refined development tools: pre-commit hooks, linting, and test automation
+- Disabled CLI bridge outside dev mode for production safety
+- Fixed video game platform dropdown and search endpoint routing for production
+- Added request rate limiting (clamping requests/sec) to protect production API calls
+- Improved book cover loading via server-to-server requests instead of client-side proxying
 
 ## 2025-12-11
 
