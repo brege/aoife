@@ -1,7 +1,7 @@
 {
   "name": "aoife",
   "private": true,
-  "version": "0.3.0",
+  "version": "0.3.1",
   "type": "module",
   "scripts": {
     "dev": "vite --host",
@@ -13,6 +13,7 @@
     "test:e2e": "start-server-and-test dev http://localhost:5173 \"mocha --group e2e\""
   },
   "dependencies": {
+    "@headlessui/react": "^2.2.9",
     "@types/ws": "^8.18.1",
     "axios": "^1.7.9",
     "react": "^18.3.1",

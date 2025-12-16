@@ -53,6 +53,7 @@
 .grid-row {
   display: flex;
   justify-content: center;
+  align-items: center;
 }
 
 .grid-item {
@@ -154,6 +155,10 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+.grid-2x2[data-layout-dimension="width"] .grid-poster {
+  height: auto;
 }
 
 .grid-poster:hover {

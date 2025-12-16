@@ -20,6 +20,7 @@ import { MediaSearchForm } from './mediasearchform';
 const GRID_STORAGE_KEY = 'gridItems';
 const COLUMNS_STORAGE_KEY = 'gridColumns';
 const MIN_ROWS_STORAGE_KEY = 'gridMinRows';
+const LAYOUT_DIMENSION_STORAGE_KEY = 'layoutDimension';
 const GRID_CAPACITY = 4;
 
 type TestApplicationApi = {
@@ -41,6 +42,8 @@ type TestApplicationApi = {
   setBuilderMode: (enabled: boolean) => void;
   getBuilderMode: () => boolean;
   getSearchValues: () => MediaSearchValues;
+  setLayoutDimension: (dimension: 'width' | 'height') => void;
+  getLayoutDimension: () => 'width' | 'height';
 };
 
 type WindowWithTestApi = Window & {
@@ -194,6 +197,13 @@ const MediaSearch: React.FC = () => {
     }
     return 2;
   });
+  const [layoutDimension, setLayoutDimension] = useState<'width' | 'height'>(() => {
+    const stored = localStorage.getItem(LAYOUT_DIMENSION_STORAGE_KEY);
+    if (stored === 'width' || stored === 'height') {
+      return stored;
+    }
+    return 'height';
+  });
   const [lastSearchSummary, setLastSearchSummary] = useState('');
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [isBuilderMode, setIsBuilderMode] = useState(true);
@@ -260,6 +270,10 @@ const MediaSearch: React.FC = () => {
   useEffect(() => {
     localStorage.setItem(MIN_ROWS_STORAGE_KEY, String(minRows));
   }, [minRows]);
+
+  useEffect(() => {
+    localStorage.setItem(LAYOUT_DIMENSION_STORAGE_KEY, layoutDimension);
+  }, [layoutDimension]);
 
   const { openModal, closeModal } = useModalManager();
 
@@ -829,6 +843,8 @@ const MediaSearch: React.FC = () => {
       setBuilderMode: handleBuilderModeToggle,
       getBuilderMode: () => isBuilderMode,
       getSearchValues: () => searchValues,
+      setLayoutDimension: (dimension) => setLayoutDimension(dimension),
+      getLayoutDimension: () => layoutDimension,
     };
 
     windowWithTestApi.appTestApi = testApi;
@@ -842,6 +858,7 @@ const MediaSearch: React.FC = () => {
     handleClearGrid,
     handleRemoveMedia,
     isBuilderMode,
+    layoutDimension,
     mergeSearchValues,
     resolveProvider,
     runSearch,
@@ -862,6 +879,8 @@ const MediaSearch: React.FC = () => {
         onMinRowsChange={setMinRows}
         isBuilderMode={isBuilderMode}
         onBuilderModeToggle={handleBuilderModeToggle}
+        layoutDimension={layoutDimension}
+        onLayoutDimensionChange={setLayoutDimension}
       />
 
       {isBuilderMode && (
@@ -910,6 +929,7 @@ const MediaSearch: React.FC = () => {
               }
               isBuilderMode={isBuilderMode}
               onAspectRatioUpdate={handleAspectRatioUpdate}
+              layoutDimension={layoutDimension}
             />
             {isBuilderMode && (
               <MediaSearchForm

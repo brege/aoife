@@ -5,10 +5,12 @@ import {
   clearGridThroughApplication,
   getApplicationTestApi,
   getGridSnapshot,
+  getLayoutDimension,
   removeMediaDirectly,
   resetApplicationState,
   searchThroughApplication,
   setBuilderModeState,
+  setLayoutDimension,
   setMediaType,
 } from '../support/actions';
 
@@ -192,6 +194,17 @@ function runOperation(step, scenarioResult) {
     });
   }
 
+  if (operation === 'setLayoutDimension') {
+    const dimension = payload.dimension || 'height';
+    return setLayoutDimension(dimension).then((result) => {
+      if (scenarioResult) {
+        scenarioResult.statusCode = 200;
+        scenarioResult.layoutDimension = result;
+      }
+      return { statusCode: 200, layoutDimension: result };
+    });
+  }
+
   return cy.wrap({
     statusCode: 400,
     error: `Unsupported operation ${operation}`,
@@ -261,6 +274,12 @@ function runScenario(scenario) {
     execution = removeMediaOperation(scenario.payload || {});
   } else if (op === 'getGrid') {
     execution = getGridStateOperation();
+  } else if (op === 'setLayoutDimension') {
+    const dimension = scenario.payload?.dimension || 'height';
+    execution = setLayoutDimension(dimension).then((result) => ({
+      statusCode: 200,
+      layoutDimension: result,
+    }));
   } else {
     execution = cy.wrap({
       statusCode: 400,

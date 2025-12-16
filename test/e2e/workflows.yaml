@@ -142,6 +142,59 @@ workflows:
           - name: tmdb_tv_search_latency
             type: duration
 
+  - name: layout_dimension
+    description: Test layout dimension toggle between fixed width and height
+    enabled: true
+    level: integration
+    scenarios:
+      - test_id: layout_001
+        description: Add movie and music items
+        type: workflow
+        steps:
+          - operation: add
+            payload:
+              id: 101
+              title: Inception
+              year: 2010
+              type: movies
+              coverUrl: https://example.com/inception.jpg
+          - operation: add
+            payload:
+              id: 201
+              title: Test Album
+              year: 2020
+              type: music
+              coverUrl: https://example.com/album.jpg
+        expectations:
+          statusCode: 200
+        measurements:
+          - name: add_multiple_items_latency
+            type: duration
+
+      - test_id: layout_002
+        description: Switch to fixed width layout
+        type: operation
+        operation: setLayoutDimension
+        payload:
+          dimension: width
+        expectations:
+          statusCode: 200
+        measurements:
+          - name: layout_switch_latency
+            type: duration
+
+      - test_id: layout_003
+        description: Verify layout dimension was set
+        type: operation
+        operation: setLayoutDimension
+        payload:
+          dimension: height
+        expectations:
+          statusCode: 200
+        measurements:
+          - name: layout_switch_latency
+            type: duration
+
 benchmarks:
   enabled: true
   persist: true

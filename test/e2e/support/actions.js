@@ -125,3 +125,16 @@ export function clearGridThroughApplication() {
       .then(() => testApi.getStoredGridItems());
   });
 }
+
+export function setLayoutDimension(dimension) {
+  return getApplicationTestApi().then((testApi) => {
+    testApi.setLayoutDimension(dimension);
+    return testApi.getLayoutDimension();
+  });
+}
+
+export function getLayoutDimension() {
+  return getApplicationTestApi().then((testApi) => {
+    return testApi.getLayoutDimension();
+  });
+}

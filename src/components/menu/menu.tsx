@@ -20,6 +20,8 @@ interface MenuProps {
   onMinRowsChange: (minRows: number) => void;
   isBuilderMode: boolean;
   onBuilderModeToggle: (enabled: boolean) => void;
+  layoutDimension: 'width' | 'height';
+  onLayoutDimensionChange: (dimension: 'width' | 'height') => void;
 }
 
 const Menu: React.FC<MenuProps> = ({
@@ -30,6 +32,8 @@ const Menu: React.FC<MenuProps> = ({
   onMinRowsChange,
   isBuilderMode,
   onBuilderModeToggle,
+  layoutDimension,
+  onLayoutDimensionChange,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -130,6 +134,7 @@ const Menu: React.FC<MenuProps> = ({
                 <HiOutlinePencilAlt size={20} />
               )}
             </button>
+
           </div>
 
           <MenuConfig
@@ -138,6 +143,8 @@ const Menu: React.FC<MenuProps> = ({
             onColumnsChange={onColumnsChange}
             minRows={minRows}
             onMinRowsChange={onMinRowsChange}
+            layoutDimension={layoutDimension}
+            onLayoutDimensionChange={onLayoutDimensionChange}
           />
 
           <div className="menu-about menu-grid-config-section">

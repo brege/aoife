@@ -8,6 +8,7 @@
 - Exposed an in-app test API plus stable data-test hooks so Cypress can drive state
 - Tests avoid brittleness from DOM selectors using data-test attributes
 - Added API integration tests and folded Cypress deeper into the test suite structure
+- Added layout dimension toggle to switch between fixed-width and fixed-height poster sizing
 
 ## 2025-12-15
 

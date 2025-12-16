@@ -17,6 +17,7 @@ interface Grid2x2Props {
   placeholderLabel?: string;
   isBuilderMode?: boolean;
   onAspectRatioUpdate?: (mediaId: string | number, aspectRatio: number) => void;
+  layoutDimension?: 'width' | 'height';
 }
 
 const DEFAULT_ASPECT_RATIOS: Record<string, number> = {
@@ -52,28 +53,49 @@ const calculateRowLayouts = (
   availableHeight: number,
   gap: number,
   minRowsVisible: number,
+  layoutDimension: 'width' | 'height' = 'height',
 ): RowLayout[] => {
   const rows: RowLayout[] = [];
   const totalRows = Math.ceil(items.length / columns);
-  const effectiveMinRows = Math.max(totalRows, minRowsVisible);
-  const maxRowHeight =
-    (availableHeight - (effectiveMinRows - 1) * gap) / effectiveMinRows;
 
-  for (let i = 0; i < items.length; i += columns) {
-    const rowItems = items.slice(i, i + columns);
-    const aspectRatios = rowItems.map(getAspectRatio);
-    const sumAspectRatios = aspectRatios.reduce((sum, ar) => sum + ar, 0);
-    const totalGaps = (rowItems.length - 1) * gap;
-    const naturalHeight = (availableWidth - totalGaps) / sumAspectRatios;
-    const height = Math.min(naturalHeight, maxRowHeight);
+  if (layoutDimension === 'width') {
+    const totalGaps = (columns - 1) * gap;
+    const fixedWidth = (availableWidth - totalGaps) / columns;
 
-    rows.push({
-      height,
-      items: rowItems.map((media, index) => ({
-        media,
-        width: height * aspectRatios[index],
-      })),
-    });
+    for (let i = 0; i < items.length; i += columns) {
+      const rowItems = items.slice(i, i + columns);
+      const heights = rowItems.map((media) => fixedWidth / getAspectRatio(media));
+      const height = Math.max(...heights);
+
+      rows.push({
+        height,
+        items: rowItems.map((media) => ({
+          media,
+          width: fixedWidth,
+        })),
+      });
+    }
+  } else {
+    const effectiveMinRows = Math.max(totalRows, minRowsVisible);
+    const maxRowHeight =
+      (availableHeight - (effectiveMinRows - 1) * gap) / effectiveMinRows;
+
+    for (let i = 0; i < items.length; i += columns) {
+      const rowItems = items.slice(i, i + columns);
+      const aspectRatios = rowItems.map(getAspectRatio);
+      const sumAspectRatios = aspectRatios.reduce((sum, ar) => sum + ar, 0);
+      const totalGaps = (rowItems.length - 1) * gap;
+      const naturalHeight = (availableWidth - totalGaps) / sumAspectRatios;
+      const height = Math.min(naturalHeight, maxRowHeight);
+
+      rows.push({
+        height,
+        items: rowItems.map((media, index) => ({
+          media,
+          width: height * aspectRatios[index],
+        })),
+      });
+    }
   }
 
   return rows;
@@ -89,6 +111,7 @@ const Grid2x2: React.FC<Grid2x2Props> = ({
   placeholderLabel,
   isBuilderMode = true,
   onAspectRatioUpdate,
+  layoutDimension = 'height',
 }) => {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const gridContainerRef = useRef<HTMLDivElement>(null);
@@ -137,8 +160,9 @@ const Grid2x2: React.FC<Grid2x2Props> = ({
       containerHeight,
       gap,
       minRows,
+      layoutDimension,
     );
-  }, [items, columns, containerWidth, containerHeight, shouldUseBuilderLayout, minRows]);
+  }, [items, columns, containerWidth, containerHeight, shouldUseBuilderLayout, minRows, layoutDimension]);
 
   const handleImageLoad = (
     media: MediaItem,
@@ -241,14 +265,14 @@ const Grid2x2: React.FC<Grid2x2Props> = ({
             <div
               key={rowKey}
               className="grid-row"
-              style={{ height: row.height, gap }}
+              style={{ height: layoutDimension === 'width' ? 'auto' : row.height, gap }}
             >
               {row.items.map(({ media, width }) => (
                 <div
                   key={media.id}
                   className="grid-item filled"
                   data-type={media.type}
-                  style={{ width, height: row.height }}
+                  style={{ width, height: layoutDimension === 'width' ? 'auto' : row.height }}
                 >
                   <div className="poster-wrapper">
                     <button
@@ -291,6 +315,7 @@ const Grid2x2: React.FC<Grid2x2Props> = ({
     <div
       ref={wrapperRef}
       className={`grid-2x2 ${gridClassName}`}
+      data-layout-dimension={layoutDimension}
     >
       {shouldUseBuilderLayout ? renderBuilderMode() : renderPresentationMode()}
     </div>

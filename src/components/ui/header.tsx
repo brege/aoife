@@ -12,6 +12,8 @@ interface AppHeaderProps {
   onMinRowsChange: (minRows: number) => void;
   isBuilderMode: boolean;
   onBuilderModeToggle: (enabled: boolean) => void;
+  layoutDimension: 'width' | 'height';
+  onLayoutDimensionChange: (dimension: 'width' | 'height') => void;
 }
 
 const AppHeader: React.FC<AppHeaderProps> = ({
@@ -22,6 +24,8 @@ const AppHeader: React.FC<AppHeaderProps> = ({
   onMinRowsChange,
   isBuilderMode,
   onBuilderModeToggle,
+  layoutDimension,
+  onLayoutDimensionChange,
 }) => {
   return (
     <div className="app-header">
@@ -38,6 +42,8 @@ const AppHeader: React.FC<AppHeaderProps> = ({
           onMinRowsChange={onMinRowsChange}
           isBuilderMode={isBuilderMode}
           onBuilderModeToggle={onBuilderModeToggle}
+          layoutDimension={layoutDimension}
+          onLayoutDimensionChange={onLayoutDimensionChange}
         />
       </div>
     </div>

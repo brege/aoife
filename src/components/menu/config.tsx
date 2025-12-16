@@ -1,4 +1,5 @@
-import type React from 'react';
+import React from 'react';
+import { Switch } from '@headlessui/react';
 import logger from '../../lib/logger';
 
 interface MenuConfigProps {
@@ -7,6 +8,8 @@ interface MenuConfigProps {
   onColumnsChange: (columns: number) => void;
   minRows: number;
   onMinRowsChange: (minRows: number) => void;
+  layoutDimension: 'width' | 'height';
+  onLayoutDimensionChange: (dimension: 'width' | 'height') => void;
 }
 
 const MIN_COLUMNS = 1;
@@ -19,6 +22,8 @@ const MenuConfig: React.FC<MenuConfigProps> = ({
   onColumnsChange,
   minRows,
   onMinRowsChange,
+  layoutDimension,
+  onLayoutDimensionChange,
 }) => {
   const handleColumnsDecrement = () => {
     if (columns <= MIN_COLUMNS) return;
@@ -126,6 +131,15 @@ const MenuConfig: React.FC<MenuConfigProps> = ({
             +
           </button>
         </div>
+      </div>
+
+      <div className="config-row">
+        <span className="config-label">fixed width</span>
+        <Switch
+          checked={layoutDimension === 'width'}
+          onChange={(checked) => onLayoutDimensionChange(checked ? 'width' : 'height')}
+          className="layout-dimension-toggle"
+        />
       </div>
     </div>
   );
