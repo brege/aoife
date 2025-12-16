@@ -3,6 +3,11 @@
   width: 100%;
 }
 
+.media-search-form.band .platform-autocomplete {
+  flex: 0 0 auto;
+  width: 200px;
+}
+
 .platform-dropdown {
   position: absolute;
   top: 100%;

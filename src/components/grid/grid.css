@@ -9,6 +9,14 @@
   padding: var(--spacing-lg);
 }
 
+@media (min-width: 601px) {
+  .grid-2x2.grid-builder {
+    max-width: none;
+    width: 100%;
+    padding: var(--spacing-lg) 40px;
+  }
+}
+
 .grid-2x2.grid-presentation {
   width: 100%;
   height: calc(100vh - var(--header-height));

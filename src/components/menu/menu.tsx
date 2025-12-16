@@ -1,16 +1,16 @@
 import type React from 'react';
 import { useEffect, useRef, useState } from 'react';
+import { FaGithub } from 'react-icons/fa';
 import { FiGrid } from 'react-icons/fi';
 import { HiOutlinePencilAlt } from 'react-icons/hi';
-import { FaGithub } from 'react-icons/fa';
 import { VscSourceControl } from 'react-icons/vsc';
 import './menu.css';
 import packageJson from '../../../package.json';
 import logger from '../../lib/logger';
 import { useModalClosed, useModalManager } from '../../lib/modalmanager';
+import { useOnClickOutside } from '../ui/useonclickoutside';
 import MenuClear from './clear';
 import MenuConfig from './config';
-import { useOnClickOutside } from '../ui/useonclickoutside';
 
 interface MenuProps {
   onClearGrid: () => void;
@@ -36,15 +36,19 @@ const Menu: React.FC<MenuProps> = ({
   const buttonRef = useRef<HTMLButtonElement>(null);
   const { openModal, closeModal } = useModalManager();
 
-  useOnClickOutside(menuRef, (event) => {
-    if (
-      buttonRef.current &&
-      buttonRef.current.contains(event.target as Node)
-    ) {
-      return;
-    }
-    setIsOpen(false);
-  }, isOpen);
+  useOnClickOutside(
+    menuRef,
+    (event) => {
+      if (
+        buttonRef.current &&
+        buttonRef.current.contains(event.target as Node)
+      ) {
+        return;
+      }
+      setIsOpen(false);
+    },
+    isOpen,
+  );
 
   useEffect(() => {
     if (isOpen) {

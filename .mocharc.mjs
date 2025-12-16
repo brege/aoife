@@ -1,5 +1,5 @@
-import yargs from 'yargs/yargs';
 import { hideBin } from 'yargs/helpers';
+import yargs from 'yargs/yargs';
 
 const argv = yargs(hideBin(process.argv)).argv;
 const hasFiles = argv._ && argv._.length > 0;

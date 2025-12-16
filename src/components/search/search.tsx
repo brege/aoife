@@ -1,12 +1,11 @@
 import type React from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { MdDriveFolderUpload } from 'react-icons/md';
+import { MdClose } from 'react-icons/md';
 import '../../app/styles/global.css';
 import './search.css';
 import { type CliMenuState, useCliBridge } from '../../lib/api';
-import { useModalClosed, useModalManager } from '../../lib/modalmanager';
-import { storeImage } from '../../lib/indexeddb';
 import logger from '../../lib/logger';
+import { useModalClosed, useModalManager } from '../../lib/modalmanager';
 import { getMediaService } from '../../media/factory';
 import { getMediaProvider } from '../../media/providers';
 import type {
@@ -15,10 +14,8 @@ import type {
   MediaType,
 } from '../../media/types';
 import Grid2x2 from '../grid/grid';
-import { MdClose } from 'react-icons/md';
 import AppHeader from '../ui/header';
-import Dropdown from './dropdown';
-import { PlatformAutocomplete } from './platformautocomplete';
+import { MediaSearchForm } from './mediasearchform';
 
 const GRID_STORAGE_KEY = 'gridItems';
 const COLUMNS_STORAGE_KEY = 'gridColumns';
@@ -314,22 +311,6 @@ const MediaSearch: React.FC = () => {
       [fieldId]: value,
     }));
   }, []);
-
-  const handleCoverImageUpload = useCallback(
-    async (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
-      if (file) {
-        const imageId = `img-${Date.now()}-${file.name}`;
-        await storeImage(imageId, file);
-        handleFieldChange('cover', imageId);
-        if (!searchValues.query) {
-          const nameWithoutExt = file.name.replace(/\.[^/.]+$/, '');
-          handleFieldChange('query', nameWithoutExt);
-        }
-      }
-    },
-    [searchValues.query, handleFieldChange],
-  );
 
   const handleAddMedia = useCallback(
     (media: MediaItem, availableCovers?: MediaItem[]) => {
@@ -750,6 +731,19 @@ const MediaSearch: React.FC = () => {
         onBuilderModeToggle={handleBuilderModeToggle}
       />
 
+      {isBuilderMode && (
+        <MediaSearchForm
+          mediaType={selectedMediaType}
+          onMediaTypeChange={handleMediaTypeChange}
+          searchValues={searchValues}
+          onFieldChange={handleFieldChange}
+          onSubmit={handleSearch}
+          isLoading={isLoading}
+          provider={provider}
+          layout="band"
+        />
+      )}
+
       <div className={searchSectionClassName}>
         <div className="search-content">
           <div className={searchModuleClassName}>
@@ -778,118 +772,23 @@ const MediaSearch: React.FC = () => {
               onPlaceholderClick={() => searchInputRef.current?.focus()}
               columns={columns}
               minRows={minRows}
-              placeholderLabel={gridItems.length === 0 ? provider.resultLabel : undefined}
+              placeholderLabel={
+                gridItems.length === 0 ? provider.resultLabel : undefined
+              }
               isBuilderMode={isBuilderMode}
               onAspectRatioUpdate={handleAspectRatioUpdate}
             />
             {isBuilderMode && (
-              <form onSubmit={handleSearch} className="search-form">
-                <Dropdown
-                  value={selectedMediaType}
-                  onChange={handleMediaTypeChange}
-                />
-                {provider.searchFields.map((field, index) => {
-                  if (
-                    field.id === 'platform' &&
-                    selectedMediaType === 'games'
-                  ) {
-                    return (
-                      <PlatformAutocomplete
-                        key={field.id}
-                        value={searchValues[field.id] ?? ''}
-                        onChange={(value) => handleFieldChange(field.id, value)}
-                        placeholder={field.placeholder}
-                        ariaLabel={field.label}
-                      />
-                    );
-                  }
-
-                  if (field.id === 'cover' && selectedMediaType === 'custom') {
-                    return (
-                      <div key={field.id} className="input-with-button">
-                        <input
-                          ref={index === 0 ? searchInputRef : undefined}
-                          type="text"
-                          value={searchValues[field.id] ?? ''}
-                          onChange={(e) =>
-                            handleFieldChange(field.id, e.target.value)
-                          }
-                          placeholder={field.placeholder}
-                          aria-label={field.label}
-                          className="search-input"
-                          required={field.required}
-                        />
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={handleCoverImageUpload}
-                          style={{ display: 'none' }}
-                          id="cover-file-input"
-                          aria-label="Upload cover image"
-                        />
-                        <button
-                          type="button"
-                          onClick={() =>
-                            document.getElementById('cover-file-input')?.click()
-                          }
-                          className="icon-button"
-                          aria-label="Upload image"
-                          title="Upload image"
-                        >
-                          <MdDriveFolderUpload size={20} />
-                        </button>
-                      </div>
-                    );
-                  }
-
-                  return (
-                    <input
-                      key={field.id}
-                      ref={index === 0 ? searchInputRef : undefined}
-                      type="text"
-                      value={searchValues[field.id] ?? ''}
-                      onChange={(e) =>
-                        handleFieldChange(field.id, e.target.value)
-                      }
-                      placeholder={field.placeholder}
-                      aria-label={field.label}
-                      className="search-input"
-                      required={field.required}
-                    />
-                  );
-                })}
-                <div className="search-buttons-row">
-                  <button
-                    type="submit"
-                    className="search-button"
-                    disabled={isLoading}
-                    onClick={() => {
-                      const action =
-                        selectedMediaType === 'custom' ? 'Upload' : 'Search';
-                      logger.info(
-                        `${action}: ${formatSearchSummary(searchValues, provider.searchFields)}`,
-                        {
-                          context: 'MediaSearch.SearchButton',
-                          action:
-                            selectedMediaType === 'custom'
-                              ? 'custom_upload'
-                              : 'search_submit',
-                          values: searchValues,
-                          timestamp: Date.now(),
-                        },
-                      );
-                    }}
-                  >
-                    {selectedMediaType === 'custom'
-                      ? isLoading
-                        ? 'Uploading...'
-                        : 'Upload'
-                      : isLoading
-                        ? 'Searching...'
-                        : `Add ${provider.label}`}
-                  </button>
-                </div>
-              </form>
+              <MediaSearchForm
+                mediaType={selectedMediaType}
+                onMediaTypeChange={handleMediaTypeChange}
+                searchValues={searchValues}
+                onFieldChange={handleFieldChange}
+                onSubmit={handleSearch}
+                isLoading={isLoading}
+                provider={provider}
+                layout="stack"
+              />
             )}
           </div>
           {isLoading && <p>Loading...</p>}
@@ -946,109 +845,111 @@ const MediaSearch: React.FC = () => {
           {!showPosterGrid &&
             searchResults.length > 0 &&
             selectedMediaType !== 'custom' && (
-            <div className="search-results">
-              <button
-                type="button"
-                className="search-close-button"
-                onClick={closeSearchResults}
-                aria-label="Close search results"
-              >
-                <MdClose aria-hidden="true" focusable="false" />
-              </button>
-              <h3 className="search-results-subtitle">
-                Results for: "
-                {searchSummary.length > 40
-                  ? `${searchSummary.substring(0, 40)}...`
-                  : searchSummary}
-                "
-              </h3>
-              <div className="search-results-grid">
-                {searchResults.map((result) => {
-                  const imdbId =
-                    typeof result.metadata?.imdb_id === 'string'
-                      ? result.metadata.imdb_id
-                      : undefined;
-                  const externalLinks = getExternalLinks(
-                    result,
-                    selectedMediaType,
-                    imdbId,
-                  );
+              <div className="search-results">
+                <button
+                  type="button"
+                  className="search-close-button"
+                  onClick={closeSearchResults}
+                  aria-label="Close search results"
+                >
+                  <MdClose aria-hidden="true" focusable="false" />
+                </button>
+                <h3 className="search-results-subtitle">
+                  Results for: "
+                  {searchSummary.length > 40
+                    ? `${searchSummary.substring(0, 40)}...`
+                    : searchSummary}
+                  "
+                </h3>
+                <div className="search-results-grid">
+                  {searchResults.map((result) => {
+                    const imdbId =
+                      typeof result.metadata?.imdb_id === 'string'
+                        ? result.metadata.imdb_id
+                        : undefined;
+                    const externalLinks = getExternalLinks(
+                      result,
+                      selectedMediaType,
+                      imdbId,
+                    );
 
-                  return (
-                    <button
-                      key={result.id}
-                      type="button"
-                      className="search-result-card"
-                      data-media-id={result.id}
-                      data-media-title={result.title}
-                      onClick={() => handleAddMedia(result, searchResults)}
-                      aria-label={`Add ${result.title}`}
-                    >
-                      {result.coverThumbnailUrl || result.coverUrl ? (
-                        <img
-                          src={result.coverThumbnailUrl || result.coverUrl || ''}
-                          alt={`${result.title} cover`}
-                          className="search-result-poster-large"
-                          onLoad={(e) =>
-                            handleSearchResultImageLoad(result.id, e)
-                          }
-                          style={
-                            searchResultAspectRatios[result.id]
-                              ? {
-                                  aspectRatio:
-                                    searchResultAspectRatios[result.id],
-                                }
-                              : undefined
-                          }
-                        />
-                      ) : (
-                        <div className="search-result-placeholder large">
-                          No cover
-                        </div>
-                      )}
-                      <div className="search-result-meta">
-                        <div className="search-result-title">
-                          <span className="search-result-name">
-                            {result.title}
-                          </span>
-                          {result.subtitle && (
-                            <span className="search-result-subtitle">
-                              {result.subtitle}
+                    return (
+                      <button
+                        key={result.id}
+                        type="button"
+                        className="search-result-card"
+                        data-media-id={result.id}
+                        data-media-title={result.title}
+                        onClick={() => handleAddMedia(result, searchResults)}
+                        aria-label={`Add ${result.title}`}
+                      >
+                        {result.coverThumbnailUrl || result.coverUrl ? (
+                          <img
+                            src={
+                              result.coverThumbnailUrl || result.coverUrl || ''
+                            }
+                            alt={`${result.title} cover`}
+                            className="search-result-poster-large"
+                            onLoad={(e) =>
+                              handleSearchResultImageLoad(result.id, e)
+                            }
+                            style={
+                              searchResultAspectRatios[result.id]
+                                ? {
+                                    aspectRatio:
+                                      searchResultAspectRatios[result.id],
+                                  }
+                                : undefined
+                            }
+                          />
+                        ) : (
+                          <div className="search-result-placeholder large">
+                            No cover
+                          </div>
+                        )}
+                        <div className="search-result-meta">
+                          <div className="search-result-title">
+                            <span className="search-result-name">
+                              {result.title}
+                            </span>
+                            {result.subtitle && (
+                              <span className="search-result-subtitle">
+                                {result.subtitle}
+                              </span>
+                            )}
+                          </div>
+                          {result.year && (
+                            <span className="search-result-year">
+                              {result.year}
                             </span>
                           )}
                         </div>
-                        {result.year && (
-                          <span className="search-result-year">
-                            {result.year}
-                          </span>
+                        {externalLinks.length > 0 && (
+                          <div className="search-result-badges">
+                            {externalLinks.map((link) => (
+                              <a
+                                key={link.href}
+                                href={link.href}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="search-badge"
+                                aria-label={link.label}
+                                onClick={(event) => event.stopPropagation()}
+                              >
+                                <img
+                                  src={`https://www.google.com/s2/favicons?sz=32&domain=${link.domain}`}
+                                  alt=""
+                                  aria-hidden="true"
+                                />
+                                <span>{link.label}</span>
+                              </a>
+                            ))}
+                          </div>
                         )}
-                      </div>
-                      {externalLinks.length > 0 && (
-                        <div className="search-result-badges">
-                          {externalLinks.map((link) => (
-                            <a
-                              key={link.href}
-                              href={link.href}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="search-badge"
-                              aria-label={link.label}
-                              onClick={(event) => event.stopPropagation()}
-                            >
-                              <img
-                                src={`https://www.google.com/s2/favicons?sz=32&domain=${link.domain}`}
-                                alt=""
-                                aria-hidden="true"
-                              />
-                              <span>{link.label}</span>
-                            </a>
-                          ))}
-                        </div>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             )}
         </div>

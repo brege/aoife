@@ -1,10 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
 import './grid.css';
+import { MdClose } from 'react-icons/md';
 import logger from '../../lib/logger';
 import type { MediaType } from '../../media/types';
 import { type MediaItem, TMDB_IMAGE_BASE } from '../../media/types';
 import { MEDIA_TYPE_ICONS } from '../search/dropdown';
-import { MdClose } from 'react-icons/md';
 import { CustomImage } from '../ui/customimage';
 
 interface Grid2x2Props {

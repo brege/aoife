@@ -113,7 +113,8 @@ export class GamesService extends MediaService {
         const boxart = imageList.find(
           (image) => image.type === 'boxart' && image.side === 'front',
         );
-        const firstBox = boxart ?? imageList.find((img) => img.type === 'boxart');
+        const firstBox =
+          boxart ?? imageList.find((img) => img.type === 'boxart');
 
         if (firstBox) {
           return {
@@ -224,5 +225,4 @@ export class GamesService extends MediaService {
       }
     });
   }
-
 }

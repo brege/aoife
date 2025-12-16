@@ -8,7 +8,9 @@ import { type WebSocket, WebSocketServer } from 'ws';
 const env = loadEnv('development', process.cwd(), '');
 
 const getTmdbKey = () =>
-  env.VITE_TMDB_API_KEY || process.env.VITE_TMDB_API_KEY || process.env.TMDB_API_KEY;
+  env.VITE_TMDB_API_KEY ||
+  process.env.VITE_TMDB_API_KEY ||
+  process.env.TMDB_API_KEY;
 
 export default defineConfig({
   plugins: [
@@ -61,7 +63,9 @@ export default defineConfig({
             (async () => {
               try {
                 const { getMediaService } = await import('./src/media/factory');
-                const { getMediaProvider } = await import('./src/media/providers');
+                const { getMediaProvider } = await import(
+                  './src/media/providers'
+                );
                 const service = getMediaService(mediaType as any);
                 const provider = getMediaProvider(mediaType as any);
                 const primaryField = provider.searchFields[0]?.id || 'query';
@@ -113,7 +117,10 @@ export default defineConfig({
               try {
                 const mediaItem = JSON.parse(body);
                 gridState.push(mediaItem);
-                console.log(`[API] Added item to grid:`, mediaItem.title || mediaItem.id);
+                console.log(
+                  `[API] Added item to grid:`,
+                  mediaItem.title || mediaItem.id,
+                );
                 res.writeHead(200, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ status: 'added', item: mediaItem }));
               } catch {
@@ -144,10 +151,15 @@ export default defineConfig({
             }
           } else if (path.startsWith('/remove/') && req.method === 'DELETE') {
             const id = path.replace('/remove/', '');
-            const index = gridState.findIndex(item => String(item.id) === String(id));
+            const index = gridState.findIndex(
+              (item) => String(item.id) === String(id),
+            );
             if (index >= 0) {
               const removed = gridState.splice(index, 1)[0];
-              console.log(`[API] Removed item from grid:`, removed.title || removed.id);
+              console.log(
+                `[API] Removed item from grid:`,
+                removed.title || removed.id,
+              );
               res.writeHead(200, { 'Content-Type': 'application/json' });
               res.end(JSON.stringify({ status: 'removed', id, item: removed }));
             } else {

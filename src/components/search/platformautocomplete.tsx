@@ -136,7 +136,7 @@ export function PlatformAutocomplete({
         onFocus={() => setShowDropdown(true)}
         placeholder={placeholder}
         aria-label={ariaLabel}
-        className="search-input"
+        className="form-input"
       />
       {showDropdown && filteredPlatforms.length > 0 && (
         <div ref={dropdownRef} className="platform-dropdown">

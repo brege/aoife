@@ -44,15 +44,26 @@ function searchMedia(payload) {
     payload.query || payload.title || payload.album || payload.artist || '';
 
   return setMediaType(payload.mediaType || payload.type)
-    .then(() =>
-      cy
-        .get('form.search-form')
-        .find('input.search-input')
-        .first()
-        .clear({ force: true })
-        .type(query, { force: true }),
-    )
-    .then(() => cy.get('.search-button').click())
+    .then(() => {
+      cy.get('[class*="search-"]')
+        .should('exist')
+        .then(() => {
+          cy.get('input[type="text"]')
+            .filter(':visible')
+            .first()
+            .should('exist')
+            .clear({ force: true })
+            .type(query, { force: true });
+        });
+    })
+    .then(() => {
+      cy.get('.search-header-button')
+        .should('exist')
+        .click()
+        .catch(() => {
+          cy.get('.search-button').click();
+        });
+    })
     .then(() =>
       cy.get('.search-results .search-result-card', { timeout: 20000 }),
     )

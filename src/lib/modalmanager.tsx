@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useEffect, useRef } from 'react';
+import type React from 'react';
+import { createContext, useContext, useEffect, useRef } from 'react';
 
 type Modal = 'searchResults' | 'posterGrid' | 'hamburger' | 'platformDropdown';
 
@@ -35,9 +36,7 @@ export const ModalProvider: React.FC<{ children: React.ReactNode }> = ({
   const closeModal = (modal: Modal) => {
     openModalsRef.current.delete(modal);
     // Dispatch custom event so components can react
-    window.dispatchEvent(
-      new CustomEvent('modalClosed', { detail: { modal } }),
-    );
+    window.dispatchEvent(new CustomEvent('modalClosed', { detail: { modal } }));
   };
 
   return (
