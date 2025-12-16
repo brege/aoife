@@ -7,7 +7,7 @@
 - Fixed close button positioning across search results, grid items, and video game posters
 - Removed old bespoke close button components in favor of consistent styling
 - Reduced duplicate click handlers and competing close button conflicts
-- Fixed failing end-to-end tests
+- Fixed failing end-to-end tests and reorganized entire test suite
 
 ## 2025-12-14
 

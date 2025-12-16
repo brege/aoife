@@ -24,12 +24,19 @@ const buildPosterUrl = (
 };
 
 export class TMDBService extends MediaService {
-  private readonly baseUrl = '/api/tmdb';
+  private readonly baseUrl: string;
   private readonly mediaType: 'movies' | 'tv';
 
   constructor(_apiKey: string, mediaType: 'movies' | 'tv' = 'movies') {
     super();
     this.mediaType = mediaType;
+    const serverBase =
+      typeof window === 'undefined'
+        ? process.env.AOIFE_API_BASE ||
+          process.env.VITE_DEV_SERVER_ORIGIN ||
+          'http://localhost:5173'
+        : '';
+    this.baseUrl = `${serverBase}/api/tmdb`;
   }
 
   private getSearchEndpoint(): string {

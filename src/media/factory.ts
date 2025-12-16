@@ -12,6 +12,16 @@ type ServiceCache = Partial<Record<MediaType, MediaService>>;
 
 const serviceCache: ServiceCache = {};
 
+function getTmdbKey(): string {
+  const metaEnv = typeof import.meta !== 'undefined' ? (import.meta as any).env : undefined;
+  return (
+    metaEnv?.VITE_TMDB_API_KEY ||
+    process.env.VITE_TMDB_API_KEY ||
+    process.env.TMDB_API_KEY ||
+    ''
+  );
+}
+
 export function getMediaService(mediaType: MediaType): MediaService {
   if (serviceCache[mediaType]) {
     return serviceCache[mediaType] as MediaService;
@@ -21,14 +31,11 @@ export function getMediaService(mediaType: MediaType): MediaService {
 
   switch (mediaType) {
     case 'movies':
-      service = new TMDBService(
-        import.meta.env.VITE_TMDB_API_KEY || '',
-        'movies',
-      );
+      service = new TMDBService(getTmdbKey(), 'movies');
       break;
 
     case 'tv':
-      service = new TMDBService(import.meta.env.VITE_TMDB_API_KEY || '', 'tv');
+      service = new TMDBService(getTmdbKey(), 'tv');
       break;
 
     case 'books':

@@ -5,7 +5,7 @@ import { defineConfig, loadEnv } from 'vite';
 import { type WebSocket, WebSocketServer } from 'ws';
 
 // https://vite.dev/config/
-const env = loadEnv('development', process.cwd());
+const env = loadEnv('development', process.cwd(), '');
 
 const getTmdbKey = () =>
   env.VITE_TMDB_API_KEY || process.env.VITE_TMDB_API_KEY || process.env.TMDB_API_KEY;
@@ -44,7 +44,8 @@ export default defineConfig({
         // API endpoints for programmatic control
         server.middlewares.use('/api', (req, res, next) => {
           const url = new URL(req.url || '', 'http://localhost');
-          const path = url.pathname.replace('/api', '');
+          const path = url.pathname.replace(/^\/api/, '');
+          console.log(`[API] ${req.method} ${url.pathname}`);
 
           if (path === '/search' && req.method === 'GET') {
             const query = url.searchParams.get('q');
@@ -150,6 +151,11 @@ export default defineConfig({
               res.writeHead(200, { 'Content-Type': 'application/json' });
               res.end(JSON.stringify({ status: 'removed', id, item: removed }));
             } else {
+              console.log(
+                `[API] Remove miss for id ${id}. Grid contains: ${gridState
+                  .map((item) => item.id)
+                  .join(', ')}`,
+              );
               res.writeHead(404, { 'Content-Type': 'application/json' });
               res.end(JSON.stringify({ error: 'Item not found' }));
             }

@@ -59,18 +59,18 @@ curl -X DELETE http://localhost:8080/api/clear
 
 ### Test Coverage Matrix
 
-This section is currently evolving and breaking.
-
 Current tests:
-- `grid_operations`: 
-  - search add TITLE
-  - search add TITLE
-  - remove both via UI
-  - verify grid state
-- `search_and_add_workflows`: 
-  - search movies TITLE
-  - search+add-first-result TITLE
-  - search TV TITLE
+- `grid_operations`:
+  - add custom item with id 123
+  - add second custom item with id 456
+  - fetch grid with two items
+  - remove first item
+  - fetch grid with one item
+  - remove missing item and expect 404
+- `search_and_add_workflows`:
+  - search movies on TMDB
+  - search movies and add first result to grid
+  - search TV shows on TMDB
 
 Coverage (✔ = covered, ○ = missing):
 | Media type | Search | Add from search | Add custom | Remove | Grid fetch |
@@ -81,4 +81,3 @@ Coverage (✔ = covered, ○ = missing):
 | Books      | ○ | ○ | ○ | ○ | ○ |
 | Music      | ○ | ○ | ○ | ○ | ○ |
 | Games      | ○ | ○ | ○ | ○ | ○ |
-

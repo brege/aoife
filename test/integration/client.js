@@ -13,21 +13,20 @@ export async function apiCall(method, endpoint, body = null) {
     };
 
     const req = http.request(url, options, (res) => {
-      let data = '';
+      let body = '';
 
       res.on('data', (chunk) => {
-        data += chunk;
+        body += chunk;
       });
 
       res.on('end', () => {
         try {
-          const parsed = data ? JSON.parse(data) : null;
-          resolve({
-            statusCode: res.statusCode,
-            data: parsed,
-          });
+          const contentType = res.headers['content-type'] || '';
+          const isJson = contentType.includes('application/json');
+          const data = isJson && body ? JSON.parse(body) : body;
+          resolve({ statusCode: res.statusCode, data });
         } catch (error) {
-          reject(new Error(`Failed to parse response: ${error.message}`));
+          resolve({ statusCode: res.statusCode, data: body });
         }
       });
     });
