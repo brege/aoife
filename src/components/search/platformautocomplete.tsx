@@ -137,6 +137,7 @@ export function PlatformAutocomplete({
         placeholder={placeholder}
         aria-label={ariaLabel}
         className="form-input"
+        data-testid="platform-input"
       />
       {showDropdown && filteredPlatforms.length > 0 && (
         <div ref={dropdownRef} className="platform-dropdown">
@@ -149,6 +150,7 @@ export function PlatformAutocomplete({
               className={`platform-option ${index === highlightedIndex ? 'highlighted' : ''}`}
               onClick={() => handleSelectPlatform(platform)}
               type="button"
+              data-testid={`platform-option-${platform.id}`}
             >
               {platform.name}
             </button>

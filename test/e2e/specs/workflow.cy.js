@@ -1,3 +1,17 @@
+import { mediaFixturesByType, movieSearchResults } from '../fixtures/media';
+import {
+  addMediaDirectly,
+  applySearchFixtureResults,
+  clearGridThroughApplication,
+  getApplicationTestApi,
+  getGridSnapshot,
+  removeMediaDirectly,
+  resetApplicationState,
+  searchThroughApplication,
+  setBuilderModeState,
+  setMediaType,
+} from '../support/actions';
+
 const workflowEnv = Cypress.env('workflow');
 const workflow =
   typeof workflowEnv === 'string' ? JSON.parse(workflowEnv) : workflowEnv;
@@ -11,194 +25,125 @@ const state = {
   gridItems: [],
 };
 
-function setMediaType(mediaType) {
-  if (!mediaType) return cy.wrap(null);
-
-  return cy
-    .get('body')
-    .then(($body) => {
-      if ($body.find('.search-results').length > 0) {
-        return cy.get('.search-close-button').click({ force: true });
-      }
-      return cy.wrap(null);
-    })
-    .then(() =>
-      cy.get('.dropdown-button').then(($button) => {
-        const current = $button.find('.dropdown-label').text().trim();
-        const expected =
-          mediaType === 'tv'
-            ? 'TV Shows'
-            : mediaType[0].toUpperCase() + mediaType.slice(1);
-        if (current === expected) return;
-
-        cy.wrap($button).click();
-        cy.contains('.dropdown-option-label', expected, {
-          timeout: 5000,
-        }).click();
-      }),
-    );
+function initializeState() {
+  state.lastSearchResults = [];
+  state.lastAddedTitle = '';
+  state.gridItems = [];
 }
 
-function searchMedia(payload) {
-  const query =
+function bootstrapApplication() {
+  cy.visit('/');
+  resetApplicationState();
+  cy.get('[data-testid="media-search-form-band"]', {
+    timeout: 15000,
+  }).should('exist');
+  cy.then(() => getApplicationTestApi());
+  clearGridThroughApplication().then((items) => {
+    state.gridItems = items;
+  });
+  setBuilderModeState(true);
+  setMediaType('movies');
+}
+
+function chooseFixtures(mediaType) {
+  return mediaFixturesByType[mediaType] || movieSearchResults;
+}
+
+function applyMediaTypeFromPayload(payload) {
+  const mediaType = payload.mediaType || payload.type;
+  if (!mediaType) {
+    return cy.wrap(null);
+  }
+  return setMediaType(mediaType);
+}
+
+function performSearch(payload) {
+  const mediaType = payload.mediaType || payload.type || 'movies';
+  const summary =
     payload.query || payload.title || payload.album || payload.artist || '';
+  const useFixtures = payload.useFixtures ?? false;
+  const action = useFixtures
+    ? applySearchFixtureResults(mediaType, chooseFixtures(mediaType), summary)
+    : searchThroughApplication({ ...payload, mediaType });
 
-  return setMediaType(payload.mediaType || payload.type)
-    .then(() => {
-      cy.get('[class*="search-"]')
-        .should('exist')
-        .then(() => {
-          cy.get('input[type="text"]')
-            .filter(':visible')
-            .first()
-            .should('exist')
-            .clear({ force: true })
-            .type(query, { force: true });
-        });
-    })
-    .then(() => {
-      cy.get('.search-header-button')
-        .should('exist')
-        .click()
-        .catch(() => {
-          cy.get('.search-button').click();
-        });
-    })
-    .then(() =>
-      cy.get('.search-results .search-result-card', { timeout: 20000 }),
-    )
-    .then((items) => {
-      const results = items.toArray().map((el) => {
-        const title =
-          el.getAttribute('data-media-title') ||
-          el.querySelector('.search-result-name')?.textContent?.trim() ||
-          '';
-        const idAttr = el.getAttribute('data-media-id') || '';
-        return { title, id: idAttr || undefined };
-      });
-      state.lastSearchResults = results;
-      return results;
-    });
-}
-
-function addFromResults(payload) {
-  const hasResults = state.lastSearchResults.length > 0;
-  const runSearch = payload.query && !hasResults;
-  const ensureResults = runSearch ? searchMedia(payload) : cy.wrap(null);
-
-  return ensureResults
-    .then(() => {
-      cy.get('.search-results', { timeout: 10000 }).should('be.visible');
-    })
-    .then(() =>
-      cy.get('.search-result-card', { timeout: 15000 }).first().click(),
-    )
-    .then(() => cy.wait(500))
-    .then(() => cy.get('.grid-item.filled', { timeout: 30000 }))
-    .then((gridItems) => {
-      const addedTitle =
-        state.lastSearchResults[0]?.title ||
-        payload.title ||
-        payload.query ||
-        '';
-      const addedId =
-        payload.id || state.lastSearchResults[0]?.id || addedTitle;
-      state.lastAddedTitle = addedTitle;
-      state.gridItems.push({ id: addedId, title: addedTitle });
-      return {
-        statusCode: 200,
-        gridCount: gridItems.length,
-        status: 'added',
-      };
-    });
-}
-
-function addCustom(payload) {
-  const title = payload.title || String(payload.id || 'custom');
-  const coverUrl = payload.coverUrl || '';
-
-  return setMediaType('custom')
-    .then(() =>
-      cy.get('form.search-form').within(() => {
-        cy.get('input.search-input')
-          .first()
-          .clear({ force: true })
-          .type(title, {
-            force: true,
-          });
-        if (coverUrl) {
-          cy.get('input[placeholder="Image URL or upload..."]', {
-            timeout: 2000,
-          })
-            .clear({ force: true })
-            .type(coverUrl, { force: true });
-        }
-      }),
-    )
-    .then(() => cy.get('.search-button').click({ force: true }))
-    .then(() => cy.get('.grid-item.filled', { timeout: 15000 }))
-    .then((gridItems) => {
-      state.lastAddedTitle = title;
-      state.gridItems.push({
-        id: payload.id ?? title,
-        title,
-      });
-      return {
-        statusCode: 200,
-        gridCount: gridItems.length,
-        status: 'added',
-      };
-    });
-}
-
-function removeFromGrid(payload) {
-  const targetId = payload.id;
-  const target =
-    state.gridItems.find((item) => item.id === targetId) ||
-    state.gridItems.find((item) => String(item.id) === String(targetId));
-  const hasId = targetId !== undefined && targetId !== null;
-  if (hasId && !target) {
-    return cy.wrap({ statusCode: 404, status: 'missing' });
-  }
-  const title =
-    target?.title ||
-    payload.title ||
-    state.lastAddedTitle ||
-    state.lastSearchResults[0]?.title;
-  if (!title) {
-    return cy.wrap({ statusCode: 404, status: 'missing' });
-  }
-
-  return cy.get('body').then(($body) => {
-    const button = $body.find(`button[aria-label="Remove ${title}"]`).first();
-    if (!button || button.length === 0) {
-      return { statusCode: 404, status: 'missing' };
-    }
-
-    return cy
-      .wrap(button)
-      .click({ force: true })
-      .then(() => cy.get('.grid-item.filled'))
-      .then((items) => ({
-        statusCode: 200,
-        status: 'removed',
-        gridCount: items.length,
-      }))
-      .then((result) => {
-        if (target) {
-          state.gridItems = state.gridItems.filter((item) => item !== target);
-        }
-        return result;
-      });
+  return action.then(({ results }) => {
+    state.lastSearchResults = results;
+    state.lastAddedTitle = results[0]?.title || '';
+    return { statusCode: 200, resultsCount: results.length };
   });
 }
 
-function getGridState() {
-  return cy.get('.grid-item.filled').then((items) => ({
-    statusCode: 200,
-    arrayLength: items.length,
-    gridCount: items.length,
-  }));
+function addMediaOperation(payload) {
+  const mediaType = payload.mediaType || payload.type || 'movies';
+  const useFirstResult = payload.use_first_result || payload.useFirstResult;
+  const availableCovers =
+    state.lastSearchResults.length > 0 ? state.lastSearchResults : undefined;
+  const targetMedia =
+    useFirstResult && state.lastSearchResults[0]
+      ? state.lastSearchResults[0]
+      : { ...payload, type: mediaType };
+
+  if (!targetMedia || !targetMedia.title) {
+    return cy.wrap({
+      statusCode: 404,
+      status: 'missing',
+      gridCount: state.gridItems.length,
+    });
+  }
+
+  const previousCount = state.gridItems.length;
+  return addMediaDirectly(targetMedia, availableCovers).then((items) => {
+    state.gridItems = items;
+    const added = items.some(
+      (item) => String(item.id) === String(targetMedia.id),
+    );
+    return {
+      statusCode: 200,
+      status: added ? 'added' : 'unchanged',
+      gridCount: items.length,
+    };
+  });
+}
+
+function removeMediaOperation(payload) {
+  const targetId =
+    payload.id ??
+    state.gridItems.find((item) => item.title === payload.title)?.id ??
+    null;
+  const previousCount = state.gridItems.length;
+
+  if (targetId === null || targetId === undefined) {
+    return cy.wrap({
+      statusCode: 404,
+      status: 'missing',
+      gridCount: previousCount,
+    });
+  }
+
+  return removeMediaDirectly(targetId).then((items) => {
+    state.gridItems = items;
+    const status = items.length < previousCount ? 'removed' : 'missing';
+    return {
+      statusCode: status === 'removed' ? 200 : 404,
+      status,
+      gridCount: items.length,
+    };
+  });
+}
+
+function getGridStateOperation() {
+  return getGridSnapshot().then((snapshot) => {
+    state.gridItems = snapshot.items;
+    expect(snapshot.stored.length).to.equal(
+      snapshot.items.length,
+      'localStorage grid should match in-memory grid',
+    );
+    return {
+      statusCode: 200,
+      arrayLength: snapshot.items.length,
+      gridCount: snapshot.items.length,
+    };
+  });
 }
 
 function runOperation(step, scenarioResult) {
@@ -206,32 +151,29 @@ function runOperation(step, scenarioResult) {
   const payload = step.payload || {};
 
   if (operation === 'search') {
-    return searchMedia(payload).then(() => {
-      const resultsCount = state.lastSearchResults.length;
-      if (scenarioResult) {
-        scenarioResult.resultsCount = resultsCount;
-        scenarioResult.statusCode = 200;
-      }
-      return { statusCode: 200, resultsCount };
-    });
+    return applyMediaTypeFromPayload(payload)
+      .then(() => performSearch(payload))
+      .then((result) => {
+        if (scenarioResult) {
+          scenarioResult.resultsCount = result.resultsCount;
+          scenarioResult.statusCode = result.statusCode;
+        }
+        return result;
+      });
   }
 
   if (operation === 'add') {
-    const canSearch = Boolean(payload.query);
-    return (canSearch ? addFromResults(payload) : addCustom(payload)).then(
-      (result) => {
-        if (scenarioResult) {
-          scenarioResult.statusCode = result.statusCode;
-          scenarioResult.gridCount =
-            result.gridCount ?? scenarioResult.gridCount;
-        }
-        return result;
-      },
-    );
+    return addMediaOperation(payload).then((result) => {
+      if (scenarioResult) {
+        scenarioResult.statusCode = result.statusCode;
+        scenarioResult.gridCount = result.gridCount ?? scenarioResult.gridCount;
+      }
+      return result;
+    });
   }
 
   if (operation === 'remove') {
-    return removeFromGrid(payload).then((result) => {
+    return removeMediaOperation(payload).then((result) => {
       if (scenarioResult) {
         scenarioResult.statusCode = result.statusCode;
         scenarioResult.gridCount = result.gridCount ?? scenarioResult.gridCount;
@@ -241,7 +183,7 @@ function runOperation(step, scenarioResult) {
   }
 
   if (operation === 'getGrid') {
-    return getGridState().then((result) => {
+    return getGridStateOperation().then((result) => {
       if (scenarioResult) {
         scenarioResult.statusCode = result.statusCode;
         scenarioResult.gridCount = result.gridCount;
@@ -309,18 +251,16 @@ function runScenario(scenario) {
   }
 
   if (op === 'search') {
-    execution = searchMedia(scenario.payload || {}).then(() => ({
+    execution = performSearch(scenario.payload || {}).then(() => ({
       statusCode: 200,
       resultsCount: state.lastSearchResults.length,
     }));
   } else if (op === 'add') {
-    const payload = scenario.payload || {};
-    const canSearch = Boolean(payload.query);
-    execution = canSearch ? addFromResults(payload) : addCustom(payload);
+    execution = addMediaOperation(scenario.payload || {});
   } else if (op === 'remove') {
-    execution = removeFromGrid(scenario.payload || {});
+    execution = removeMediaOperation(scenario.payload || {});
   } else if (op === 'getGrid') {
-    execution = getGridState();
+    execution = getGridStateOperation();
   } else {
     execution = cy.wrap({
       statusCode: 400,
@@ -385,16 +325,29 @@ function persistMeasurements() {
     });
 }
 
+function runAccessibilityChecks() {
+  cy.get('[data-testid="media-type-toggle"]').should('exist');
+  cy.get('[data-testid="media-type-toggle"]').first().click();
+  cy.get('[data-testid="media-type-option-movies"]').should('exist');
+  cy.get('[data-testid="media-type-toggle"]').first().type('{esc}');
+
+  cy.get('[data-testid="search-submit"]').should('exist');
+  cy.get('[data-testid="media-search-form-band"]').should('exist');
+  cy.get('[data-testid="media-search-form-stack"]').should('exist');
+
+  cy.viewport(360, 720);
+  cy.get('[data-testid="media-search-form-stack"]').should('be.visible');
+  cy.viewport(1280, 800);
+}
+
 describe(`Workflow: ${workflow?.name || 'unnamed'}`, () => {
   it('runs YAML scenarios in-browser', () => {
     if (!workflow || !Array.isArray(workflow.scenarios)) {
       throw new Error('Missing workflow scenarios');
     }
 
-    cy.visit('/');
-    cy.window().then((win) => win.localStorage.clear());
-    cy.reload();
-    cy.get('.dropdown-button', { timeout: 15000 }).should('exist');
+    initializeState();
+    bootstrapApplication();
 
     const scenarios = workflow.scenarios.filter((s) => !s.skip);
     scenarios.reduce(
@@ -402,6 +355,7 @@ describe(`Workflow: ${workflow?.name || 'unnamed'}`, () => {
       cy.wrap(null),
     );
 
+    cy.then(() => runAccessibilityChecks());
     cy.then(() => persistMeasurements());
   });
 });

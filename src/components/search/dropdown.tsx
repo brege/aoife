@@ -59,6 +59,7 @@ const Dropdown: React.FC<DropdownProps> = ({ value, onChange }) => {
         className="dropdown-button"
         onClick={() => setIsOpen(!isOpen)}
         aria-label="Select media type"
+        data-testid="media-type-toggle"
       >
         <span className="dropdown-icon">{currentMedia?.icon}</span>
         <span className="dropdown-label">{currentMedia?.label}</span>
@@ -72,6 +73,7 @@ const Dropdown: React.FC<DropdownProps> = ({ value, onChange }) => {
               type="button"
               className={`dropdown-option ${value === media.type ? 'active' : ''}`}
               onClick={() => handleSelect(media.type)}
+              data-testid={`media-type-option-${media.type}`}
             >
               <span className="dropdown-option-icon">{media.icon}</span>
               <span className="dropdown-option-label">{media.label}</span>

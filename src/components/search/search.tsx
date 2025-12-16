@@ -22,6 +22,31 @@ const COLUMNS_STORAGE_KEY = 'gridColumns';
 const MIN_ROWS_STORAGE_KEY = 'gridMinRows';
 const GRID_CAPACITY = 4;
 
+type TestApplicationApi = {
+  setMediaType: (mediaType: MediaType) => void;
+  search: (
+    values: Partial<MediaSearchValues>,
+    mediaType?: MediaType,
+  ) => Promise<MediaItem[]>;
+  applySearchResults: (
+    results: MediaItem[],
+    mediaType?: MediaType,
+    summary?: string,
+  ) => void;
+  addMedia: (media: MediaItem, availableCovers?: MediaItem[]) => void;
+  removeMedia: (mediaId: string | number) => void;
+  clearGrid: () => void;
+  getGridItems: () => MediaItem[];
+  getStoredGridItems: () => MediaItem[];
+  setBuilderMode: (enabled: boolean) => void;
+  getBuilderMode: () => boolean;
+  getSearchValues: () => MediaSearchValues;
+};
+
+type WindowWithTestApi = Window & {
+  appTestApi?: TestApplicationApi;
+};
+
 const formatSearchSummary = (
   values: MediaSearchValues,
   selectedFields: { id: string }[],
@@ -173,6 +198,29 @@ const MediaSearch: React.FC = () => {
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [isBuilderMode, setIsBuilderMode] = useState(true);
 
+  const resolveProvider = useCallback(
+    (mediaType: MediaType) =>
+      mediaType === selectedMediaType
+        ? provider
+        : getMediaProvider(mediaType),
+    [provider, selectedMediaType],
+  );
+
+  const mergeSearchValues = useCallback(
+    (values: Partial<MediaSearchValues>, mediaType: MediaType) => {
+      const targetProvider = resolveProvider(mediaType);
+      const merged = {
+        ...targetProvider.defaultSearchValues,
+        ...values,
+      };
+      // Filter out undefined values
+      return Object.fromEntries(
+        Object.entries(merged).filter(([, v]) => v !== undefined),
+      ) as MediaSearchValues;
+    },
+    [resolveProvider],
+  );
+
   useEffect(() => {
     const stored = localStorage.getItem(GRID_STORAGE_KEY);
     if (!stored) return;
@@ -252,32 +300,44 @@ const MediaSearch: React.FC = () => {
   );
 
   const runSearch = useCallback(
-    async (values: MediaSearchValues) => {
+    async (
+      values: Partial<MediaSearchValues>,
+      mediaTypeOverride?: MediaType,
+    ) => {
+      const activeMediaType = mediaTypeOverride ?? selectedMediaType;
+      const activeProvider = resolveProvider(activeMediaType);
+      const mergedValues = mergeSearchValues(values, activeMediaType);
+
       setIsLoading(true);
       setError('');
 
       try {
-        const service = getMediaService(selectedMediaType);
-        const results = await service.search(values);
+        const service = getMediaService(activeMediaType);
+        const results = await service.search(mergedValues);
 
         logger.info(`SEARCH: Found ${results.length} results`, {
           context: 'MediaSearch.runSearch',
           action: 'search_results',
-          mediaType: selectedMediaType,
-          values,
+          mediaType: activeMediaType,
+          values: mergedValues,
           resultsCount: results.length,
           timestamp: Date.now(),
         });
 
+        if (mediaTypeOverride && mediaTypeOverride !== selectedMediaType) {
+          setSelectedMediaType(mediaTypeOverride);
+        }
+
+        setSearchValues(mergedValues);
         setSearchResults(results);
         setLastSearchSummary(
-          formatSearchSummary(values, provider.searchFields),
+          formatSearchSummary(mergedValues, activeProvider.searchFields),
         );
         return results;
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
         const friendly = message.includes('not yet implemented')
-          ? `${provider.label} search is not configured yet. Wire up its cover API to enable it.`
+          ? `${activeProvider.label} search is not configured yet. Wire up its cover API to enable it.`
           : 'An error occurred while searching.';
 
         setError(friendly);
@@ -285,8 +345,8 @@ const MediaSearch: React.FC = () => {
 
         logger.error('Search request failed', {
           context: 'MediaSearch.runSearch',
-          mediaType: selectedMediaType,
-          values,
+          mediaType: activeMediaType,
+          values: mergedValues,
           error: message,
         });
         return [];
@@ -294,7 +354,7 @@ const MediaSearch: React.FC = () => {
         setIsLoading(false);
       }
     },
-    [selectedMediaType, provider],
+    [mergeSearchValues, resolveProvider, selectedMediaType],
   );
 
   const handleSearch = async (e: React.FormEvent) => {
@@ -332,33 +392,35 @@ const MediaSearch: React.FC = () => {
         mediaWithCovers.alternateCoverUrls = coverUrls;
       }
 
-      const updatedGrid = [...gridItems, mediaWithCovers];
-      setGridItems(updatedGrid);
+      setGridItems((current) => {
+        const updatedGrid = [...current, mediaWithCovers];
+        persistGrid(updatedGrid);
+
+        logger.info(
+          `GRID: Added "${media.title}" to position ${current.length}`,
+          {
+            context: 'MediaSearch.handleAddMedia',
+            action: 'grid_media_added',
+            media: {
+              id: media.id,
+              title: media.title,
+              year: media.year,
+            },
+            position: current.length,
+            gridCount: updatedGrid.length,
+            hasAlternateCovers: Boolean(
+              mediaWithCovers.alternateCoverUrls?.length,
+            ),
+            timestamp: Date.now(),
+          },
+        );
+
+        return updatedGrid;
+      });
       setSearchResults([]);
       setSearchValues(provider.defaultSearchValues);
-      persistGrid(updatedGrid);
-
-      logger.info(
-        `GRID: Added "${media.title}" to position ${gridItems.length}`,
-        {
-          context: 'MediaSearch.handleAddMedia',
-          action: 'grid_media_added',
-          media: {
-            id: media.id,
-            title: media.title,
-            year: media.year,
-          },
-          position: gridItems.length,
-          gridCount: updatedGrid.length,
-          hasAlternateCovers: Boolean(
-            mediaWithCovers.alternateCoverUrls?.length,
-          ),
-          timestamp: Date.now(),
-        },
-      );
     },
     [
-      gridItems,
       provider.defaultSearchValues,
       searchResults,
       persistGrid,
@@ -369,26 +431,28 @@ const MediaSearch: React.FC = () => {
 
   const handleRemoveMedia = useCallback(
     (mediaId: string | number) => {
-      const mediaToRemove = gridItems.find((m) => m.id === mediaId);
-      const removedPosition = gridItems.findIndex((m) => m.id === mediaId);
+      setGridItems((current) => {
+        const mediaToRemove = current.find((m) => m.id === mediaId);
+        const removedPosition = current.findIndex((m) => m.id === mediaId);
+        const updatedGrid = current.filter((media) => media.id !== mediaId);
+        persistGrid(updatedGrid);
 
-      const updatedGrid = gridItems.filter((media) => media.id !== mediaId);
-      setGridItems(updatedGrid);
-      persistGrid(updatedGrid);
+        logger.info(
+          `GRID: Removed "${mediaToRemove?.title || 'unknown'}" from position ${removedPosition}`,
+          {
+            context: 'MediaSearch.handleRemoveMedia',
+            action: 'grid_media_removed',
+            mediaId,
+            position: removedPosition,
+            gridCount: updatedGrid.length,
+            timestamp: Date.now(),
+          },
+        );
 
-      logger.info(
-        `GRID: Removed "${mediaToRemove?.title || 'unknown'}" from position ${removedPosition}`,
-        {
-          context: 'MediaSearch.handleRemoveMedia',
-          action: 'grid_media_removed',
-          mediaId,
-          position: removedPosition,
-          gridCount: updatedGrid.length,
-          timestamp: Date.now(),
-        },
-      );
+        return updatedGrid;
+      });
     },
-    [gridItems, persistGrid],
+    [persistGrid],
   );
 
   const fetchAlternateCovers = useCallback(
@@ -715,6 +779,75 @@ const MediaSearch: React.FC = () => {
       },
     );
   }, []);
+
+  useEffect(() => {
+    const windowWithTestApi = window as WindowWithTestApi;
+
+    const testApi: TestApplicationApi = {
+      setMediaType: (mediaType) => {
+        setSelectedMediaType(mediaType);
+        const defaults = mergeSearchValues({}, mediaType);
+        setSearchValues(defaults);
+        setSearchResults([]);
+        setLastSearchSummary('');
+      },
+      search: (values, mediaType) =>
+        runSearch(values ?? {}, mediaType ?? selectedMediaType),
+      applySearchResults: (results, mediaType, summary) => {
+        const targetMediaType = mediaType ?? selectedMediaType;
+        const targetProvider = resolveProvider(targetMediaType);
+        setSelectedMediaType(targetMediaType);
+        setSearchValues(mergeSearchValues({}, targetMediaType));
+        setSearchResults(results);
+        setLastSearchSummary(
+          summary ??
+            formatSearchSummary(
+              mergeSearchValues({}, targetMediaType),
+              targetProvider.searchFields,
+            ),
+        );
+        setIsLoading(false);
+      },
+      addMedia: (media, availableCovers) => {
+        handleAddMedia(media, availableCovers);
+      },
+      removeMedia: (mediaId) => {
+        handleRemoveMedia(mediaId);
+      },
+      clearGrid: handleClearGrid,
+      getGridItems: () => gridItems.map((item) => ({ ...item })),
+      getStoredGridItems: () => {
+        const stored = localStorage.getItem(GRID_STORAGE_KEY);
+        if (!stored) return [];
+        try {
+          const parsed = JSON.parse(stored) as MediaItem[];
+          return Array.isArray(parsed) ? parsed : [];
+        } catch {
+          return [];
+        }
+      },
+      setBuilderMode: handleBuilderModeToggle,
+      getBuilderMode: () => isBuilderMode,
+      getSearchValues: () => searchValues,
+    };
+
+    windowWithTestApi.appTestApi = testApi;
+    return () => {
+      delete windowWithTestApi.appTestApi;
+    };
+  }, [
+    gridItems,
+    handleAddMedia,
+    handleBuilderModeToggle,
+    handleClearGrid,
+    handleRemoveMedia,
+    isBuilderMode,
+    mergeSearchValues,
+    resolveProvider,
+    runSearch,
+    searchValues,
+    selectedMediaType,
+  ]);
 
   const searchSectionClassName = `search-section ${isBuilderMode ? 'builder-mode' : 'presentation-mode'}`;
   const searchModuleClassName = `search-module ${isBuilderMode ? 'builder-mode' : 'presentation-mode'}`;

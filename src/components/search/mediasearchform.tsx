@@ -63,6 +63,7 @@ export const MediaSearchForm: React.FC<MediaSearchFormProps> = ({
     <form
       className={`media-search-form ${layoutClass}`}
       onSubmit={handleFormSubmit}
+      data-testid={`media-search-form-${layout}`}
     >
       {layout === 'stack' && (
         <Dropdown value={mediaType} onChange={onMediaTypeChange} />
@@ -97,6 +98,7 @@ export const MediaSearchForm: React.FC<MediaSearchFormProps> = ({
                   aria-label={field.label}
                   className="form-input"
                   required={field.required}
+                  data-testid="search-field-cover"
                 />
                 <input
                   type="file"
@@ -105,6 +107,7 @@ export const MediaSearchForm: React.FC<MediaSearchFormProps> = ({
                   style={{ display: 'none' }}
                   id="cover-file-input"
                   aria-label="Upload cover image"
+                  data-testid="cover-file-input"
                 />
                 <button
                   type="button"
@@ -114,6 +117,7 @@ export const MediaSearchForm: React.FC<MediaSearchFormProps> = ({
                   className="icon-button"
                   aria-label="Upload image"
                   title="Upload image"
+                  data-testid="cover-upload-trigger"
                 >
                   <MdDriveFolderUpload size={20} />
                 </button>
