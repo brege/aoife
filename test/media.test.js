@@ -13,7 +13,7 @@ import yaml from 'js-yaml';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const rootDir = resolve(__dirname, '..');
-const configPath = join(__dirname, 'config.yaml');
+const configPath = join(__dirname, 'e2e', 'workflows.yaml');
 const envPath = join(rootDir, '.env');
 const config = yaml.load(readFileSync(configPath, 'utf8'));
 const measurementsPath = resolve(
@@ -111,8 +111,8 @@ describe('YAML workflows via Cypress', function () {
 
     it(`${workflow.name} [${workflow.level}]`, async () => {
       const run = await cypress.run({
-        configFile: 'tools/cypress.config.js',
-        spec: 'tools/cypress/e2e/workflow.cy.js',
+        configFile: 'test/e2e/cypress.config.js',
+        spec: 'test/e2e/specs/workflow.cy.js',
         env: {
           workflow: JSON.stringify(workflow),
           measurementsPath,

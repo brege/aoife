@@ -8,9 +8,7 @@
     "build": "tsc -b && vite build",
     "lint": "biome check --write",
     "preview": "vite preview",
-    "test": "start-server-and-test dev http://localhost:5173 mocha",
-    "test:measure": "cypress run --config-file tools/cypress.config.js --spec tools/cypress/e2e/quick-measure.cy.js",
-    "test:measure:open": "cypress open --config-file tools/cypress.config.js"
+    "test": "start-server-and-test dev http://localhost:5173 mocha"
   },
   "dependencies": {
     "@types/ws": "^8.18.1",

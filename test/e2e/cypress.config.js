@@ -7,10 +7,10 @@ export default defineConfig({
     viewportHeight: 1835,
     video: false,
     screenshotOnRunFailure: false,
-    supportFile: 'tools/cypress/support/e2e.js',
-    fixturesFolder: 'tools/cypress/fixtures',
-    downloadsFolder: 'tools/cypress/downloads',
-    specPattern: 'tools/cypress/e2e/**/*.cy.js',
+    supportFile: 'test/e2e/support/e2e.js',
+    fixturesFolder: 'test/e2e/fixtures',
+    downloadsFolder: 'test/e2e/downloads',
+    specPattern: 'test/e2e/specs/**/*.cy.js',
     setupNodeEvents() {
       // implement node event listeners here
     },
