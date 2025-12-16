@@ -94,10 +94,22 @@ const Grid2x2: React.FC<Grid2x2Props> = ({
   const gridContainerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(0);
   const [containerHeight, setContainerHeight] = useState(0);
+  const [isDesktop, setIsDesktop] = useState(window.innerWidth > 600);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsDesktop(window.innerWidth > 600);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const shouldUseBuilderLayout = isBuilderMode && !isDesktop;
 
   useEffect(() => {
     const updateDimensions = () => {
-      if (!isBuilderMode) {
+      if (!shouldUseBuilderLayout) {
         const horizontalPadding = 80;
         const headerHeight = 80;
         const verticalPadding = 80;
@@ -112,11 +124,11 @@ const Grid2x2: React.FC<Grid2x2Props> = ({
     updateDimensions();
     window.addEventListener('resize', updateDimensions);
     return () => window.removeEventListener('resize', updateDimensions);
-  }, [isBuilderMode]);
+  }, [shouldUseBuilderLayout]);
 
   const gap = 16;
   const rowLayouts = React.useMemo(() => {
-    if (isBuilderMode || containerWidth === 0 || containerHeight === 0)
+    if (shouldUseBuilderLayout || containerWidth === 0 || containerHeight === 0)
       return [];
     return calculateRowLayouts(
       items,
@@ -126,7 +138,7 @@ const Grid2x2: React.FC<Grid2x2Props> = ({
       gap,
       minRows,
     );
-  }, [items, columns, containerWidth, containerHeight, isBuilderMode, minRows]);
+  }, [items, columns, containerWidth, containerHeight, shouldUseBuilderLayout, minRows]);
 
   const handleImageLoad = (
     media: MediaItem,
@@ -273,12 +285,14 @@ const Grid2x2: React.FC<Grid2x2Props> = ({
     );
   };
 
+  const gridClassName = shouldUseBuilderLayout ? 'grid-builder' : 'grid-presentation';
+
   return (
     <div
       ref={wrapperRef}
-      className={`grid-2x2 ${isBuilderMode ? 'grid-builder' : 'grid-presentation'}`}
+      className={`grid-2x2 ${gridClassName}`}
     >
-      {isBuilderMode ? renderBuilderMode() : renderPresentationMode()}
+      {shouldUseBuilderLayout ? renderBuilderMode() : renderPresentationMode()}
     </div>
   );
 };
