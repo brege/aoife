@@ -1,5 +1,14 @@
 # Changelog
 
+## 2025-12-16
+
+- Defaulted desktop to presentation mode with new banded input form
+- Reworked the search form to adapt between band and stack layouts based on viewport
+- No changes made to mobile layout (stacked layout)
+- Exposed an in-app test API plus stable data-test hooks so Cypress can drive state
+- Tests avoid brittleness from DOM selectors using data-test attributes
+- Added API integration tests and folded Cypress deeper into the test suite structure
+
 ## 2025-12-15
 
 - Redesigned poster/cover selection with visual picker interface and large thumbnail previews

@@ -1,7 +1,7 @@
 {
   "name": "aoife",
   "private": true,
-  "version": "0.2.2",
+  "version": "0.3.0",
   "type": "module",
   "scripts": {
     "dev": "vite --host",
@@ -25,6 +25,7 @@
     "@types/react": "^18.3.18",
     "@types/react-dom": "^18.3.5",
     "@vitejs/plugin-react": "^4.3.4",
+    "baseline-browser-mapping": "^2.9.8",
     "chai": "^4.3.10",
     "cypress": "^14.5.4",
     "js-yaml": "^4.1.0",
