@@ -4,10 +4,10 @@ import { MdDriveFolderUpload } from 'react-icons/md';
 import { storeImage } from '../../lib/indexeddb';
 import type { MediaSearchValues, MediaType } from '../../media/types';
 import Dropdown from './dropdown';
-import { PlatformAutocomplete } from './platformautocomplete';
-import './mediasearchform.css';
+import { Platform } from './platform';
+import './mediaform.css';
 
-interface MediaSearchFormProps {
+interface MediaFormProps {
   mediaType: MediaType;
   onMediaTypeChange: (type: MediaType) => void;
   searchValues: MediaSearchValues;
@@ -26,7 +26,7 @@ interface MediaSearchFormProps {
   layout: 'band' | 'stack';
 }
 
-export const MediaSearchForm: React.FC<MediaSearchFormProps> = ({
+export const MediaForm: React.FC<MediaFormProps> = ({
   mediaType,
   onMediaTypeChange,
   searchValues,
@@ -77,7 +77,7 @@ export const MediaSearchForm: React.FC<MediaSearchFormProps> = ({
         {provider.searchFields.map((field) => {
           if (field.id === 'platform') {
             return (
-              <PlatformAutocomplete
+              <Platform
                 key={field.id}
                 value={searchValues[field.id] ?? ''}
                 onChange={(value) => onFieldChange(field.id, value)}

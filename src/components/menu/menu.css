@@ -497,9 +497,6 @@
   left: 23px;
 }
 
-.cover-view-toggle-row {
-  display: none;
-}
 
 .config-spacer {
   display: block;
@@ -542,9 +539,6 @@
 
 /* Responsive Design */
 @media (max-width: 480px) {
-  .cover-view-toggle-row {
-    display: grid;
-  }
   .menu-dropdown {
     right: var(--spacing-md);
     width: calc(100vw - 32px);

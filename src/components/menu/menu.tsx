@@ -12,8 +12,8 @@ import { VscSourceControl } from 'react-icons/vsc';
 import './menu.css';
 import packageJson from '../../../package.json';
 import logger from '../../lib/logger';
+import { useOutside } from '../../lib/escape';
 import { useModalClosed, useModalManager } from '../../lib/modalmanager';
-import { useOnClickOutside } from '../ui/useonclickoutside';
 import MenuClear from './clear';
 import MenuConfig from './config';
 
@@ -66,7 +66,7 @@ const Menu: React.FC<MenuProps> = ({
     setCopyError('');
   }, []);
 
-  useOnClickOutside(
+  useOutside(
     menuRef,
     (event) => {
       if (buttonRef.current?.contains(event.target as Node)) {

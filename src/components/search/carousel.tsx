@@ -3,16 +3,16 @@ import { useState } from 'react';
 import { useGesture } from '@use-gesture/react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { MdClose } from 'react-icons/md';
-import './alternatecoverscarousel.css';
+import './carousel.css';
 
-interface AlternateCoversCarouselProps {
+interface CarouselProps {
   urls: string[];
   mediaTitle: string;
   onSelectCover: (url: string) => void;
   onClose: () => void;
 }
 
-const AlternateCoversCarousel: React.FC<AlternateCoversCarouselProps> = ({
+const Carousel: React.FC<CarouselProps> = ({
   urls,
   mediaTitle,
   onSelectCover,
@@ -143,4 +143,4 @@ const AlternateCoversCarousel: React.FC<AlternateCoversCarouselProps> = ({
   );
 };
 
-export default AlternateCoversCarousel;
+export default Carousel;

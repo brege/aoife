@@ -1,5 +1,26 @@
 import { useEffect } from 'react';
 
+type OnOutsideCallback = (event: MouseEvent) => void;
+
+const useOutside = (
+  ref: React.RefObject<HTMLElement>,
+  callback: OnOutsideCallback,
+  enabled = true,
+) => {
+  useEffect(() => {
+    if (!enabled) return undefined;
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (ref.current && !ref.current.contains(event.target as Node)) {
+        callback(event);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [ref, callback, enabled]);
+};
+
 const useEscapeKey = (callback: () => void) => {
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -57,5 +78,5 @@ const useDropdownNavigation = (
   };
 };
 
-export { useDropdownNavigation };
+export { useDropdownNavigation, useOutside };
 export default useEscapeKey;

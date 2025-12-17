@@ -1,28 +1,27 @@
 import axios from 'axios';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useDropdownNavigation } from '../../lib/escape';
-import './platformautocomplete.css';
-import { useOnClickOutside } from '../ui/useonclickoutside';
+import { useDropdownNavigation, useOutside } from '../../lib/escape';
+import './platform.css';
 
-type Platform = {
+type PlatformItem = {
   id: string;
   name: string;
 };
 
-interface PlatformAutocompleteProps {
+interface PlatformProps {
   value: string;
   onChange: (platformId: string) => void;
   placeholder: string;
   ariaLabel: string;
 }
 
-export function PlatformAutocomplete({
+export function Platform({
   onChange,
   placeholder,
   ariaLabel,
-}: PlatformAutocompleteProps) {
-  const [platforms, setPlatforms] = useState<Platform[]>([]);
-  const [filteredPlatforms, setFilteredPlatforms] = useState<Platform[]>([]);
+}: PlatformProps) {
+  const [platforms, setPlatforms] = useState<PlatformItem[]>([]);
+  const [filteredPlatforms, setFilteredPlatforms] = useState<PlatformItem[]>([]);
   const [showDropdown, setShowDropdown] = useState(false);
   const [inputValue, setInputValue] = useState('');
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
@@ -40,8 +39,8 @@ export function PlatformAutocomplete({
         const platformsData = response.data.data.platforms;
         const platformList = Object.values(platformsData).map(
           (platform: unknown) => ({
-            id: (platform as Platform).id.toString(),
-            name: (platform as Platform).name,
+            id: (platform as PlatformItem).id.toString(),
+            name: (platform as PlatformItem).name,
           }),
         );
         setPlatforms(platformList);
@@ -70,7 +69,7 @@ export function PlatformAutocomplete({
   };
 
   const handleSelectPlatform = useCallback(
-    (platform: Platform) => {
+    (platform: PlatformItem) => {
       setInputValue(platform.name);
       onChange(platform.id);
       setShowDropdown(false);
@@ -123,7 +122,7 @@ export function PlatformAutocomplete({
     }
   }, [highlightedIndex]);
 
-  useOnClickOutside(containerRef, handleClickOutside, showDropdown);
+  useOutside(containerRef, handleClickOutside, showDropdown);
 
   return (
     <div className="platform-autocomplete" ref={containerRef}>

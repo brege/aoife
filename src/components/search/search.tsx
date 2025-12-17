@@ -17,8 +17,8 @@ import type {
 } from '../../media/types';
 import Grid2x2 from '../grid/grid';
 import AppHeader from '../ui/header';
-import { MediaSearchForm } from './mediasearchform';
-import AlternateCoversCarousel from './alternatecoverscarousel';
+import { MediaForm } from './mediaform';
+import Carousel from './carousel';
 
 const GRID_STORAGE_KEY = 'gridItems';
 const COLUMNS_STORAGE_KEY = 'gridColumns';
@@ -1223,7 +1223,7 @@ const MediaSearch: React.FC = () => {
       />
 
       {isBuilderMode && (
-        <MediaSearchForm
+        <MediaForm
           mediaType={selectedMediaType}
           onMediaTypeChange={handleMediaTypeChange}
           searchValues={searchValues}
@@ -1270,7 +1270,7 @@ const MediaSearch: React.FC = () => {
               layoutDimension={layoutDimension}
             />
             {isBuilderMode && (
-              <MediaSearchForm
+              <MediaForm
                 mediaType={selectedMediaType}
                 onMediaTypeChange={handleMediaTypeChange}
                 searchValues={searchValues}
@@ -1287,12 +1287,12 @@ const MediaSearch: React.FC = () => {
           {showPosterGrid &&
             activePosterItem &&
             (coverViewMode === 'carousel' ? (
-              <AlternateCoversCarousel
+              <Carousel
                 urls={alternateCoverUrls}
                 mediaTitle={activePosterItem.title}
                 onSelectCover={(url) => {
                   logger.info(`POSTER: Selected alternate poster from carousel`, {
-                    context: 'AlternateCoversCarousel',
+                    context: 'Carousel',
                     action: 'poster_change',
                     posterPath: url,
                     timestamp: Date.now(),

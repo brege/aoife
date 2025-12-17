@@ -9,8 +9,8 @@ import {
   PiTelevisionSimpleBold,
 } from 'react-icons/pi';
 import type { MediaType } from '../../media/types';
+import { useOutside } from '../../lib/escape';
 import './dropdown.css';
-import { useOnClickOutside } from '../ui/useonclickoutside';
 
 interface DropdownProps {
   value: MediaType;
@@ -43,7 +43,7 @@ const Dropdown: React.FC<DropdownProps> = ({ value, onChange }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  useOnClickOutside(dropdownRef, () => setIsOpen(false), isOpen);
+  useOutside(dropdownRef, () => setIsOpen(false), isOpen);
 
   const handleSelect = (type: MediaType) => {
     onChange(type);
