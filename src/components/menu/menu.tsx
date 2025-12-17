@@ -32,6 +32,8 @@ interface MenuProps {
   shareUrl: string;
   shareError: string;
   isLoadingShare: boolean;
+  coverViewMode?: 'grid' | 'carousel';
+  onCoverViewModeChange?: (mode: 'grid' | 'carousel') => void;
 }
 
 const Menu: React.FC<MenuProps> = ({
@@ -49,6 +51,8 @@ const Menu: React.FC<MenuProps> = ({
   shareUrl,
   shareError,
   isLoadingShare,
+  coverViewMode,
+  onCoverViewModeChange,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -240,6 +244,8 @@ const Menu: React.FC<MenuProps> = ({
             onMinRowsChange={onMinRowsChange}
             layoutDimension={layoutDimension}
             onLayoutDimensionChange={onLayoutDimensionChange}
+            coverViewMode={coverViewMode}
+            onCoverViewModeChange={onCoverViewModeChange}
           />
 
           <details className="menu-status menu-grid-config-section">

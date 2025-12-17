@@ -10,6 +10,8 @@ interface MenuConfigProps {
   onMinRowsChange: (minRows: number) => void;
   layoutDimension: 'width' | 'height';
   onLayoutDimensionChange: (dimension: 'width' | 'height') => void;
+  coverViewMode?: 'grid' | 'carousel';
+  onCoverViewModeChange?: (mode: 'grid' | 'carousel') => void;
 }
 
 const MIN_COLUMNS = 1;
@@ -24,6 +26,8 @@ const MenuConfig: React.FC<MenuConfigProps> = ({
   onMinRowsChange,
   layoutDimension,
   onLayoutDimensionChange,
+  coverViewMode = 'grid',
+  onCoverViewModeChange,
 }) => {
   const handleColumnsDecrement = () => {
     if (columns <= MIN_COLUMNS) return;
@@ -83,7 +87,7 @@ const MenuConfig: React.FC<MenuConfigProps> = ({
         <h3>Layout</h3>
       </div>
 
-      <div className="config-row">
+      <div className="config-row four-col">
         <span className="config-label">titles per row</span>
         <div className="column-stepper">
           <button
@@ -108,7 +112,7 @@ const MenuConfig: React.FC<MenuConfigProps> = ({
         </div>
       </div>
 
-      <div className="config-row">
+      <div className="config-row four-col">
         <span className="config-label">minimum rows</span>
         <div className="column-stepper">
           <button
@@ -133,8 +137,9 @@ const MenuConfig: React.FC<MenuConfigProps> = ({
         </div>
       </div>
 
-      <div className="config-row">
+      <div className="config-row four-col">
         <span className="config-label">fixed width</span>
+        <span className="config-spacer" aria-hidden="true" />
         <Switch
           checked={layoutDimension === 'width'}
           onChange={(checked) =>
@@ -142,6 +147,27 @@ const MenuConfig: React.FC<MenuConfigProps> = ({
           }
           className="layout-dimension-toggle"
         />
+        <span className="config-spacer" aria-hidden="true" />
+      </div>
+
+      <div className="config-row four-col cover-view-toggle-row">
+        <span className="config-label">swipe mode</span>
+        <span className="config-spacer" aria-hidden="true" />
+        <Switch
+          checked={coverViewMode === 'carousel'}
+          onChange={(checked) => {
+            const newMode = checked ? 'carousel' : 'grid';
+            onCoverViewModeChange?.(newMode);
+            logger.info(`MENU: Swipe mode changed to ${newMode}`, {
+              context: 'MenuConfig.swipeMode',
+              action: 'swipe_mode_change',
+              newMode,
+              timestamp: Date.now(),
+            });
+          }}
+          className="cover-view-toggle"
+        />
+        <span className="config-spacer" aria-hidden="true" />
       </div>
     </div>
   );

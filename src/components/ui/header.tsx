@@ -21,6 +21,8 @@ interface AppHeaderProps {
   shareUrl: string;
   shareError: string;
   isLoadingShare: boolean;
+  coverViewMode?: 'grid' | 'carousel';
+  onCoverViewModeChange?: (mode: 'grid' | 'carousel') => void;
 }
 
 const AppHeader: React.FC<AppHeaderProps> = ({
@@ -40,6 +42,8 @@ const AppHeader: React.FC<AppHeaderProps> = ({
   shareUrl,
   shareError,
   isLoadingShare,
+  coverViewMode,
+  onCoverViewModeChange,
 }) => {
   return (
     <div className="app-header">
@@ -63,6 +67,8 @@ const AppHeader: React.FC<AppHeaderProps> = ({
           shareUrl={shareUrl}
           shareError={shareError}
           isLoadingShare={isLoadingShare}
+          coverViewMode={coverViewMode}
+          onCoverViewModeChange={onCoverViewModeChange}
         />
       </div>
     </div>

@@ -11,7 +11,6 @@ interface Grid2x2Props {
   items: MediaItem[];
   onRemoveMedia: (mediaId: string | number) => void;
   onPosterClick: (media: MediaItem) => void;
-  onPlaceholderClick: () => void;
   columns: number;
   minRows: number;
   placeholderLabel?: string;
@@ -109,7 +108,6 @@ const Grid2x2: React.FC<Grid2x2Props> = ({
   items,
   onRemoveMedia,
   onPosterClick,
-  onPlaceholderClick,
   columns,
   minRows,
   placeholderLabel,
@@ -194,26 +192,11 @@ const Grid2x2: React.FC<Grid2x2Props> = ({
 
   const renderPresentationMode = () => {
     if (isBuilderMode && placeholderLabel && items.length === 0) {
-      const placeholderAspectRatio = 2 / 3;
-      const placeholderWidth = Math.min(
-        containerWidth * 0.7,
-        containerHeight * placeholderAspectRatio,
-      );
-      const placeholderHeight = placeholderWidth / placeholderAspectRatio;
-
       return (
         <div className="grid-container grid-container-empty">
-          <button
-            type="button"
-            className="grid-item empty"
-            onClick={onPlaceholderClick}
-            title={`Add a ${placeholderLabel}`}
-            style={{ width: placeholderWidth, height: placeholderHeight }}
-          >
-            <div className="placeholder-content">
-              <span>+</span>
-            </div>
-          </button>
+          <div className="empty-state-hint">
+            Add a {placeholderLabel}
+          </div>
         </div>
       );
     }

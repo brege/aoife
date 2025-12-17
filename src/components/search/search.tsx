@@ -18,12 +18,14 @@ import type {
 import Grid2x2 from '../grid/grid';
 import AppHeader from '../ui/header';
 import { MediaSearchForm } from './mediasearchform';
+import AlternateCoversCarousel from './alternatecoverscarousel';
 
 const GRID_STORAGE_KEY = 'gridItems';
 const COLUMNS_STORAGE_KEY = 'gridColumns';
 const MIN_ROWS_STORAGE_KEY = 'gridMinRows';
 const LAYOUT_DIMENSION_STORAGE_KEY = 'layoutDimension';
 const TITLE_STORAGE_KEY = 'gridTitle';
+const COVER_VIEW_STORAGE_KEY = 'coverViewMode';
 const GRID_CAPACITY = 4;
 const SHARE_QUERY_PARAM = 'share';
 const INDEXEDDB_GRID_KEY = 'gridItems';
@@ -233,6 +235,13 @@ const MediaSearch: React.FC = () => {
       return 'height';
     },
   );
+  const [coverViewMode, setCoverViewMode] = useState<'grid' | 'carousel'>(() => {
+    const stored = localStorage.getItem(COVER_VIEW_STORAGE_KEY);
+    if (stored === 'carousel') {
+      return 'carousel';
+    }
+    return 'grid';
+  });
   const [lastSearchSummary, setLastSearchSummary] = useState('');
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [isBuilderMode, setIsBuilderMode] = useState(true);
@@ -542,6 +551,10 @@ const MediaSearch: React.FC = () => {
     localStorage.setItem(LAYOUT_DIMENSION_STORAGE_KEY, layoutDimension);
     storeState(INDEXEDDB_LAYOUT_DIMENSION_KEY, layoutDimension);
   }, [layoutDimension, isIndexedDbHydrated]);
+
+  useEffect(() => {
+    localStorage.setItem(COVER_VIEW_STORAGE_KEY, coverViewMode);
+  }, [coverViewMode]);
 
   useEffect(() => {
     if (!initialShareSlugRef.current) {
@@ -1205,6 +1218,8 @@ const MediaSearch: React.FC = () => {
         shareUrl={shareUrl}
         shareError={shareError}
         isLoadingShare={isLoadingShare}
+        coverViewMode={coverViewMode}
+        onCoverViewModeChange={setCoverViewMode}
       />
 
       {isBuilderMode && (
@@ -1245,7 +1260,6 @@ const MediaSearch: React.FC = () => {
                 );
                 setShowPosterGrid(true);
               }}
-              onPlaceholderClick={() => searchInputRef.current?.focus()}
               columns={columns}
               minRows={minRows}
               placeholderLabel={
@@ -1270,55 +1284,72 @@ const MediaSearch: React.FC = () => {
           </div>
           {isLoading && <p>Loading...</p>}
           {error && <p className="error">{error}</p>}
-          {showPosterGrid && (
-            <div className="search-results poster-picker">
-              <button
-                type="button"
-                className="search-close-button"
-                onClick={handleClosePosterGrid}
-                aria-label="Close alternate covers"
-              >
-                <MdClose aria-hidden="true" focusable="false" />
-              </button>
-              <h3 className="search-results-subtitle">
-                Alternate covers
-                {activePosterItem ? ` - ${activePosterItem.title}` : ''}
-              </h3>
-              <div className="poster-picker-grid">
-                {alternateCoverUrls.length === 0 ? (
-                  <div className="poster-picker-empty">No alternate covers</div>
-                ) : (
-                  alternateCoverUrls.map((url, index) => (
-                    <button
-                      key={url}
-                      type="button"
-                      className="poster-picker-card"
-                      onClick={() => {
-                        logger.info(
-                          `POSTER: Selected alternate poster ${index + 1}`,
-                          {
-                            context: 'Grid2x2.onSelectAlternatePoster',
-                            action: 'poster_change',
-                            posterIndex: index + 1,
-                            posterPath: url,
-                            timestamp: Date.now(),
-                          },
-                        );
-                        handleSelectAlternatePoster(url);
-                      }}
-                      aria-label={`Use alternate cover ${index + 1}`}
-                    >
-                      <img
-                        src={url}
-                        alt={`Alternate cover ${index + 1}`}
-                        className="poster-picker-image"
-                      />
-                    </button>
-                  ))
-                )}
+          {showPosterGrid &&
+            activePosterItem &&
+            (coverViewMode === 'carousel' ? (
+              <AlternateCoversCarousel
+                urls={alternateCoverUrls}
+                mediaTitle={activePosterItem.title}
+                onSelectCover={(url) => {
+                  logger.info(`POSTER: Selected alternate poster from carousel`, {
+                    context: 'AlternateCoversCarousel',
+                    action: 'poster_change',
+                    posterPath: url,
+                    timestamp: Date.now(),
+                  });
+                  handleSelectAlternatePoster(url);
+                }}
+                onClose={handleClosePosterGrid}
+              />
+            ) : (
+              <div className="search-results poster-picker">
+                <button
+                  type="button"
+                  className="search-close-button"
+                  onClick={handleClosePosterGrid}
+                  aria-label="Close alternate covers"
+                >
+                  <MdClose aria-hidden="true" focusable="false" />
+                </button>
+                <h3 className="search-results-subtitle">
+                  Alternate covers
+                  {activePosterItem ? ` - ${activePosterItem.title}` : ''}
+                </h3>
+                <div className="poster-picker-grid">
+                  {alternateCoverUrls.length === 0 ? (
+                    <div className="poster-picker-empty">No alternate covers</div>
+                  ) : (
+                    alternateCoverUrls.map((url, index) => (
+                      <button
+                        key={url}
+                        type="button"
+                        className="poster-picker-card"
+                        onClick={() => {
+                          logger.info(
+                            `POSTER: Selected alternate poster ${index + 1}`,
+                            {
+                              context: 'Grid2x2.onSelectAlternatePoster',
+                              action: 'poster_change',
+                              posterIndex: index + 1,
+                              posterPath: url,
+                              timestamp: Date.now(),
+                            },
+                          );
+                          handleSelectAlternatePoster(url);
+                        }}
+                        aria-label={`Use alternate cover ${index + 1}`}
+                      >
+                        <img
+                          src={url}
+                          alt={`Alternate cover ${index + 1}`}
+                          className="poster-picker-image"
+                        />
+                      </button>
+                    ))
+                  )}
+                </div>
               </div>
-            </div>
-          )}
+            ))}
           {!showPosterGrid &&
             searchResults.length > 0 &&
             selectedMediaType !== 'custom' && (

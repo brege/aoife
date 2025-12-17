@@ -103,22 +103,12 @@
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
 }
 
-.grid-item.empty {
-  background-color: #2a2a2a;
-  border: 2px dashed #666;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  width: var(--thumbnail-max);
-  height: var(--thumbnail-max);
-}
-
-.grid-item.empty:hover {
-  background-color: #3a3a3a;
-  border-color: #888;
-  transform: translateY(-2px);
+.empty-state-hint {
+  font-size: 48px;
+  color: #666;
+  font-weight: 300;
+  user-select: none;
+  text-align: center;
 }
 
 .poster-wrapper {
@@ -138,8 +128,7 @@
 }
 
 .poster-button:focus-visible,
-.alternate-poster-button:focus-visible,
-.grid-item.empty:focus-visible {
+.alternate-poster-button:focus-visible {
   outline: 2px solid var(--accent-blue);
   outline-offset: 2px;
 }
@@ -172,17 +161,6 @@
   opacity: 0.9;
 }
 
-.placeholder-content {
-  font-size: 32px;
-  color: #666;
-  font-weight: 300;
-  user-select: none;
-}
-
-.grid-item.empty:hover .placeholder-content {
-  color: #888;
-  transform: scale(1.1);
-}
 
 .grid-close-button {
   position: absolute;
@@ -276,8 +254,8 @@
     --gap: var(--spacing-md);
   }
 
-  .placeholder-content {
-    font-size: 24px;
+  .empty-state-hint {
+    font-size: 32px;
   }
 
   .grid-close-button {

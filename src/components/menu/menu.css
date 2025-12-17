@@ -365,10 +365,17 @@
 
 .config-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   column-gap: var(--spacing-md);
   margin-bottom: var(--spacing-md);
+}
+
+.config-row.four-col {
+  grid-template-columns:
+    minmax(0, 1fr)
+    40px
+    48px
+    40px;
 }
 
 .config-label {
@@ -382,6 +389,7 @@
   align-items: center;
   gap: var(--spacing-md);
   justify-self: end;
+  width: 100%;
 }
 
 .stepper-button {
@@ -462,7 +470,7 @@
   width: 44px;
   align-items: center;
   cursor: pointer;
-  justify-self: end;
+  justify-self: center;
   border-radius: 9999px;
   background: #444;
   transition: background-color 200ms;
@@ -489,8 +497,54 @@
   left: 23px;
 }
 
+.cover-view-toggle-row {
+  display: none;
+}
+
+.config-spacer {
+  display: block;
+  width: 100%;
+}
+
+.cover-view-toggle {
+  position: relative;
+  display: inline-flex;
+  height: 24px;
+  width: 44px;
+  align-items: center;
+  cursor: pointer;
+  justify-self: center;
+  border-radius: 9999px;
+  background: #444;
+  transition: background-color 200ms;
+  border: 1px solid #555;
+}
+
+.cover-view-toggle[aria-checked="true"] {
+  background: var(--accent-green);
+  border-color: var(--accent-green);
+}
+
+.cover-view-toggle::after {
+  content: "";
+  position: absolute;
+  height: 18px;
+  width: 18px;
+  border-radius: 9999px;
+  background: white;
+  left: 3px;
+  transition: left 200ms;
+}
+
+.cover-view-toggle[data-headlessui-state*="checked"]::after {
+  left: 23px;
+}
+
 /* Responsive Design */
 @media (max-width: 480px) {
+  .cover-view-toggle-row {
+    display: grid;
+  }
   .menu-dropdown {
     right: var(--spacing-md);
     width: calc(100vw - 32px);
