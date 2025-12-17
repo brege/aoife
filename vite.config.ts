@@ -283,7 +283,7 @@ export default defineConfig({
         let reactClient: WebSocket | null = null;
 
         // In-memory grid state for API testing
-        const gridState: any[] = [];
+        const gridState: Record<string, unknown>[] = [];
         const shareStore = loadShareStore();
         const slugWords = loadSlugWords();
 
@@ -325,8 +325,8 @@ export default defineConfig({
                 const { getMediaProvider } = await import(
                   './src/media/providers'
                 );
-                const service = getMediaService(mediaType as any);
-                const provider = getMediaProvider(mediaType as any);
+                const service = getMediaService(mediaType as unknown as Parameters<typeof getMediaService>[0]);
+                const provider = getMediaProvider(mediaType as unknown as Parameters<typeof getMediaProvider>[0]);
                 const primaryField = provider.searchFields[0]?.id || 'query';
                 const results = await service.search({ [primaryField]: query });
                 res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -359,9 +359,16 @@ export default defineConfig({
                   );
                   return;
                 }
-                if (typeof parsed.title !== 'string' || parsed.title.trim() === '') {
+                if (
+                  typeof parsed.title !== 'string' ||
+                  parsed.title.trim() === ''
+                ) {
                   res.writeHead(400, { 'Content-Type': 'application/json' });
-                  res.end(JSON.stringify({ error: 'title must be a non-empty string' }));
+                  res.end(
+                    JSON.stringify({
+                      error: 'title must be a non-empty string',
+                    }),
+                  );
                   return;
                 }
 
@@ -416,7 +423,8 @@ export default defineConfig({
               JSON.stringify({
                 slug,
                 payload: record.payload,
-                title: typeof record.title === 'string' ? record.title : undefined,
+                title:
+                  typeof record.title === 'string' ? record.title : undefined,
               }),
             );
           } else if (path.startsWith('/tmdb/') && req.method === 'GET') {

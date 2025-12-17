@@ -25,7 +25,7 @@ export async function apiCall(method, endpoint, body = null) {
           const isJson = contentType.includes('application/json');
           const data = isJson && body ? JSON.parse(body) : body;
           resolve({ statusCode: res.statusCode, data });
-        } catch (error) {
+        } catch (_error) {
           resolve({ statusCode: res.statusCode, data: body });
         }
       });

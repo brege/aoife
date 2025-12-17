@@ -319,7 +319,7 @@
 }
 
 .menu-status-summary::marker {
-  content: '';
+  content: "";
 }
 
 .menu-status-summary-label {

@@ -1,6 +1,11 @@
 import type React from 'react';
 import { useEffect, useRef, useState } from 'react';
-import { FaChevronDown, FaChevronRight, FaGithub, FaRegCopy } from 'react-icons/fa';
+import {
+  FaChevronDown,
+  FaChevronRight,
+  FaGithub,
+  FaRegCopy,
+} from 'react-icons/fa';
 import { FiGrid, FiShare2 } from 'react-icons/fi';
 import { HiOutlinePencilAlt } from 'react-icons/hi';
 import { VscSourceControl } from 'react-icons/vsc';
@@ -55,15 +60,12 @@ const Menu: React.FC<MenuProps> = ({
   useEffect(() => {
     setCopySuccess(false);
     setCopyError('');
-  }, [shareUrl, isSharing]);
+  }, []);
 
   useOnClickOutside(
     menuRef,
     (event) => {
-      if (
-        buttonRef.current &&
-        buttonRef.current.contains(event.target as Node)
-      ) {
+      if (buttonRef.current?.contains(event.target as Node)) {
         return;
       }
       setIsOpen(false);
@@ -274,9 +276,9 @@ const Menu: React.FC<MenuProps> = ({
                   href="https://downforeveryoneorjustme.com/api.themoviedb.org"
                   target="_blank"
                   rel="noreferrer"
-                > 
+                >
                   api.themoviedb.org
-                  <b> [ movies/TV ]  </b>
+                  <b> [ movies/TV ] </b>
                 </a>
               </li>
               <li>

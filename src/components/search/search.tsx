@@ -697,7 +697,14 @@ const MediaSearch: React.FC = () => {
     } finally {
       setIsSharing(false);
     }
-  }, [buildSharePayload, columns, gridItems.length, layoutDimension, minRows, title]);
+  }, [
+    buildSharePayload,
+    columns,
+    gridItems.length,
+    layoutDimension,
+    minRows,
+    title,
+  ]);
 
   const handleTitleChange = useCallback(
     (nextTitle: string) => {

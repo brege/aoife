@@ -1,5 +1,5 @@
 import type React from 'react';
-import { createContext, useContext, useEffect, useRef } from 'react';
+import { createContext, useCallback, useContext, useEffect, useRef } from 'react';
 
 type Modal = 'searchResults' | 'posterGrid' | 'hamburger' | 'platformDropdown';
 
@@ -15,6 +15,11 @@ export const ModalProvider: React.FC<{ children: React.ReactNode }> = ({
 }) => {
   const openModalsRef = useRef<Set<Modal>>(new Set());
 
+  const closeModal = useCallback((modal: Modal) => {
+    openModalsRef.current.delete(modal);
+    window.dispatchEvent(new CustomEvent('modalClosed', { detail: { modal } }));
+  }, []);
+
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape' && openModalsRef.current.size > 0) {
@@ -27,16 +32,10 @@ export const ModalProvider: React.FC<{ children: React.ReactNode }> = ({
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [closeModal]);
 
   const openModal = (modal: Modal) => {
     openModalsRef.current.add(modal);
-  };
-
-  const closeModal = (modal: Modal) => {
-    openModalsRef.current.delete(modal);
-    // Dispatch custom event so components can react
-    window.dispatchEvent(new CustomEvent('modalClosed', { detail: { modal } }));
   };
 
   return (

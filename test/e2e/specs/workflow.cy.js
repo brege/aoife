@@ -5,7 +5,6 @@ import {
   clearGridThroughApplication,
   getApplicationTestApi,
   getGridSnapshot,
-  getLayoutDimension,
   removeMediaDirectly,
   resetApplicationState,
   searchThroughApplication,
@@ -93,7 +92,6 @@ function addMediaOperation(payload) {
     });
   }
 
-  const previousCount = state.gridItems.length;
   return addMediaDirectly(targetMedia, availableCovers).then((items) => {
     state.gridItems = items;
     const added = items.some(
