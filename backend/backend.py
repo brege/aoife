@@ -1,13 +1,59 @@
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
-import requests
+import json
 import os
+import random
+import time
 from dotenv import load_dotenv
+import requests
 
 load_dotenv()
 
 app = Flask(__name__, static_folder="dist", static_url_path="")
 CORS(app)
+
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+SHARE_STORE_PATH = os.path.join(PROJECT_ROOT, "share_store.json")
+SLUG_WORDS_PATH = os.path.join(PROJECT_ROOT, "src", "lib", "slugs.json")
+
+
+def load_share_store() -> dict:
+    if not os.path.exists(SHARE_STORE_PATH):
+        return {}
+    with open(SHARE_STORE_PATH, "r", encoding="utf-8") as handle:
+        data = json.load(handle)
+        if not isinstance(data, dict):
+            raise ValueError("Share store file is invalid")
+        return data
+
+
+def load_slug_words() -> list[str]:
+    if not os.path.exists(SLUG_WORDS_PATH):
+        raise FileNotFoundError("Slug word list is missing")
+    with open(SLUG_WORDS_PATH, "r", encoding="utf-8") as handle:
+        words = json.load(handle)
+        if not isinstance(words, list) or not all(isinstance(w, str) for w in words):
+            raise ValueError("Slug word list is invalid")
+        if len(words) < 8:
+            raise ValueError("Slug word list is too short")
+        return words
+
+
+def persist_share_store(store: dict) -> None:
+    with open(SHARE_STORE_PATH, "w", encoding="utf-8") as handle:
+        json.dump(store, handle)
+
+
+def generate_slug(existing: set[str]) -> str:
+    for _ in range(10):
+        slug = "-".join(random.choice(SLUG_WORDS) for _ in range(3))
+        if slug not in existing:
+            return slug
+    raise RuntimeError("Unable to generate unique share slug")
+
+
+SHARE_STORE = load_share_store()
+SLUG_WORDS = load_slug_words()
 
 
 @app.after_request
@@ -78,6 +124,41 @@ def proxy_gamesdb_images(subpath):
 @app.route("/api/log", methods=["POST"])
 def log_event():
     return jsonify({"status": "ok"}), 200
+
+
+@app.route("/api/share", methods=["POST"])
+def create_share():
+    body = request.get_json(silent=False)
+    payload = body.get("payload") if isinstance(body, dict) else None
+    if not isinstance(payload, str) or not payload.strip():
+        return (
+            jsonify({"error": "payload must be a non-empty string"}),
+            400,
+        )
+
+    slug = generate_slug(set(SHARE_STORE.keys()))
+    SHARE_STORE[slug] = {"payload": payload, "createdAt": int(time.time())}
+
+    try:
+        persist_share_store(SHARE_STORE)
+    except Exception as exc:
+        SHARE_STORE.pop(slug, None)
+        return jsonify({"error": f"Failed to persist share: {exc}"}), 500
+
+    return jsonify({"slug": slug, "id": slug})
+
+
+@app.route("/api/share/<slug>", methods=["GET"])
+def get_share(slug: str):
+    record = SHARE_STORE.get(slug)
+    if not record:
+        return jsonify({"error": "Share not found"}), 404
+
+    payload = record.get("payload")
+    if not isinstance(payload, str):
+        return jsonify({"error": "Share payload is invalid"}), 500
+
+    return jsonify({"slug": slug, "payload": payload})
 
 
 # Serve static files and SPA

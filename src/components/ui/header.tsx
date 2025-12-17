@@ -14,6 +14,11 @@ interface AppHeaderProps {
   onBuilderModeToggle: (enabled: boolean) => void;
   layoutDimension: 'width' | 'height';
   onLayoutDimensionChange: (dimension: 'width' | 'height') => void;
+  onShare: () => void;
+  isSharing: boolean;
+  shareUrl: string;
+  shareError: string;
+  isLoadingShare: boolean;
 }
 
 const AppHeader: React.FC<AppHeaderProps> = ({
@@ -26,6 +31,11 @@ const AppHeader: React.FC<AppHeaderProps> = ({
   onBuilderModeToggle,
   layoutDimension,
   onLayoutDimensionChange,
+  onShare,
+  isSharing,
+  shareUrl,
+  shareError,
+  isLoadingShare,
 }) => {
   return (
     <div className="app-header">
@@ -44,6 +54,11 @@ const AppHeader: React.FC<AppHeaderProps> = ({
           onBuilderModeToggle={onBuilderModeToggle}
           layoutDimension={layoutDimension}
           onLayoutDimensionChange={onLayoutDimensionChange}
+          onShare={onShare}
+          isSharing={isSharing}
+          shareUrl={shareUrl}
+          shareError={shareError}
+          isLoadingShare={isLoadingShare}
         />
       </div>
     </div>

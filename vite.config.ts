@@ -1,5 +1,8 @@
+import fs from 'node:fs';
 import type { IncomingMessage } from 'node:http';
 import https from 'node:https';
+import path from 'node:path';
+import crypto from 'node:crypto';
 import react from '@vitejs/plugin-react';
 import { defineConfig, loadEnv } from 'vite';
 import { type WebSocket, WebSocketServer } from 'ws';
@@ -11,6 +14,56 @@ const getTmdbKey = () =>
   env.VITE_TMDB_API_KEY ||
   process.env.VITE_TMDB_API_KEY ||
   process.env.TMDB_API_KEY;
+
+const SLUG_WORDS_PATH = path.join(process.cwd(), 'src', 'lib', 'slugs.json');
+
+type ShareStoreRecord = { payload: string; createdAt: number };
+type ShareStore = Record<string, ShareStoreRecord>;
+
+const SHARE_STORE_PATH = path.join(process.cwd(), 'share_store.json');
+
+const loadShareStore = (): ShareStore => {
+  if (!fs.existsSync(SHARE_STORE_PATH)) {
+    return {};
+  }
+  const contents = fs.readFileSync(SHARE_STORE_PATH, 'utf-8');
+  const parsed = JSON.parse(contents);
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+    throw new Error('Share store file is invalid');
+  }
+  return parsed as ShareStore;
+};
+
+const loadSlugWords = (): string[] => {
+  if (!fs.existsSync(SLUG_WORDS_PATH)) {
+    throw new Error('Slug word list is missing');
+  }
+  const contents = fs.readFileSync(SLUG_WORDS_PATH, 'utf-8');
+  const parsed = JSON.parse(contents);
+  if (!Array.isArray(parsed) || parsed.some((entry) => typeof entry !== 'string')) {
+    throw new Error('Slug word list is invalid');
+  }
+  if (parsed.length < 8) {
+    throw new Error('Slug word list is too short');
+  }
+  return parsed;
+};
+
+const persistShareStore = (store: ShareStore): void => {
+  fs.writeFileSync(SHARE_STORE_PATH, JSON.stringify(store));
+};
+
+const generateSlug = (existing: Set<string>, wordList: string[]): string => {
+  for (let i = 0; i < 10; i += 1) {
+    const slug = Array.from({ length: 3 })
+      .map(() => wordList[crypto.randomInt(0, wordList.length)])
+      .join('-');
+    if (!existing.has(slug)) {
+      return slug;
+    }
+  }
+  throw new Error('Unable to generate unique share slug');
+};
 
 export default defineConfig({
   plugins: [
@@ -27,6 +80,8 @@ export default defineConfig({
 
         // In-memory grid state for API testing
         const gridState: any[] = [];
+        const shareStore = loadShareStore();
+        const slugWords = loadSlugWords();
 
         wss.on('connection', (ws) => {
           console.log('[WS] React client connected');
@@ -78,6 +133,60 @@ export default defineConfig({
                 res.end(JSON.stringify({ error: `Search failed: ${error}` }));
               }
             })();
+          } else if (path === '/share' && req.method === 'POST') {
+            let body = '';
+            req.on('data', (chunk) => {
+              body += chunk.toString();
+            });
+            req.on('end', () => {
+              try {
+                const parsed = JSON.parse(body || '{}');
+                if (
+                  !parsed ||
+                  typeof parsed !== 'object' ||
+                  typeof parsed.payload !== 'string' ||
+                  parsed.payload.trim() === ''
+                ) {
+                  res.writeHead(400, { 'Content-Type': 'application/json' });
+                  res.end(
+                    JSON.stringify({
+                      error: 'payload must be a non-empty string',
+                    }),
+                  );
+                  return;
+                }
+
+                const slug = generateSlug(new Set(Object.keys(shareStore)), slugWords);
+                shareStore[slug] = {
+                  payload: parsed.payload,
+                  createdAt: Date.now(),
+                };
+                persistShareStore(shareStore);
+
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ slug, id: slug }));
+              } catch (err) {
+                const message =
+                  err instanceof Error ? err.message : 'Failed to create share';
+                res.writeHead(500, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: message }));
+              }
+            });
+          } else if (path.startsWith('/share/') && req.method === 'GET') {
+            const slug = path.replace('/share/', '');
+            const record = shareStore[slug];
+            if (!record) {
+              res.writeHead(404, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({ error: 'Share not found' }));
+              return;
+            }
+            if (typeof record.payload !== 'string') {
+              res.writeHead(500, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({ error: 'Share payload is invalid' }));
+              return;
+            }
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ slug, payload: record.payload }));
           } else if (path.startsWith('/tmdb/') && req.method === 'GET') {
             const tmdbKey = getTmdbKey();
             if (!tmdbKey) {

@@ -69,6 +69,23 @@ export const deleteImage = async (imageId: string): Promise<void> => {
   });
 };
 
+export const blobToDataUrl = (blob: Blob): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () =>
+      reject(reader.error ?? new Error('Failed to read blob as data URL'));
+    reader.onloadend = () => {
+      const result = reader.result;
+      if (typeof result === 'string') {
+        resolve(result);
+        return;
+      }
+      reject(new Error('Unexpected FileReader result'));
+    };
+    reader.readAsDataURL(blob);
+  });
+};
+
 export const createBlobURL = (blob: Blob): string => {
   return URL.createObjectURL(blob);
 };

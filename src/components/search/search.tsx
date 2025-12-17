@@ -6,6 +6,7 @@ import './search.css';
 import { type CliMenuState, useCliBridge } from '../../lib/api';
 import logger from '../../lib/logger';
 import { useModalClosed, useModalManager } from '../../lib/modalmanager';
+import { createShare, fetchShare } from '../../lib/share';
 import { getMediaService } from '../../media/factory';
 import { getMediaProvider } from '../../media/providers';
 import type {
@@ -22,6 +23,14 @@ const COLUMNS_STORAGE_KEY = 'gridColumns';
 const MIN_ROWS_STORAGE_KEY = 'gridMinRows';
 const LAYOUT_DIMENSION_STORAGE_KEY = 'layoutDimension';
 const GRID_CAPACITY = 4;
+const SHARE_QUERY_PARAM = 'share';
+
+type SharedState = {
+  gridItems: MediaItem[];
+  columns: number;
+  minRows: number;
+  layoutDimension: 'width' | 'height';
+};
 
 type TestApplicationApi = {
   setMediaType: (mediaType: MediaType) => void;
@@ -207,6 +216,16 @@ const MediaSearch: React.FC = () => {
   const [lastSearchSummary, setLastSearchSummary] = useState('');
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [isBuilderMode, setIsBuilderMode] = useState(true);
+  const [shareUrl, setShareUrl] = useState('');
+  const [shareError, setShareError] = useState('');
+  const [isSharing, setIsSharing] = useState(false);
+  const [isLoadingShare, setIsLoadingShare] = useState(false);
+  const initialShareSlugRef = useRef<string | null>(null);
+
+  if (initialShareSlugRef.current === null) {
+    const params = new URLSearchParams(window.location.search);
+    initialShareSlugRef.current = params.get(SHARE_QUERY_PARAM);
+  }
 
   const resolveProvider = useCallback(
     (mediaType: MediaType) =>
@@ -232,6 +251,10 @@ const MediaSearch: React.FC = () => {
   );
 
   useEffect(() => {
+    if (initialShareSlugRef.current) {
+      return;
+    }
+
     const stored = localStorage.getItem(GRID_STORAGE_KEY);
     if (!stored) return;
     try {
@@ -263,6 +286,80 @@ const MediaSearch: React.FC = () => {
     localStorage.setItem(GRID_STORAGE_KEY, JSON.stringify(items));
   }, []);
 
+  const buildSharePayload = useCallback((): string => {
+    const payload: SharedState = {
+      gridItems,
+      columns,
+      minRows,
+      layoutDimension,
+    };
+    return JSON.stringify(payload);
+  }, [columns, gridItems, layoutDimension, minRows]);
+
+  const applySharedState = useCallback(
+    (state: SharedState, slug: string) => {
+      if (!Array.isArray(state.gridItems)) {
+        throw new Error('Shared state is missing grid items');
+      }
+      if (typeof state.columns !== 'number' || Number.isNaN(state.columns)) {
+        throw new Error('Shared state columns value is invalid');
+      }
+      if (typeof state.minRows !== 'number' || Number.isNaN(state.minRows)) {
+        throw new Error('Shared state minRows value is invalid');
+      }
+      if (state.layoutDimension !== 'width' && state.layoutDimension !== 'height') {
+        throw new Error('Shared state layout dimension is invalid');
+      }
+
+      setColumns(state.columns);
+      setMinRows(state.minRows);
+      setLayoutDimension(state.layoutDimension);
+      setGridItems(state.gridItems);
+      persistGrid(state.gridItems);
+      localStorage.setItem(COLUMNS_STORAGE_KEY, String(state.columns));
+      localStorage.setItem(MIN_ROWS_STORAGE_KEY, String(state.minRows));
+      localStorage.setItem(LAYOUT_DIMENSION_STORAGE_KEY, state.layoutDimension);
+
+      const url = new URL(window.location.href);
+      url.searchParams.set(SHARE_QUERY_PARAM, slug);
+      window.history.replaceState(null, '', url.toString());
+      setShareUrl(url.toString());
+    },
+    [persistGrid],
+  );
+
+  const loadShare = useCallback(
+    async (slug: string) => {
+      setIsLoadingShare(true);
+      setShareError('');
+      try {
+        const response = await fetchShare(slug);
+        const parsed = JSON.parse(response.payload) as SharedState;
+        if (!parsed || typeof parsed !== 'object') {
+          throw new Error('Share payload is invalid');
+        }
+        applySharedState(parsed, slug);
+        logger.info('SHARE: Loaded shared grid', {
+          context: 'MediaSearch.loadShare',
+          action: 'share_load',
+          slug,
+          timestamp: Date.now(),
+        });
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        setShareError(message);
+        logger.error('SHARE: Failed to load shared grid', {
+          context: 'MediaSearch.loadShare',
+          slug,
+          error: message,
+        });
+      } finally {
+        setIsLoadingShare(false);
+      }
+    },
+    [applySharedState],
+  );
+
   useEffect(() => {
     localStorage.setItem(COLUMNS_STORAGE_KEY, String(columns));
   }, [columns]);
@@ -274,6 +371,13 @@ const MediaSearch: React.FC = () => {
   useEffect(() => {
     localStorage.setItem(LAYOUT_DIMENSION_STORAGE_KEY, layoutDimension);
   }, [layoutDimension]);
+
+  useEffect(() => {
+    if (!initialShareSlugRef.current) {
+      return;
+    }
+    loadShare(initialShareSlugRef.current);
+  }, [loadShare]);
 
   const { openModal, closeModal } = useModalManager();
 
@@ -378,6 +482,46 @@ const MediaSearch: React.FC = () => {
       handleAddMedia(results[0], results);
     }
   };
+
+  const handleCreateShare = useCallback(async () => {
+    if (gridItems.length === 0) {
+      setShareError('Add at least one item before sharing.');
+      return;
+    }
+
+    setIsSharing(true);
+    setShareError('');
+
+    try {
+      const payload = buildSharePayload();
+      const response = await createShare(payload);
+      const url = new URL(window.location.href);
+      url.searchParams.set(SHARE_QUERY_PARAM, response.slug);
+      window.history.replaceState(null, '', url.toString());
+      setShareUrl(url.toString());
+
+      logger.info('SHARE: Created share link', {
+        context: 'MediaSearch.handleCreateShare',
+        action: 'share_created',
+        slug: response.slug,
+        gridCount: gridItems.length,
+        columns,
+        minRows,
+        layoutDimension,
+        timestamp: Date.now(),
+      });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      setShareError(message);
+      logger.error('SHARE: Failed to create share link', {
+        context: 'MediaSearch.handleCreateShare',
+        action: 'share_create_failed',
+        error: message,
+      });
+    } finally {
+      setIsSharing(false);
+    }
+  }, [buildSharePayload, columns, gridItems.length, layoutDimension, minRows]);
 
   const handleFieldChange = useCallback((fieldId: string, value: string) => {
     setSearchValues((prev) => ({
@@ -881,6 +1025,11 @@ const MediaSearch: React.FC = () => {
         onBuilderModeToggle={handleBuilderModeToggle}
         layoutDimension={layoutDimension}
         onLayoutDimensionChange={setLayoutDimension}
+        onShare={handleCreateShare}
+        isSharing={isSharing}
+        shareUrl={shareUrl}
+        shareError={shareError}
+        isLoadingShare={isLoadingShare}
       />
 
       {isBuilderMode && (

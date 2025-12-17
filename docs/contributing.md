@@ -81,3 +81,14 @@ Coverage (✔ = covered, ○ = missing):
 | Books      | ○ | ○ | ○ | ○ | ○ |
 | Music      | ○ | ○ | ○ | ○ | ○ |
 | Games      | ○ | ○ | ○ | ○ | ○ |
+
+### slugs.json
+
+To regenerate the shared slug vocabulary from the flavor network dataset:
+
+```bash
+curl -s https://flavorpair.me/data/flavor/nodes.json \
+  | jq '[.[] | select(.id | test("^[a-zA-Z0-9]+$")) | .id]' \
+  > src/lib/slugs.json
+```
+

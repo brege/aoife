@@ -1,7 +1,7 @@
 import type React from 'react';
 import { useEffect, useRef, useState } from 'react';
-import { FaGithub } from 'react-icons/fa';
-import { FiGrid } from 'react-icons/fi';
+import { FaGithub, FaRegCopy } from 'react-icons/fa';
+import { FiGrid, FiShare2 } from 'react-icons/fi';
 import { HiOutlinePencilAlt } from 'react-icons/hi';
 import { VscSourceControl } from 'react-icons/vsc';
 import './menu.css';
@@ -22,6 +22,11 @@ interface MenuProps {
   onBuilderModeToggle: (enabled: boolean) => void;
   layoutDimension: 'width' | 'height';
   onLayoutDimensionChange: (dimension: 'width' | 'height') => void;
+  onShare: () => void;
+  isSharing: boolean;
+  shareUrl: string;
+  shareError: string;
+  isLoadingShare: boolean;
 }
 
 const Menu: React.FC<MenuProps> = ({
@@ -34,11 +39,23 @@ const Menu: React.FC<MenuProps> = ({
   onBuilderModeToggle,
   layoutDimension,
   onLayoutDimensionChange,
+  onShare,
+  isSharing,
+  shareUrl,
+  shareError,
+  isLoadingShare,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const { openModal, closeModal } = useModalManager();
+  const [copyError, setCopyError] = useState('');
+  const [copySuccess, setCopySuccess] = useState(false);
+
+  useEffect(() => {
+    setCopySuccess(false);
+    setCopyError('');
+  }, [shareUrl, isSharing]);
 
   useOnClickOutside(
     menuRef,
@@ -77,6 +94,28 @@ const Menu: React.FC<MenuProps> = ({
 
   const closeMenu = () => {
     setIsOpen(false);
+  };
+
+  const handleCopyShare = async () => {
+    if (!shareUrl) {
+      setCopyError('Create a share link before copying.');
+      setCopySuccess(false);
+      return;
+    }
+    if (!navigator.clipboard) {
+      setCopyError('Clipboard is not available in this browser.');
+      setCopySuccess(false);
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setCopyError('');
+      setCopySuccess(true);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      setCopyError(message);
+      setCopySuccess(false);
+    }
   };
 
   const handleModeSelect = (builderModeEnabled: boolean) => {
@@ -134,7 +173,54 @@ const Menu: React.FC<MenuProps> = ({
                 <HiOutlinePencilAlt size={20} />
               )}
             </button>
+            <button
+              type="button"
+              className={`menu-icon-button menu-share-button${isSharing ? ' active' : ''}`}
+              aria-label="Create share link"
+              title="Create share link"
+              onClick={onShare}
+              disabled={isSharing || isLoadingShare}
+            >
+              <FiShare2 size={20} />
+            </button>
 
+          </div>
+
+          <div className="menu-share">
+            <div className="menu-share-header">
+              <span>Share link</span>
+              {isSharing && <span className="menu-share-status">Creating…</span>}
+              {isLoadingShare && !isSharing && (
+                <span className="menu-share-status">Loading…</span>
+              )}
+              {copySuccess && <span className="menu-share-status success">Copied</span>}
+            </div>
+            <div className="menu-share-row">
+              <input
+                type="text"
+                value={shareUrl}
+                readOnly
+                placeholder={
+                  isLoadingShare ? 'Loading shared grid...' : 'Create a share link'
+                }
+                className="menu-share-input"
+                aria-label="Share URL"
+              />
+              <button
+                type="button"
+                className="menu-share-copy"
+                onClick={handleCopyShare}
+                disabled={!shareUrl}
+                aria-label="Copy share URL"
+                title="Copy share URL"
+              >
+                <FaRegCopy size={16} aria-hidden="true" focusable="false" />
+                <span className="menu-share-copy-label">Copy</span>
+              </button>
+            </div>
+            {(shareError || copyError) && (
+              <div className="menu-share-error">{shareError || copyError}</div>
+            )}
           </div>
 
           <MenuConfig
