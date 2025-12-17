@@ -175,7 +175,7 @@ const Menu: React.FC<MenuProps> = ({
             </button>
             <button
               type="button"
-              className={`menu-icon-button menu-share-button${isSharing ? ' active' : ''}`}
+              className={`menu-icon-button menu-permalink-button${isSharing ? ' active' : ''}`}
               aria-label="Create share link"
               title="Create share link"
               onClick={onShare}
@@ -185,20 +185,20 @@ const Menu: React.FC<MenuProps> = ({
             </button>
           </div>
 
-          <div className="menu-share">
-            <div className="menu-share-header">
+          <div className="menu-permalink">
+            <div className="menu-permalink-header">
               <span>Share link</span>
               {isSharing && (
-                <span className="menu-share-status">Creating…</span>
+                <span className="menu-permalink-status">Creating…</span>
               )}
               {isLoadingShare && !isSharing && (
-                <span className="menu-share-status">Loading…</span>
+                <span className="menu-permalink-status">Loading…</span>
               )}
               {copySuccess && (
-                <span className="menu-share-status success">Copied</span>
+                <span className="menu-permalink-status success">Copied</span>
               )}
             </div>
-            <div className="menu-share-row">
+            <div className="menu-permalink-row">
               <input
                 type="text"
                 value={shareUrl}
@@ -208,23 +208,25 @@ const Menu: React.FC<MenuProps> = ({
                     ? 'Loading shared grid...'
                     : 'Create a share link'
                 }
-                className="menu-share-input"
+                className="menu-permalink-input"
                 aria-label="Share URL"
               />
               <button
                 type="button"
-                className="menu-share-copy"
+                className="menu-permalink-copy"
                 onClick={handleCopyShare}
                 disabled={!shareUrl}
                 aria-label="Copy share URL"
                 title="Copy share URL"
               >
                 <FaRegCopy size={16} aria-hidden="true" focusable="false" />
-                <span className="menu-share-copy-label">Copy</span>
+                <span className="menu-permalink-copy-label">Copy</span>
               </button>
             </div>
             {(shareError || copyError) && (
-              <div className="menu-share-error">{shareError || copyError}</div>
+              <div className="menu-permalink-error">
+                {shareError || copyError}
+              </div>
             )}
           </div>
 

@@ -133,7 +133,7 @@
   border-bottom: 1px solid var(--border-color);
 }
 
-.menu-share {
+.menu-permalink {
   padding: var(--spacing-xl);
   border-bottom: 1px solid var(--border-color);
   display: flex;
@@ -141,7 +141,7 @@
   gap: var(--spacing-sm);
 }
 
-.menu-share-header {
+.menu-permalink-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -149,22 +149,22 @@
   color: var(--text-secondary);
 }
 
-.menu-share-status {
+.menu-permalink-status {
   font-size: 12px;
   color: var(--text-muted);
 }
 
-.menu-share-status.success {
+.menu-permalink-status.success {
   color: var(--accent-green);
 }
 
-.menu-share-row {
+.menu-permalink-row {
   display: flex;
   align-items: center;
   gap: var(--spacing-sm);
 }
 
-.menu-share-input {
+.menu-permalink-input {
   flex: 1;
   min-width: 0;
   background: var(--bg-secondary);
@@ -174,11 +174,11 @@
   border-radius: var(--border-radius-sm);
 }
 
-.menu-share-input::placeholder {
+.menu-permalink-input::placeholder {
   color: var(--text-muted);
 }
 
-.menu-share-copy {
+.menu-permalink-copy {
   min-width: 60px;
   height: 36px;
   border-radius: var(--border-radius-sm);
@@ -194,17 +194,17 @@
   font-size: 12px;
 }
 
-.menu-share-copy:disabled {
+.menu-permalink-copy:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
-.menu-share-copy svg {
+.menu-permalink-copy svg {
   width: 16px;
   height: 16px;
 }
 
-.menu-share-error {
+.menu-permalink-error {
   color: var(--accent-red);
   font-size: 12px;
 }
