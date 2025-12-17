@@ -1,6 +1,6 @@
 import type React from 'react';
 import { useEffect, useRef, useState } from 'react';
-import { FaGithub, FaRegCopy } from 'react-icons/fa';
+import { FaChevronDown, FaChevronRight, FaGithub, FaRegCopy } from 'react-icons/fa';
 import { FiGrid, FiShare2 } from 'react-icons/fi';
 import { HiOutlinePencilAlt } from 'react-icons/hi';
 import { VscSourceControl } from 'react-icons/vsc';
@@ -237,6 +237,70 @@ const Menu: React.FC<MenuProps> = ({
             layoutDimension={layoutDimension}
             onLayoutDimensionChange={onLayoutDimensionChange}
           />
+
+          <details className="menu-status menu-grid-config-section">
+            <summary className="menu-status-summary">
+              <span className="menu-status-summary-label">
+                <FaChevronRight
+                  className="menu-status-chevron menu-status-chevron-right"
+                  aria-hidden="true"
+                  focusable="false"
+                />
+                <FaChevronDown
+                  className="menu-status-chevron menu-status-chevron-down"
+                  aria-hidden="true"
+                  focusable="false"
+                />
+                <span>Is it down?</span>
+              </span>
+            </summary>
+            <ul className="menu-status-links">
+              <li>
+                <a
+                  className="menu-status-link"
+                  href="https://downforeveryoneorjustme.com/api.thegamesdb.net"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  api.thegamesdb.net
+                  <b> [ games ] </b>
+                </a>
+              </li>
+              <li>
+                <a
+                  className="menu-status-link"
+                  href="https://downforeveryoneorjustme.com/api.themoviedb.org"
+                  target="_blank"
+                  rel="noreferrer"
+                > 
+                  api.themoviedb.org
+                  <b> [ movies/TV ]  </b>
+                </a>
+              </li>
+              <li>
+                <a
+                  className="menu-status-link"
+                  href="https://downforeveryoneorjustme.com/musicbrainz.org"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  musicbrainz.org
+                  <b> [ music ] </b>
+                </a>
+              </li>
+              <li>
+                <a
+                  className="menu-status-link"
+                  href="https://downforeveryoneorjustme.com/openlibrary.org"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  openlibrary.org
+                  <b> [ books ]</b>
+                </a>
+              </li>
+            </ul>
+          </details>
 
           <div className="menu-about menu-grid-config-section">
             <div className="grid-config-header">

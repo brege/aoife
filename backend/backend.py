@@ -95,6 +95,7 @@ def set_csp_header(response):
 
 TMDB_KEY = os.getenv("VITE_TMDB_API_KEY")
 GAMESDB_KEY = os.getenv("VITE_GAMESDB_PUBLIC_KEY")
+UPSTREAM_TIMEOUT_SECONDS = 10
 
 
 # Proxy TMDB requests
@@ -103,8 +104,14 @@ def proxy_tmdb(subpath):
     params = dict(request.args)
     params["api_key"] = TMDB_KEY
     try:
-        resp = requests.get(f"https://api.themoviedb.org/{subpath}", params=params)
+        resp = requests.get(
+            f"https://api.themoviedb.org/{subpath}",
+            params=params,
+            timeout=UPSTREAM_TIMEOUT_SECONDS,
+        )
         return jsonify(resp.json()), resp.status_code
+    except requests.exceptions.Timeout:
+        return jsonify({"error": "Upstream request timed out"}), 504
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -120,6 +127,7 @@ def proxy_gamesdb(subpath):
                 f"https://api.thegamesdb.net/{subpath}",
                 json=request.json,
                 params=params,
+                timeout=UPSTREAM_TIMEOUT_SECONDS,
             )
         else:
             params = dict(request.args)
@@ -127,8 +135,11 @@ def proxy_gamesdb(subpath):
             resp = requests.get(
                 f"https://api.thegamesdb.net/{subpath}",
                 params=params,
+                timeout=UPSTREAM_TIMEOUT_SECONDS,
             )
         return jsonify(resp.json()), resp.status_code
+    except requests.exceptions.Timeout:
+        return jsonify({"error": "Upstream request timed out"}), 504
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -137,7 +148,10 @@ def proxy_gamesdb(subpath):
 @app.route("/api/gamesdb/images/<path:subpath>", methods=["GET"])
 def proxy_gamesdb_images(subpath):
     try:
-        resp = requests.get(f"https://cdn.thegamesdb.net/images/large/{subpath}")
+        resp = requests.get(
+            f"https://cdn.thegamesdb.net/images/large/{subpath}",
+            timeout=UPSTREAM_TIMEOUT_SECONDS,
+        )
         return (
             resp.content,
             resp.status_code,
@@ -145,6 +159,8 @@ def proxy_gamesdb_images(subpath):
                 "Content-Type": resp.headers.get("Content-Type", "image/jpeg"),
             },
         )
+    except requests.exceptions.Timeout:
+        return jsonify({"error": "Upstream request timed out"}), 504
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
