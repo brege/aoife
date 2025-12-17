@@ -69,10 +69,18 @@
 }
 
 @media (min-width: 601px) {
+  .search-section.builder-mode {
+    max-width: none;
+    width: 100%;
+    padding: 0;
+    height: calc(100vh - var(--header-height));
+    box-sizing: border-box;
+  }
+
   .search-module.builder-mode {
     max-width: none;
     background: transparent;
-    padding: 30px 20px;
+    padding: 0;
     box-shadow: none;
   }
 }

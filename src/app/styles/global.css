@@ -45,6 +45,10 @@
   --header-height: 60px;
 }
 
+html {
+  scrollbar-gutter: stable;
+}
+
 body {
   padding-top: var(--header-height);
   background-color: var(--bg-primary);
