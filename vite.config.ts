@@ -16,12 +16,13 @@ const getTmdbKey = () =>
   process.env.VITE_TMDB_API_KEY ||
   process.env.TMDB_API_KEY;
 
-const SLUG_WORDS_PATH = path.join(process.cwd(), 'src', 'lib', 'slugs.json');
+const DATA_DIRECTORY_PATH = path.join(process.cwd(), 'data');
+const SLUG_WORDS_PATH = path.join(DATA_DIRECTORY_PATH, 'slugs.json');
 
-type ShareStoreRecord = { payload: string; createdAt: number };
+type ShareStoreRecord = { payload: string; createdAt: number; title?: string };
 type ShareStore = Record<string, ShareStoreRecord>;
 
-const SHARE_STORE_PATH = path.join(process.cwd(), 'share_store.json');
+const SHARE_STORE_PATH = path.join(DATA_DIRECTORY_PATH, 'share.json');
 const MAX_SHARE_PAYLOAD_BYTES = 200_000;
 const MAX_SHARE_ITEMS = 24;
 const MAX_ALTERNATE_COVERS = 32;
@@ -250,6 +251,9 @@ const loadSlugWords = (): string[] => {
 };
 
 const persistShareStore = (store: ShareStore): void => {
+  if (!fs.existsSync(DATA_DIRECTORY_PATH)) {
+    throw new Error(`Missing data directory at ${DATA_DIRECTORY_PATH}`);
+  }
   fs.writeFileSync(SHARE_STORE_PATH, JSON.stringify(store));
 };
 
@@ -355,6 +359,11 @@ export default defineConfig({
                   );
                   return;
                 }
+                if (typeof parsed.title !== 'string' || parsed.title.trim() === '') {
+                  res.writeHead(400, { 'Content-Type': 'application/json' });
+                  res.end(JSON.stringify({ error: 'title must be a non-empty string' }));
+                  return;
+                }
 
                 let canonicalPayload: string;
                 try {
@@ -376,6 +385,7 @@ export default defineConfig({
                 shareStore[slug] = {
                   payload: canonicalPayload,
                   createdAt: Date.now(),
+                  title: parsed.title,
                 };
                 persistShareStore(shareStore);
 
@@ -402,7 +412,13 @@ export default defineConfig({
               return;
             }
             res.writeHead(200, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ slug, payload: record.payload }));
+            res.end(
+              JSON.stringify({
+                slug,
+                payload: record.payload,
+                title: typeof record.title === 'string' ? record.title : undefined,
+              }),
+            );
           } else if (path.startsWith('/tmdb/') && req.method === 'GET') {
             const tmdbKey = getTmdbKey();
             if (!tmdbKey) {

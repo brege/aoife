@@ -5,6 +5,8 @@ import Menu from '../menu/menu';
 import EditableTitle from './title';
 
 interface AppHeaderProps {
+  title: string;
+  onTitleChange: (title: string) => void;
   onClearGrid: () => void;
   columns: number;
   onColumnsChange: (columns: number) => void;
@@ -22,6 +24,8 @@ interface AppHeaderProps {
 }
 
 const AppHeader: React.FC<AppHeaderProps> = ({
+  title,
+  onTitleChange,
   onClearGrid,
   columns,
   onColumnsChange,
@@ -40,7 +44,7 @@ const AppHeader: React.FC<AppHeaderProps> = ({
   return (
     <div className="app-header">
       <div className="header-left">
-        <EditableTitle />
+        <EditableTitle title={title} onTitleChange={onTitleChange} />
       </div>
 
       <div className="header-right">

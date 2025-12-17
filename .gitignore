@@ -1,5 +1,9 @@
+# databases
+data/share.json
+
 # dependencies
 node_modules/
+.venv/
 
 # build artifacts
 dist/

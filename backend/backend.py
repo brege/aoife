@@ -24,15 +24,13 @@ def resolve_project_root() -> str:
 
 PROJECT_ROOT = resolve_project_root()
 DIST_PATH = os.path.join(PROJECT_ROOT, "dist")
+DATA_DIRECTORY_PATH = os.path.join(PROJECT_ROOT, "data")
 
 app = Flask(__name__, static_folder=DIST_PATH, static_url_path="")
 CORS(app)
 
-SHARE_STORE_PATH = os.path.join(PROJECT_ROOT, "share_store.json")
-SLUG_WORDS_PATHS = [
-    os.path.join(PROJECT_ROOT, "slugs.json"),
-    os.path.join(PROJECT_ROOT, "src", "lib", "slugs.json"),
-]
+SHARE_STORE_PATH = os.path.join(DATA_DIRECTORY_PATH, "share.json")
+SLUG_WORDS_PATH = os.path.join(DATA_DIRECTORY_PATH, "slugs.json")
 
 
 def load_share_store() -> dict:
@@ -46,11 +44,10 @@ def load_share_store() -> dict:
 
 
 def load_slug_words() -> list[str]:
-    slug_path = next((p for p in SLUG_WORDS_PATHS if os.path.exists(p)), None)
-    if not slug_path:
-        raise FileNotFoundError("Slug word list is missing")
+    if not os.path.exists(SLUG_WORDS_PATH):
+        raise FileNotFoundError(f"Slug word list is missing: {SLUG_WORDS_PATH}")
 
-    with open(slug_path, "r", encoding="utf-8") as handle:
+    with open(SLUG_WORDS_PATH, "r", encoding="utf-8") as handle:
         words = json.load(handle)
         if not isinstance(words, list) or not all(isinstance(w, str) for w in words):
             raise ValueError("Slug word list is invalid")
@@ -60,8 +57,12 @@ def load_slug_words() -> list[str]:
 
 
 def persist_share_store(store: dict) -> None:
-    with open(SHARE_STORE_PATH, "w", encoding="utf-8") as handle:
+    if not os.path.isdir(DATA_DIRECTORY_PATH):
+        raise FileNotFoundError(f"Missing data directory at {DATA_DIRECTORY_PATH}")
+    temporary_path = f"{SHARE_STORE_PATH}.tmp"
+    with open(temporary_path, "w", encoding="utf-8") as handle:
         json.dump(store, handle)
+    os.replace(temporary_path, SHARE_STORE_PATH)
 
 
 _SLUG_WORDS: list[str] | None = None
@@ -81,9 +82,6 @@ def generate_slug(existing: set[str]) -> str:
         if slug not in existing:
             return slug
     raise RuntimeError("Unable to generate unique share slug")
-
-
-SHARE_STORE = load_share_store()
 
 
 @app.after_request
@@ -313,11 +311,14 @@ def log_event():
 def create_share():
     body = request.get_json(silent=False)
     payload = body.get("payload") if isinstance(body, dict) else None
+    title = body.get("title") if isinstance(body, dict) else None
     if not isinstance(payload, str) or not payload.strip():
         return (
             jsonify({"error": "payload must be a non-empty string"}),
             400,
         )
+    if not isinstance(title, str) or not title.strip():
+        return jsonify({"error": "title must be a non-empty string"}), 400
 
     try:
         canonical_payload = validate_and_canonicalize_share_payload(payload)
@@ -326,13 +327,17 @@ def create_share():
     except ValueError as exc:
         return jsonify({"error": str(exc)}), 400
 
-    slug = generate_slug(set(SHARE_STORE.keys()))
-    SHARE_STORE[slug] = {"payload": canonical_payload, "createdAt": int(time.time())}
+    store = load_share_store()
+    slug = generate_slug(set(store.keys()))
+    store[slug] = {
+        "payload": canonical_payload,
+        "createdAt": int(time.time()),
+        "title": title,
+    }
 
     try:
-        persist_share_store(SHARE_STORE)
+        persist_share_store(store)
     except Exception as exc:
-        SHARE_STORE.pop(slug, None)
         return jsonify({"error": f"Failed to persist share: {exc}"}), 500
 
     return jsonify({"slug": slug, "id": slug})
@@ -340,7 +345,8 @@ def create_share():
 
 @app.route("/api/share/<slug>", methods=["GET"])
 def get_share(slug: str):
-    record = SHARE_STORE.get(slug)
+    store = load_share_store()
+    record = store.get(slug)
     if not record:
         return jsonify({"error": "Share not found"}), 404
 
@@ -348,7 +354,11 @@ def get_share(slug: str):
     if not isinstance(payload, str):
         return jsonify({"error": "Share payload is invalid"}), 500
 
-    return jsonify({"slug": slug, "payload": payload})
+    title = record.get("title")
+    if title is not None and not isinstance(title, str):
+        return jsonify({"error": "Share title is invalid"}), 500
+
+    return jsonify({"slug": slug, "payload": payload, "title": title})
 
 
 # Serve static files and SPA

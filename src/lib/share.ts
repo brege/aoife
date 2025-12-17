@@ -6,6 +6,7 @@ type ShareCreateResponse = {
 type ShareFetchResponse = {
   slug: string;
   payload: string;
+  title?: string;
 };
 
 const parseErrorMessage = async (response: Response): Promise<string> => {
@@ -23,15 +24,19 @@ const parseErrorMessage = async (response: Response): Promise<string> => {
 
 export const createShare = async (
   payload: string,
+  title: string,
 ): Promise<ShareCreateResponse> => {
   if (typeof payload !== 'string' || payload.trim() === '') {
     throw new Error('Share payload must be a non-empty string');
+  }
+  if (typeof title !== 'string' || title.trim() === '') {
+    throw new Error('Share title must be a non-empty string');
   }
 
   const response = await fetch('/api/share', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ payload }),
+    body: JSON.stringify({ payload, title }),
   });
 
   if (!response.ok) {

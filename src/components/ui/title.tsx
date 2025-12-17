@@ -4,15 +4,17 @@ import './title.css';
 import logger from '../../lib/logger';
 
 interface EditableTitleProps {
-  initialTitle?: string;
+  title: string;
+  onTitleChange: (title: string) => void;
   className?: string;
 }
 
 const EditableTitle: React.FC<EditableTitleProps> = ({
-  initialTitle = 'aoife',
+  title,
+  onTitleChange,
   className = '',
 }) => {
-  const [title, setTitle] = useState(initialTitle);
+  const [draftTitle, setDraftTitle] = useState(title);
   const [isEditing, setIsEditing] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -23,17 +25,24 @@ const EditableTitle: React.FC<EditableTitleProps> = ({
     }
   }, [isEditing]);
 
+  useEffect(() => {
+    if (!isEditing) {
+      setDraftTitle(title);
+    }
+  }, [isEditing, title]);
+
   const handleTitleClick = useCallback(() => setIsEditing(true), []);
 
-  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) =>
-    setTitle(e.target.value);
+  const handleDraftTitleChange = (e: React.ChangeEvent<HTMLInputElement>) =>
+    setDraftTitle(e.target.value);
 
   const handleTitleBlur = () => {
     setIsEditing(false);
-    logger.info(`TITLE: Title changed to "${title}"`, {
+    onTitleChange(draftTitle);
+    logger.info(`TITLE: Title changed to "${draftTitle}"`, {
       context: 'EditableTitle.handleTitleBlur',
       action: 'title_change',
-      newTitle: title,
+      newTitle: draftTitle,
       timestamp: Date.now(),
     });
   };
@@ -43,7 +52,7 @@ const EditableTitle: React.FC<EditableTitleProps> = ({
       handleTitleBlur();
     }
     if (e.key === 'Escape') {
-      setTitle(initialTitle);
+      setDraftTitle(title);
       setIsEditing(false);
     }
   };
@@ -54,8 +63,8 @@ const EditableTitle: React.FC<EditableTitleProps> = ({
         <input
           ref={inputRef}
           type="text"
-          value={title}
-          onChange={handleTitleChange}
+          value={draftTitle}
+          onChange={handleDraftTitleChange}
           onBlur={handleTitleBlur}
           onKeyDown={handleKeyPress}
           className={`editable-title-input ${className}`}

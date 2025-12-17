@@ -23,19 +23,27 @@ const GRID_STORAGE_KEY = 'gridItems';
 const COLUMNS_STORAGE_KEY = 'gridColumns';
 const MIN_ROWS_STORAGE_KEY = 'gridMinRows';
 const LAYOUT_DIMENSION_STORAGE_KEY = 'layoutDimension';
+const TITLE_STORAGE_KEY = 'gridTitle';
 const GRID_CAPACITY = 4;
 const SHARE_QUERY_PARAM = 'share';
 const INDEXEDDB_GRID_KEY = 'gridItems';
 const INDEXEDDB_COLUMNS_KEY = 'gridColumns';
 const INDEXEDDB_MIN_ROWS_KEY = 'gridMinRows';
 const INDEXEDDB_LAYOUT_DIMENSION_KEY = 'layoutDimension';
+const INDEXEDDB_TITLE_KEY = 'gridTitle';
 const INDEXEDDB_SHARE_PREFIX = 'share:';
+const DEFAULT_TITLE = 'aoife';
 
 type SharedState = {
   gridItems: MediaItem[];
   columns: number;
   minRows: number;
   layoutDimension: 'width' | 'height';
+};
+
+type ShareCacheRecord = {
+  payload: string;
+  title?: string;
 };
 
 type TestApplicationApi = {
@@ -181,6 +189,10 @@ const MediaSearch: React.FC = () => {
     Record<string | number, number>
   >({});
   const [gridItems, setGridItems] = useState<MediaItem[]>([]);
+  const [title, setTitle] = useState<string>(() => {
+    const stored = localStorage.getItem(TITLE_STORAGE_KEY);
+    return stored ?? DEFAULT_TITLE;
+  });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [alternateCoverUrls, setAlternateCoverUrls] = useState<string[]>([]);
@@ -314,6 +326,11 @@ const MediaSearch: React.FC = () => {
         setLayoutDimension(storedLayoutDimension);
       }
 
+      const storedTitle = await getState(INDEXEDDB_TITLE_KEY);
+      if (storedTitle && localStorage.getItem(TITLE_STORAGE_KEY) === null) {
+        setTitle(storedTitle);
+      }
+
       const storedGrid = await getState(INDEXEDDB_GRID_KEY);
       if (!storedGrid) {
         return;
@@ -345,6 +362,11 @@ const MediaSearch: React.FC = () => {
     storeState(INDEXEDDB_GRID_KEY, JSON.stringify(items));
   }, []);
 
+  const persistTitle = useCallback((nextTitle: string) => {
+    localStorage.setItem(TITLE_STORAGE_KEY, nextTitle);
+    storeState(INDEXEDDB_TITLE_KEY, nextTitle);
+  }, []);
+
   const clearGridAndPersist = useCallback(
     (source: string) => {
       setGridItems([]);
@@ -369,7 +391,7 @@ const MediaSearch: React.FC = () => {
   }, [columns, gridItems, layoutDimension, minRows]);
 
   const applySharedState = useCallback(
-    (state: SharedState, slug: string) => {
+    (state: SharedState, slug: string, sharedTitle: string) => {
       if (!Array.isArray(state.gridItems)) {
         throw new Error('Shared state is missing grid items');
       }
@@ -385,12 +407,17 @@ const MediaSearch: React.FC = () => {
       ) {
         throw new Error('Shared state layout dimension is invalid');
       }
+      if (typeof sharedTitle !== 'string' || sharedTitle.trim() === '') {
+        throw new Error('Shared state title is invalid');
+      }
 
       setColumns(state.columns);
       setMinRows(state.minRows);
       setLayoutDimension(state.layoutDimension);
       setGridItems(state.gridItems);
+      setTitle(sharedTitle);
       persistGrid(state.gridItems);
+      persistTitle(sharedTitle);
       localStorage.setItem(COLUMNS_STORAGE_KEY, String(state.columns));
       localStorage.setItem(MIN_ROWS_STORAGE_KEY, String(state.minRows));
       localStorage.setItem(LAYOUT_DIMENSION_STORAGE_KEY, state.layoutDimension);
@@ -403,7 +430,7 @@ const MediaSearch: React.FC = () => {
       window.history.replaceState(null, '', url.toString());
       setShareUrl(url.toString());
     },
-    [persistGrid],
+    [persistGrid, persistTitle],
   );
 
   const loadShare = useCallback(
@@ -412,12 +439,23 @@ const MediaSearch: React.FC = () => {
       setShareError('');
       try {
         const response = await fetchShare(slug);
-        await storeState(`${INDEXEDDB_SHARE_PREFIX}${slug}`, response.payload);
+        const cacheRecord: ShareCacheRecord = {
+          payload: response.payload,
+          title: response.title,
+        };
+        await storeState(
+          `${INDEXEDDB_SHARE_PREFIX}${slug}`,
+          JSON.stringify(cacheRecord),
+        );
         const parsed = JSON.parse(response.payload) as SharedState;
         if (!parsed || typeof parsed !== 'object') {
           throw new Error('Share payload is invalid');
         }
-        applySharedState(parsed, slug);
+        const sharedTitle =
+          typeof response.title === 'string' && response.title.trim() !== ''
+            ? response.title
+            : DEFAULT_TITLE;
+        applySharedState(parsed, slug, sharedTitle);
         logger.info('SHARE: Loaded shared grid', {
           context: 'MediaSearch.loadShare',
           action: 'share_load',
@@ -430,11 +468,32 @@ const MediaSearch: React.FC = () => {
           if (!cached) {
             throw err;
           }
-          const parsed = JSON.parse(cached) as SharedState;
+          let cachedTitle = DEFAULT_TITLE;
+          let cachedPayload = cached;
+          try {
+            const parsedCache = JSON.parse(cached) as ShareCacheRecord;
+            if (
+              parsedCache &&
+              typeof parsedCache === 'object' &&
+              typeof parsedCache.payload === 'string'
+            ) {
+              cachedPayload = parsedCache.payload;
+              if (
+                typeof parsedCache.title === 'string' &&
+                parsedCache.title.trim() !== ''
+              ) {
+                cachedTitle = parsedCache.title;
+              }
+            }
+          } catch {
+            cachedPayload = cached;
+          }
+
+          const parsed = JSON.parse(cachedPayload) as SharedState;
           if (!parsed || typeof parsed !== 'object') {
             throw new Error('Cached share payload is invalid');
           }
-          applySharedState(parsed, slug);
+          applySharedState(parsed, slug, cachedTitle);
           logger.info('SHARE: Loaded shared grid from cache', {
             context: 'MediaSearch.loadShare',
             action: 'share_load_cached',
@@ -606,8 +665,12 @@ const MediaSearch: React.FC = () => {
 
     try {
       const payload = buildSharePayload();
-      const response = await createShare(payload);
-      await storeState(`${INDEXEDDB_SHARE_PREFIX}${response.slug}`, payload);
+      const response = await createShare(payload, title);
+      const cacheRecord: ShareCacheRecord = { payload, title };
+      await storeState(
+        `${INDEXEDDB_SHARE_PREFIX}${response.slug}`,
+        JSON.stringify(cacheRecord),
+      );
       const url = new URL(window.location.href);
       url.searchParams.set(SHARE_QUERY_PARAM, response.slug);
       window.history.replaceState(null, '', url.toString());
@@ -634,7 +697,15 @@ const MediaSearch: React.FC = () => {
     } finally {
       setIsSharing(false);
     }
-  }, [buildSharePayload, columns, gridItems.length, layoutDimension, minRows]);
+  }, [buildSharePayload, columns, gridItems.length, layoutDimension, minRows, title]);
+
+  const handleTitleChange = useCallback(
+    (nextTitle: string) => {
+      setTitle(nextTitle);
+      persistTitle(nextTitle);
+    },
+    [persistTitle],
+  );
 
   const handleFieldChange = useCallback((fieldId: string, value: string) => {
     setSearchValues((prev) => ({
@@ -1111,6 +1182,8 @@ const MediaSearch: React.FC = () => {
   return (
     <div className="container">
       <AppHeader
+        title={title}
+        onTitleChange={handleTitleChange}
         onClearGrid={handleClearGrid}
         columns={columns}
         onColumnsChange={setColumns}
