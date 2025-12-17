@@ -83,6 +83,7 @@
   width: 340px;
   max-height: 70vh;
   overflow-y: auto;
+  scrollbar-gutter: stable;
   box-shadow: var(--shadow-lg);
   z-index: var(--z-dropdown);
   animation: dropdownIn var(--transition-medium);
@@ -165,6 +166,7 @@
 
 .menu-share-input {
   flex: 1;
+  min-width: 0;
   background: var(--bg-secondary);
   border: 1px solid var(--border-color);
   color: var(--text-primary);
@@ -362,22 +364,24 @@
 }
 
 .config-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  justify-content: space-between;
+  column-gap: var(--spacing-md);
   margin-bottom: var(--spacing-md);
 }
 
 .config-label {
   font-size: 14px;
   color: var(--text-primary);
-  white-space: nowrap;
+  white-space: normal;
 }
 
 .column-stepper {
   display: flex;
   align-items: center;
   gap: var(--spacing-md);
+  justify-self: end;
 }
 
 .stepper-button {
@@ -458,6 +462,7 @@
   width: 44px;
   align-items: center;
   cursor: pointer;
+  justify-self: end;
   border-radius: 9999px;
   background: #444;
   transition: background-color 200ms;
