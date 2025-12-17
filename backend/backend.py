@@ -9,12 +9,29 @@ import requests
 
 load_dotenv()
 
-app = Flask(__name__, static_folder="dist", static_url_path="")
+CURRENT_DIRECTORY = os.path.abspath(os.path.dirname(__file__))
+PARENT_DIRECTORY = os.path.abspath(os.path.join(CURRENT_DIRECTORY, ".."))
+
+
+def resolve_project_root() -> str:
+    if os.path.exists(os.path.join(CURRENT_DIRECTORY, "dist")):
+        return CURRENT_DIRECTORY
+    if os.path.exists(os.path.join(PARENT_DIRECTORY, "dist")):
+        return PARENT_DIRECTORY
+    return CURRENT_DIRECTORY
+
+
+PROJECT_ROOT = resolve_project_root()
+DIST_PATH = os.path.join(PROJECT_ROOT, "dist")
+
+app = Flask(__name__, static_folder=DIST_PATH, static_url_path="")
 CORS(app)
 
-PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 SHARE_STORE_PATH = os.path.join(PROJECT_ROOT, "share_store.json")
-SLUG_WORDS_PATH = os.path.join(PROJECT_ROOT, "src", "lib", "slugs.json")
+SLUG_WORDS_PATHS = [
+    os.path.join(PROJECT_ROOT, "slugs.json"),
+    os.path.join(PROJECT_ROOT, "src", "lib", "slugs.json"),
+]
 
 
 def load_share_store() -> dict:
@@ -28,9 +45,11 @@ def load_share_store() -> dict:
 
 
 def load_slug_words() -> list[str]:
-    if not os.path.exists(SLUG_WORDS_PATH):
+    slug_path = next((p for p in SLUG_WORDS_PATHS if os.path.exists(p)), None)
+    if not slug_path:
         raise FileNotFoundError("Slug word list is missing")
-    with open(SLUG_WORDS_PATH, "r", encoding="utf-8") as handle:
+
+    with open(slug_path, "r", encoding="utf-8") as handle:
         words = json.load(handle)
         if not isinstance(words, list) or not all(isinstance(w, str) for w in words):
             raise ValueError("Slug word list is invalid")
@@ -44,16 +63,26 @@ def persist_share_store(store: dict) -> None:
         json.dump(store, handle)
 
 
+_SLUG_WORDS: list[str] | None = None
+
+
+def get_slug_words() -> list[str]:
+    global _SLUG_WORDS
+    if _SLUG_WORDS is None:
+        _SLUG_WORDS = load_slug_words()
+    return _SLUG_WORDS
+
+
 def generate_slug(existing: set[str]) -> str:
     for _ in range(10):
-        slug = "-".join(random.choice(SLUG_WORDS) for _ in range(3))
+        slug_words = get_slug_words()
+        slug = "-".join(random.choice(slug_words) for _ in range(3))
         if slug not in existing:
             return slug
     raise RuntimeError("Unable to generate unique share slug")
 
 
 SHARE_STORE = load_share_store()
-SLUG_WORDS = load_slug_words()
 
 
 @app.after_request
