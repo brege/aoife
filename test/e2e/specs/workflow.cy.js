@@ -135,17 +135,40 @@ function removeMediaOperation(payload) {
 
 function getGridStateOperation() {
   return getGridSnapshot().then((snapshot) => {
+    state.gridItems = snapshot.stored;
+    return {
+      statusCode: 200,
+      arrayLength: snapshot.stored.length,
+      gridCount: snapshot.stored.length,
+    };
+  });
+}
+
+function getUiGridStateOperation() {
+  return getGridSnapshot().then((snapshot) => {
     state.gridItems = snapshot.items;
-    expect(snapshot.stored.length).to.equal(
-      snapshot.items.length,
-      'localStorage grid should match in-memory grid',
-    );
     return {
       statusCode: 200,
       arrayLength: snapshot.items.length,
       gridCount: snapshot.items.length,
     };
   });
+}
+
+function clearGridOperation() {
+  return clearGridThroughApplication().then((items) => {
+    state.gridItems = items;
+    return { statusCode: 200, gridCount: items.length };
+  });
+}
+
+function reloadOperation() {
+  cy.reload();
+  cy.get('[data-testid="media-search-form-band"]', {
+    timeout: 15000,
+  }).should('exist');
+  cy.then(() => getApplicationTestApi());
+  return getGridStateOperation();
 }
 
 function runOperation(step, scenarioResult) {
@@ -189,6 +212,20 @@ function runOperation(step, scenarioResult) {
       if (scenarioResult) {
         scenarioResult.statusCode = result.statusCode;
         scenarioResult.gridCount = result.gridCount;
+        scenarioResult.arrayLength =
+          result.arrayLength ?? scenarioResult.arrayLength;
+      }
+      return result;
+    });
+  }
+
+  if (operation === 'getUiGrid') {
+    return getUiGridStateOperation().then((result) => {
+      if (scenarioResult) {
+        scenarioResult.statusCode = result.statusCode;
+        scenarioResult.gridCount = result.gridCount;
+        scenarioResult.arrayLength =
+          result.arrayLength ?? scenarioResult.arrayLength;
       }
       return result;
     });
@@ -202,6 +239,26 @@ function runOperation(step, scenarioResult) {
         scenarioResult.layoutDimension = result;
       }
       return { statusCode: 200, layoutDimension: result };
+    });
+  }
+
+  if (operation === 'clearGrid') {
+    return clearGridOperation().then((result) => {
+      if (scenarioResult) {
+        scenarioResult.statusCode = result.statusCode;
+        scenarioResult.gridCount = result.gridCount ?? scenarioResult.gridCount;
+      }
+      return result;
+    });
+  }
+
+  if (operation === 'reload') {
+    return reloadOperation().then((result) => {
+      if (scenarioResult) {
+        scenarioResult.statusCode = result.statusCode;
+        scenarioResult.gridCount = result.gridCount ?? scenarioResult.gridCount;
+      }
+      return result;
     });
   }
 
@@ -224,6 +281,7 @@ function runScenario(scenario) {
       statusCode: null,
       resultsCount: 0,
       gridCount: 0,
+      arrayLength: 0,
     };
 
     execution = scenario.steps.reduce((chain, step) => {
@@ -258,6 +316,11 @@ function runScenario(scenario) {
           scenario.expectations.statusCode,
         );
       }
+      if (scenario.expectations?.arrayLength !== undefined) {
+        expect(scenarioResult.arrayLength).to.equal(
+          scenario.expectations.arrayLength,
+        );
+      }
 
       scenarioResults.push(scenarioResult);
     });
@@ -274,12 +337,18 @@ function runScenario(scenario) {
     execution = removeMediaOperation(scenario.payload || {});
   } else if (op === 'getGrid') {
     execution = getGridStateOperation();
+  } else if (op === 'getUiGrid') {
+    execution = getUiGridStateOperation();
   } else if (op === 'setLayoutDimension') {
     const dimension = scenario.payload?.dimension || 'height';
     execution = setLayoutDimension(dimension).then((result) => ({
       statusCode: 200,
       layoutDimension: result,
     }));
+  } else if (op === 'clearGrid') {
+    execution = clearGridOperation();
+  } else if (op === 'reload') {
+    execution = reloadOperation();
   } else {
     execution = cy.wrap({
       statusCode: 400,

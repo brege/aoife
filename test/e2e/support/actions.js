@@ -96,9 +96,10 @@ export function removeMediaDirectly(mediaId) {
 export function getGridSnapshot() {
   return getApplicationTestApi().then((testApi) =>
     cy.wrap(null).then(() => {
+      const items = testApi.getGridItems();
       const stored = testApi.getStoredGridItems();
       return {
-        items: stored,
+        items,
         stored,
         builderMode: testApi.getBuilderMode(),
       };

@@ -195,6 +195,30 @@ workflows:
           - name: layout_switch_latency
             type: duration
 
+  - name: grid_persistence
+    description: Ensure clear grid persists across reload
+    enabled: true
+    level: integration
+    scenarios:
+      - test_id: persist_001
+        description: Add item, clear grid, reload, verify empty
+        type: workflow
+        steps:
+          - operation: add
+            payload:
+              id: 9991
+              title: Persistence Movie
+              year: 2024
+              type: movies
+              coverUrl: https://example.com/persistence.jpg
+          - operation: getGrid
+          - operation: clearGrid
+          - operation: reload
+          - operation: getUiGrid
+        expectations:
+          statusCode: 200
+          arrayLength: 0
+
 benchmarks:
   enabled: true
   persist: true
