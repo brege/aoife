@@ -179,6 +179,22 @@
   .media-search-form.band {
     display: none;
   }
+
+  .media-search-form.stack {
+    position: fixed;
+    left: var(--spacing-md);
+    right: var(--spacing-md);
+    bottom: calc(var(--spacing-md) + env(safe-area-inset-bottom));
+    width: auto;
+    max-width: 520px;
+    margin: 0 auto;
+    padding: 12px;
+    background: rgba(31, 41, 51, 0.92);
+    border: 1px solid rgba(44, 62, 80, 0.8);
+    border-radius: 12px;
+    box-shadow: var(--shadow-lg);
+    z-index: var(--z-dropdown);
+  }
 }
 
 @media (min-width: 601px) {

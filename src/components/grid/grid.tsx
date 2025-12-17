@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import './grid.css';
 import { MdClose } from 'react-icons/md';
 import logger from '../../lib/logger';
@@ -40,6 +40,8 @@ const getAspectRatio = (media: MediaItem): number => {
   if (media.aspectRatio) return media.aspectRatio;
   return DEFAULT_ASPECT_RATIOS[media.type] ?? 2 / 3;
 };
+
+const MAXIMUM_GRID_WIDTH = 1600;
 
 interface RowLayout {
   height: number;
@@ -116,45 +118,39 @@ const Grid2x2: React.FC<Grid2x2Props> = ({
   layoutDimension = 'height',
 }) => {
   const wrapperRef = useRef<HTMLDivElement>(null);
-  const gridContainerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(0);
   const [containerHeight, setContainerHeight] = useState(0);
-  const [isDesktop, setIsDesktop] = useState(window.innerWidth > 600);
 
-  useEffect(() => {
-    const handleResize = () => {
-      setIsDesktop(window.innerWidth > 600);
-    };
+  const updateContainerDimensions = useCallback(() => {
+    const element = wrapperRef.current;
+    if (!element) return;
 
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    const computedStyle = window.getComputedStyle(element);
+    const paddingLeft = Number.parseFloat(computedStyle.paddingLeft);
+    const paddingRight = Number.parseFloat(computedStyle.paddingRight);
+    const paddingTop = Number.parseFloat(computedStyle.paddingTop);
+    const paddingBottom = Number.parseFloat(computedStyle.paddingBottom);
+
+    const availableWidth = element.clientWidth - paddingLeft - paddingRight;
+    const availableHeight = element.clientHeight - paddingTop - paddingBottom;
+
+    setContainerWidth(Math.min(availableWidth, MAXIMUM_GRID_WIDTH));
+    setContainerHeight(availableHeight);
   }, []);
 
-  const shouldUseBuilderLayout = isBuilderMode && !isDesktop;
-
   useEffect(() => {
-    const updateDimensions = () => {
-      if (!shouldUseBuilderLayout) {
-        const horizontalPadding = 80;
-        const headerHeight = 80;
-        const verticalPadding = 80;
-        const availableWidth = window.innerWidth - horizontalPadding;
-        const availableHeight =
-          window.innerHeight - headerHeight - verticalPadding;
-        setContainerWidth(Math.min(availableWidth, 1600));
-        setContainerHeight(availableHeight);
-      }
-    };
-
-    updateDimensions();
-    window.addEventListener('resize', updateDimensions);
-    return () => window.removeEventListener('resize', updateDimensions);
-  }, [shouldUseBuilderLayout]);
+    updateContainerDimensions();
+    const observer = new ResizeObserver(updateContainerDimensions);
+    const element = wrapperRef.current;
+    if (element) {
+      observer.observe(element);
+    }
+    return () => observer.disconnect();
+  }, [updateContainerDimensions]);
 
   const gap = 16;
   const rowLayouts = React.useMemo(() => {
-    if (shouldUseBuilderLayout || containerWidth === 0 || containerHeight === 0)
-      return [];
+    if (containerWidth === 0 || containerHeight === 0) return [];
     return calculateRowLayouts(
       items,
       columns,
@@ -169,7 +165,6 @@ const Grid2x2: React.FC<Grid2x2Props> = ({
     columns,
     containerWidth,
     containerHeight,
-    shouldUseBuilderLayout,
     minRows,
     layoutDimension,
   ]);
@@ -197,76 +192,34 @@ const Grid2x2: React.FC<Grid2x2Props> = ({
     );
   };
 
-  const renderBuilderMode = () => {
-    const positionsToRender = Math.max(items.length + 1, 1);
-
-    return (
-      <div ref={gridContainerRef} className="grid-container">
-        {Array.from({ length: positionsToRender }, (_, position) => {
-          const item = items[position];
-
-          if (item) {
-            return (
-              <div
-                key={item.id}
-                className="grid-item filled"
-                data-type={item.type}
-              >
-                <div className="poster-wrapper">
-                  <button
-                    type="button"
-                    className="poster-button"
-                    onClick={() => onPosterClick(item)}
-                    aria-label={`View poster for ${item.title}`}
-                  >
-                    <CustomImage
-                      src={getCoverSrc(item) || ''}
-                      alt={`${item.title} cover`}
-                      className="grid-poster"
-                      onLoad={(e) => handleImageLoad(item, e)}
-                    />
-                  </button>
-                  <button
-                    type="button"
-                    className="grid-close-button"
-                    onClick={() => onRemoveMedia(item.id)}
-                    aria-label={`Remove ${item.title}`}
-                  >
-                    <MdClose aria-hidden="true" focusable="false" />
-                  </button>
-                  <div className="media-type-badge">
-                    {MEDIA_TYPE_ICONS[item.type as MediaType]}
-                  </div>
-                </div>
-              </div>
-            );
-          }
-
-          if (!placeholderLabel) {
-            return null;
-          }
-
-          return (
-            <button
-              key="builder-placeholder"
-              type="button"
-              className="grid-item empty"
-              onClick={onPlaceholderClick}
-              title={`Add a ${placeholderLabel}`}
-            >
-              <div className="placeholder-content">
-                <span>+</span>
-              </div>
-            </button>
-          );
-        })}
-      </div>
-    );
-  };
-
   const renderPresentationMode = () => {
+    if (isBuilderMode && placeholderLabel && items.length === 0) {
+      const placeholderAspectRatio = 2 / 3;
+      const placeholderWidth = Math.min(
+        containerWidth * 0.7,
+        containerHeight * placeholderAspectRatio,
+      );
+      const placeholderHeight = placeholderWidth / placeholderAspectRatio;
+
+      return (
+        <div className="grid-container grid-container-empty">
+          <button
+            type="button"
+            className="grid-item empty"
+            onClick={onPlaceholderClick}
+            title={`Add a ${placeholderLabel}`}
+            style={{ width: placeholderWidth, height: placeholderHeight }}
+          >
+            <div className="placeholder-content">
+              <span>+</span>
+            </div>
+          </button>
+        </div>
+      );
+    }
+
     return (
-      <div ref={gridContainerRef} className="grid-container">
+      <div className="grid-container">
         {rowLayouts.map((row) => {
           const rowKey =
             row.items.map(({ media }) => media.id).join('-') ||
@@ -325,9 +278,7 @@ const Grid2x2: React.FC<Grid2x2Props> = ({
     );
   };
 
-  const gridClassName = shouldUseBuilderLayout
-    ? 'grid-builder'
-    : 'grid-presentation';
+  const gridClassName = 'grid-presentation';
 
   return (
     <div
@@ -335,7 +286,7 @@ const Grid2x2: React.FC<Grid2x2Props> = ({
       className={`grid-2x2 ${gridClassName}`}
       data-layout-dimension={layoutDimension}
     >
-      {shouldUseBuilderLayout ? renderBuilderMode() : renderPresentationMode()}
+      {renderPresentationMode()}
     </div>
   );
 };

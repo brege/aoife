@@ -50,6 +50,13 @@
   margin: 0 auto;
 }
 
+.grid-container-empty {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .grid-row {
   display: flex;
   justify-content: center;
@@ -250,6 +257,12 @@
 }
 
 @media (max-width: 600px) {
+  .grid-2x2.grid-presentation {
+    padding: var(--spacing-sm) var(--spacing-md) 0;
+    justify-content: center;
+    align-items: flex-start;
+  }
+
   .grid-2x2.grid-builder {
     padding: var(--spacing-md);
   }
