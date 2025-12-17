@@ -1,5 +1,10 @@
 # Changelog
 
+## 2025-12-17
+
+- Contained and templated gunicorn setup for production server
+- Made gunicorn workers slightly more resilient to downed TGDB API timeouts
+
 ## 2025-12-16
 
 - Defaulted desktop to presentation mode with new banded input form

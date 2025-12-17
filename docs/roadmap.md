@@ -20,8 +20,6 @@ The goal is to support more media types without constant rebuilding of the core 
 
 ## Next Features
 
-- **Shareable URLs** - Make grids shareable via hash slug so users can bookmark/share them
-  - will require persistent storage on server-side
 - **Captions and Overlays**
   1. whether to provide an editable caption or description for each title
   2. options for persistant media type badge overlay
@@ -29,4 +27,14 @@ The goal is to support more media types without constant rebuilding of the core 
 ## Challenges
 
 - Decide if this is an app requiring authentication or just a public one-time builder
-- Decide how the server persists if shareable URLs are implemented
+
+## Backend Resilience
+
+1. Add nginx caching for `/api/gamesdb/*` JSON responses with short TTLs
+   - Coalesce identical requests with `proxy_cache_lock`
+   - Serve stale on upstream errors/timeouts
+   - Relax/drop cache /api/gamesdb/images/* (image bytes) when disk space is low
+
+2. Add rate limiting that won’t trip fail2ban to early or during dev/benchmarking
+   - Prefer app-level limiting with `flask-limiter`
+   - Whitelist dev-machine IP
