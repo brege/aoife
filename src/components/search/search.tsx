@@ -318,6 +318,10 @@ const MediaSearch: React.FC = () => {
       if (!storedGrid) {
         return;
       }
+      const storedLocalGrid = localStorage.getItem(GRID_STORAGE_KEY);
+      if (storedLocalGrid !== null) {
+        return;
+      }
       const parsedGrid = JSON.parse(storedGrid) as MediaItem[];
       if (Array.isArray(parsedGrid)) {
         setGridItems(parsedGrid);
@@ -340,6 +344,19 @@ const MediaSearch: React.FC = () => {
     localStorage.setItem(GRID_STORAGE_KEY, JSON.stringify(items));
     storeState(INDEXEDDB_GRID_KEY, JSON.stringify(items));
   }, []);
+
+  const clearGridAndPersist = useCallback(
+    (source: string) => {
+      setGridItems([]);
+      persistGrid([]);
+      logger.info(source, {
+        context: 'MediaSearch.clearGridAndPersist',
+        action: 'grid_cleared',
+        timestamp: Date.now(),
+      });
+    },
+    [persistGrid],
+  );
 
   const buildSharePayload = useCallback((): string => {
     const payload: SharedState = {
@@ -846,24 +863,12 @@ const MediaSearch: React.FC = () => {
   );
 
   const handleCliClearGrid = useCallback(() => {
-    setGridItems([]);
-    localStorage.removeItem(GRID_STORAGE_KEY);
-    logger.info('CLI-CLEAR: Grid cleared via CLI command', {
-      context: 'MediaSearch.handleCliClearGrid',
-      action: 'cli_grid_cleared',
-      timestamp: Date.now(),
-    });
-  }, []);
+    clearGridAndPersist('CLI-CLEAR: Grid cleared via CLI command');
+  }, [clearGridAndPersist]);
 
   const handleClearGrid = useCallback(() => {
-    setGridItems([]);
-    localStorage.removeItem(GRID_STORAGE_KEY);
-    logger.info('CLEAR: Grid cleared via hamburger menu', {
-      context: 'MediaSearch.handleClearGrid',
-      action: 'grid_cleared_menu',
-      timestamp: Date.now(),
-    });
-  }, []);
+    clearGridAndPersist('CLEAR: Grid cleared via hamburger menu');
+  }, [clearGridAndPersist]);
 
   const handleGetMenuState = useCallback(() => {
     const menuState: CliMenuState = {
@@ -920,14 +925,8 @@ const MediaSearch: React.FC = () => {
   }, [gridItems.length, isBuilderMode]);
 
   const handleMenuClearGrid = useCallback(() => {
-    setGridItems([]);
-    localStorage.removeItem(GRID_STORAGE_KEY);
-    logger.info('CLI-MENU-CLEAR: Grid cleared via CLI menu command', {
-      context: 'MediaSearch.handleMenuClearGrid',
-      action: 'cli_menu_clear_grid',
-      timestamp: Date.now(),
-    });
-  }, []);
+    clearGridAndPersist('CLI-MENU-CLEAR: Grid cleared via CLI menu command');
+  }, [clearGridAndPersist]);
 
   const handleGetDebugInfo = useCallback(() => {
     const debugInfo = window.gridDebugInfo ?? {
