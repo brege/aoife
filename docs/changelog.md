@@ -4,6 +4,11 @@
 
 - Contained and templated gunicorn setup for production server
 - Made gunicorn workers slightly more resilient to downed TGDB API timeouts
+- Redesigned the search forms to float minimally on top of the poster grid
+- Fixed button alignment in hamburger menu on mobile to use a 2-column layout
+- Fixed IndexDB not being clear on trash action like localStorage
+- Added regression wirkflow test for clear & reloads, fixing IndexDB v. lS race condition
+- Added favicon
 
 ## 2025-12-16
 
