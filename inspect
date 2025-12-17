@@ -1,0 +1,214 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+  echo "Usage:"
+  echo "  inspect [-s <slug-fragment> | -n <count>] [-r | -f <path>]"
+  echo "  inspect -h"
+  echo
+  echo "Environment:"
+  echo "  AOIFE_BASE_URL (optional)  When set, prints full share links."
+  echo "  AOIFE_REMOTE_HOST (optional) SSH host for -r"
+  echo
+  echo "Remote defaults:"
+  echo "  host: AOIFE_REMOTE_HOST from .env"
+  echo "  path: /opt/aoife/data/share.json"
+}
+
+if ! command -v jq >/dev/null 2>&1; then
+  echo "Error: jq is required." >&2
+  exit 1
+fi
+
+shareFilePath="data/share.json"
+remoteHost="__host__"
+remoteShareFilePath="/opt/aoife/data/share.json"
+useRemote=false
+fileSpecified=false
+
+scriptDirectory="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+dotEnvPath="${scriptDirectory}/.env"
+
+readDotEnvValue() {
+  local filePath="$1"
+  local key="$2"
+  local line=""
+  local value=""
+
+  if [[ ! -f "${filePath}" ]]; then
+    return 1
+  fi
+
+  while IFS= read -r line || [[ -n "${line}" ]]; do
+    if [[ "${line}" == "" || "${line}" == \#* ]]; then
+      continue
+    fi
+    if [[ "${line}" == "${key}="* ]]; then
+      value="${line#${key}=}"
+      if [[ "${value}" == \"*\" && "${value}" == *\" ]]; then
+        value="${value:1:${#value}-2}"
+      fi
+      if [[ "${value}" == \'*\' && "${value}" == *\' ]]; then
+        value="${value:1:${#value}-2}"
+      fi
+      printf '%s' "${value}"
+      return 0
+    fi
+  done < "${filePath}"
+
+  return 1
+}
+
+readShareStore() {
+  if [[ "${useRemote}" == "true" ]]; then
+    if [[ "${remoteHost}" == "__host__" ]]; then
+      echo "Error: Missing AOIFE_REMOTE_HOST in ${dotEnvPath}" >&2
+      exit 1
+    fi
+    ssh -- "${remoteHost}" "cat '${remoteShareFilePath}'"
+    return
+  fi
+  cat -- "${shareFilePath}"
+}
+
+slug=""
+count=""
+while getopts ":s:n:f:rh" option; do
+  case "${option}" in
+    s) slug="${OPTARG}" ;;
+    n) count="${OPTARG}" ;;
+    f)
+      shareFilePath="${OPTARG}"
+      fileSpecified=true
+      ;;
+    r) useRemote=true ;;
+    h)
+      usage
+      exit 0
+      ;;
+    \?)
+      echo "Error: Unknown option -${OPTARG}" >&2
+      usage >&2
+      exit 2
+      ;;
+    :)
+      echo "Error: Option -${OPTARG} requires an argument" >&2
+      usage >&2
+      exit 2
+      ;;
+  esac
+done
+shift $((OPTIND - 1))
+
+if [[ "${useRemote}" == "true" ]]; then
+  dotEnvHost="$(readDotEnvValue "${dotEnvPath}" "AOIFE_REMOTE_HOST" || true)"
+  if [[ "${dotEnvHost}" != "" ]]; then
+    remoteHost="${dotEnvHost}"
+  fi
+fi
+
+if [[ $# -gt 0 ]]; then
+  echo "Error: Unexpected arguments: $*" >&2
+  usage >&2
+  exit 2
+fi
+
+if [[ "${useRemote}" == "true" && "${fileSpecified}" == "true" ]]; then
+  echo "Error: Use either -r or -f, not both" >&2
+  usage >&2
+  exit 2
+fi
+
+if [[ "${useRemote}" == "false" && ! -f "${shareFilePath}" ]]; then
+  echo "Error: Missing ${shareFilePath}" >&2
+  exit 1
+fi
+
+if [[ "${slug}" != "" && "${count}" != "" ]]; then
+  echo "Error: Use exactly one of -s or -n" >&2
+  usage >&2
+  exit 2
+fi
+
+if [[ "${slug}" == "" && "${count}" == "" ]]; then
+  echo "Error: Use one of -s or -n" >&2
+  usage >&2
+  exit 2
+fi
+
+if [[ "${count}" != "" && ! "${count}" =~ ^[0-9]+$ ]]; then
+  echo "Error: -n must be a non-negative integer" >&2
+  exit 2
+fi
+
+baseUrl="${AOIFE_BASE_URL:-}"
+baseUrl="${baseUrl%/}"
+
+recordFilter='
+  def share_link($baseUrl; $slug):
+    if ($baseUrl | length) > 0 then
+      ($baseUrl + "/?share=" + $slug)
+    else
+      ("?share=" + $slug)
+    end;
+
+  def created_at_seconds($createdAt):
+    ($createdAt | tonumber) as $value
+    | if $value > 1000000000000 then ($value / 1000 | floor) else $value end;
+
+  def normalize_entry($baseUrl):
+    (.value.payload | fromjson) as $payload
+    | {
+        slug: .key,
+        createdAt: .value.createdAt,
+        createdAtIso: (created_at_seconds(.value.createdAt) | todateiso8601),
+        title: (.value.title // null),
+        link: share_link($baseUrl; .key),
+        gridItemCount: ($payload.gridItems | length),
+        payload: $payload
+      };
+'
+
+if [[ "${slug}" != "" ]]; then
+  errorFilePath="$(mktemp)"
+  cleanup() {
+    rm --force -- "${errorFilePath}"
+  }
+  trap cleanup EXIT
+
+  set +e
+  readShareStore | jq --exit-status \
+    --arg baseUrl "${baseUrl}" \
+    --arg slug "${slug}" \
+    "${recordFilter}
+    to_entries
+    | map(select(.key | contains(\$slug)))
+    | sort_by(.value.createdAt)
+    | reverse
+    | if length == 0 then error(\"No slugs matching: \"+\$slug) else map(normalize_entry(\$baseUrl)) end
+    " 2>"${errorFilePath}"
+  exitStatus="$?"
+  set -e
+
+  if [[ "${exitStatus}" -ne 0 ]]; then
+    cat -- "${errorFilePath}" >&2
+    if [[ "${useRemote}" == "false" ]]; then
+      echo "Hint: the slug might exist on prod only; try: inspect -r -s ${slug}" >&2
+      echo "Hint: or inspect a downloaded store: inspect -f local-share.json -s ${slug}" >&2
+    fi
+    exit "${exitStatus}"
+  fi
+
+  exit 0
+fi
+
+readShareStore | jq --exit-status \
+  --arg baseUrl "${baseUrl}" \
+	  --argjson count "${count}" \
+	  "${recordFilter}
+	  to_entries
+	  | sort_by(.value.createdAt)
+	  | reverse
+	  | .[0:\$count]
+	  | map(normalize_entry(\$baseUrl))
+	  "
