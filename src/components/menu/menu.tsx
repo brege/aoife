@@ -183,17 +183,20 @@ const Menu: React.FC<MenuProps> = ({
             >
               <FiShare2 size={20} />
             </button>
-
           </div>
 
           <div className="menu-share">
             <div className="menu-share-header">
               <span>Share link</span>
-              {isSharing && <span className="menu-share-status">Creating…</span>}
+              {isSharing && (
+                <span className="menu-share-status">Creating…</span>
+              )}
               {isLoadingShare && !isSharing && (
                 <span className="menu-share-status">Loading…</span>
               )}
-              {copySuccess && <span className="menu-share-status success">Copied</span>}
+              {copySuccess && (
+                <span className="menu-share-status success">Copied</span>
+              )}
             </div>
             <div className="menu-share-row">
               <input
@@ -201,7 +204,9 @@ const Menu: React.FC<MenuProps> = ({
                 value={shareUrl}
                 readOnly
                 placeholder={
-                  isLoadingShare ? 'Loading shared grid...' : 'Create a share link'
+                  isLoadingShare
+                    ? 'Loading shared grid...'
+                    : 'Create a share link'
                 }
                 className="menu-share-input"
                 aria-label="Share URL"

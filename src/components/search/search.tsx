@@ -4,6 +4,7 @@ import { MdClose } from 'react-icons/md';
 import '../../app/styles/global.css';
 import './search.css';
 import { type CliMenuState, useCliBridge } from '../../lib/api';
+import { getState, storeState } from '../../lib/indexeddb';
 import logger from '../../lib/logger';
 import { useModalClosed, useModalManager } from '../../lib/modalmanager';
 import { createShare, fetchShare } from '../../lib/share';
@@ -24,6 +25,11 @@ const MIN_ROWS_STORAGE_KEY = 'gridMinRows';
 const LAYOUT_DIMENSION_STORAGE_KEY = 'layoutDimension';
 const GRID_CAPACITY = 4;
 const SHARE_QUERY_PARAM = 'share';
+const INDEXEDDB_GRID_KEY = 'gridItems';
+const INDEXEDDB_COLUMNS_KEY = 'gridColumns';
+const INDEXEDDB_MIN_ROWS_KEY = 'gridMinRows';
+const INDEXEDDB_LAYOUT_DIMENSION_KEY = 'layoutDimension';
+const INDEXEDDB_SHARE_PREFIX = 'share:';
 
 type SharedState = {
   gridItems: MediaItem[];
@@ -206,13 +212,15 @@ const MediaSearch: React.FC = () => {
     }
     return 2;
   });
-  const [layoutDimension, setLayoutDimension] = useState<'width' | 'height'>(() => {
-    const stored = localStorage.getItem(LAYOUT_DIMENSION_STORAGE_KEY);
-    if (stored === 'width' || stored === 'height') {
-      return stored;
-    }
-    return 'height';
-  });
+  const [layoutDimension, setLayoutDimension] = useState<'width' | 'height'>(
+    () => {
+      const stored = localStorage.getItem(LAYOUT_DIMENSION_STORAGE_KEY);
+      if (stored === 'width' || stored === 'height') {
+        return stored;
+      }
+      return 'height';
+    },
+  );
   const [lastSearchSummary, setLastSearchSummary] = useState('');
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [isBuilderMode, setIsBuilderMode] = useState(true);
@@ -221,6 +229,7 @@ const MediaSearch: React.FC = () => {
   const [isSharing, setIsSharing] = useState(false);
   const [isLoadingShare, setIsLoadingShare] = useState(false);
   const initialShareSlugRef = useRef<string | null>(null);
+  const [isIndexedDbHydrated, setIsIndexedDbHydrated] = useState(false);
 
   if (initialShareSlugRef.current === null) {
     const params = new URLSearchParams(window.location.search);
@@ -229,9 +238,7 @@ const MediaSearch: React.FC = () => {
 
   const resolveProvider = useCallback(
     (mediaType: MediaType) =>
-      mediaType === selectedMediaType
-        ? provider
-        : getMediaProvider(mediaType),
+      mediaType === selectedMediaType ? provider : getMediaProvider(mediaType),
     [provider, selectedMediaType],
   );
 
@@ -252,6 +259,7 @@ const MediaSearch: React.FC = () => {
 
   useEffect(() => {
     if (initialShareSlugRef.current) {
+      setIsIndexedDbHydrated(true);
       return;
     }
 
@@ -274,6 +282,52 @@ const MediaSearch: React.FC = () => {
   }, []);
 
   useEffect(() => {
+    if (initialShareSlugRef.current) {
+      setIsIndexedDbHydrated(true);
+      return;
+    }
+
+    void (async () => {
+      const storedColumns = await getState(INDEXEDDB_COLUMNS_KEY);
+      if (storedColumns) {
+        const parsed = parseInt(storedColumns, 10);
+        if (!Number.isNaN(parsed) && parsed >= 1 && parsed <= 8) {
+          setColumns(parsed);
+        }
+      }
+
+      const storedMinRows = await getState(INDEXEDDB_MIN_ROWS_KEY);
+      if (storedMinRows) {
+        const parsed = parseInt(storedMinRows, 10);
+        if (!Number.isNaN(parsed) && parsed >= 1 && parsed <= 6) {
+          setMinRows(parsed);
+        }
+      }
+
+      const storedLayoutDimension = await getState(
+        INDEXEDDB_LAYOUT_DIMENSION_KEY,
+      );
+      if (
+        storedLayoutDimension === 'width' ||
+        storedLayoutDimension === 'height'
+      ) {
+        setLayoutDimension(storedLayoutDimension);
+      }
+
+      const storedGrid = await getState(INDEXEDDB_GRID_KEY);
+      if (!storedGrid) {
+        return;
+      }
+      const parsedGrid = JSON.parse(storedGrid) as MediaItem[];
+      if (Array.isArray(parsedGrid)) {
+        setGridItems(parsedGrid);
+      }
+    })().finally(() => {
+      setIsIndexedDbHydrated(true);
+    });
+  }, []);
+
+  useEffect(() => {
     setSearchValues(provider.defaultSearchValues);
     setSearchResults([]);
     setLastSearchSummary('');
@@ -284,6 +338,7 @@ const MediaSearch: React.FC = () => {
 
   const persistGrid = useCallback((items: MediaItem[]) => {
     localStorage.setItem(GRID_STORAGE_KEY, JSON.stringify(items));
+    storeState(INDEXEDDB_GRID_KEY, JSON.stringify(items));
   }, []);
 
   const buildSharePayload = useCallback((): string => {
@@ -307,7 +362,10 @@ const MediaSearch: React.FC = () => {
       if (typeof state.minRows !== 'number' || Number.isNaN(state.minRows)) {
         throw new Error('Shared state minRows value is invalid');
       }
-      if (state.layoutDimension !== 'width' && state.layoutDimension !== 'height') {
+      if (
+        state.layoutDimension !== 'width' &&
+        state.layoutDimension !== 'height'
+      ) {
         throw new Error('Shared state layout dimension is invalid');
       }
 
@@ -319,6 +377,9 @@ const MediaSearch: React.FC = () => {
       localStorage.setItem(COLUMNS_STORAGE_KEY, String(state.columns));
       localStorage.setItem(MIN_ROWS_STORAGE_KEY, String(state.minRows));
       localStorage.setItem(LAYOUT_DIMENSION_STORAGE_KEY, state.layoutDimension);
+      storeState(INDEXEDDB_COLUMNS_KEY, String(state.columns));
+      storeState(INDEXEDDB_MIN_ROWS_KEY, String(state.minRows));
+      storeState(INDEXEDDB_LAYOUT_DIMENSION_KEY, state.layoutDimension);
 
       const url = new URL(window.location.href);
       url.searchParams.set(SHARE_QUERY_PARAM, slug);
@@ -334,6 +395,7 @@ const MediaSearch: React.FC = () => {
       setShareError('');
       try {
         const response = await fetchShare(slug);
+        await storeState(`${INDEXEDDB_SHARE_PREFIX}${slug}`, response.payload);
         const parsed = JSON.parse(response.payload) as SharedState;
         if (!parsed || typeof parsed !== 'object') {
           throw new Error('Share payload is invalid');
@@ -346,13 +408,34 @@ const MediaSearch: React.FC = () => {
           timestamp: Date.now(),
         });
       } catch (err) {
-        const message = err instanceof Error ? err.message : String(err);
-        setShareError(message);
-        logger.error('SHARE: Failed to load shared grid', {
-          context: 'MediaSearch.loadShare',
-          slug,
-          error: message,
-        });
+        try {
+          const cached = await getState(`${INDEXEDDB_SHARE_PREFIX}${slug}`);
+          if (!cached) {
+            throw err;
+          }
+          const parsed = JSON.parse(cached) as SharedState;
+          if (!parsed || typeof parsed !== 'object') {
+            throw new Error('Cached share payload is invalid');
+          }
+          applySharedState(parsed, slug);
+          logger.info('SHARE: Loaded shared grid from cache', {
+            context: 'MediaSearch.loadShare',
+            action: 'share_load_cached',
+            slug,
+            timestamp: Date.now(),
+          });
+        } catch (cacheError) {
+          const message =
+            cacheError instanceof Error
+              ? cacheError.message
+              : String(cacheError);
+          setShareError(message);
+          logger.error('SHARE: Failed to load shared grid', {
+            context: 'MediaSearch.loadShare',
+            slug,
+            error: message,
+          });
+        }
       } finally {
         setIsLoadingShare(false);
       }
@@ -361,16 +444,28 @@ const MediaSearch: React.FC = () => {
   );
 
   useEffect(() => {
+    if (!isIndexedDbHydrated) {
+      return;
+    }
     localStorage.setItem(COLUMNS_STORAGE_KEY, String(columns));
-  }, [columns]);
+    storeState(INDEXEDDB_COLUMNS_KEY, String(columns));
+  }, [columns, isIndexedDbHydrated]);
 
   useEffect(() => {
+    if (!isIndexedDbHydrated) {
+      return;
+    }
     localStorage.setItem(MIN_ROWS_STORAGE_KEY, String(minRows));
-  }, [minRows]);
+    storeState(INDEXEDDB_MIN_ROWS_KEY, String(minRows));
+  }, [minRows, isIndexedDbHydrated]);
 
   useEffect(() => {
+    if (!isIndexedDbHydrated) {
+      return;
+    }
     localStorage.setItem(LAYOUT_DIMENSION_STORAGE_KEY, layoutDimension);
-  }, [layoutDimension]);
+    storeState(INDEXEDDB_LAYOUT_DIMENSION_KEY, layoutDimension);
+  }, [layoutDimension, isIndexedDbHydrated]);
 
   useEffect(() => {
     if (!initialShareSlugRef.current) {
@@ -495,6 +590,7 @@ const MediaSearch: React.FC = () => {
     try {
       const payload = buildSharePayload();
       const response = await createShare(payload);
+      await storeState(`${INDEXEDDB_SHARE_PREFIX}${response.slug}`, payload);
       const url = new URL(window.location.href);
       url.searchParams.set(SHARE_QUERY_PARAM, response.slug);
       window.history.replaceState(null, '', url.toString());

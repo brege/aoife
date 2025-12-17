@@ -1,8 +1,8 @@
+import crypto from 'node:crypto';
 import fs from 'node:fs';
 import type { IncomingMessage } from 'node:http';
 import https from 'node:https';
 import path from 'node:path';
-import crypto from 'node:crypto';
 import react from '@vitejs/plugin-react';
 import { defineConfig, loadEnv } from 'vite';
 import { type WebSocket, WebSocketServer } from 'ws';
@@ -40,7 +40,10 @@ const loadSlugWords = (): string[] => {
   }
   const contents = fs.readFileSync(SLUG_WORDS_PATH, 'utf-8');
   const parsed = JSON.parse(contents);
-  if (!Array.isArray(parsed) || parsed.some((entry) => typeof entry !== 'string')) {
+  if (
+    !Array.isArray(parsed) ||
+    parsed.some((entry) => typeof entry !== 'string')
+  ) {
     throw new Error('Slug word list is invalid');
   }
   if (parsed.length < 8) {
@@ -156,7 +159,10 @@ export default defineConfig({
                   return;
                 }
 
-                const slug = generateSlug(new Set(Object.keys(shareStore)), slugWords);
+                const slug = generateSlug(
+                  new Set(Object.keys(shareStore)),
+                  slugWords,
+                );
                 shareStore[slug] = {
                   payload: parsed.payload,
                   createdAt: Date.now(),

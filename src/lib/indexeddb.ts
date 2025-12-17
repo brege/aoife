@@ -1,8 +1,9 @@
 /// <reference lib="dom" />
 
 const DB_NAME = 'aoife';
-const STORE_NAME = 'images';
-const DB_VERSION = 1;
+const IMAGE_STORE_NAME = 'images';
+const STATE_STORE_NAME = 'state';
+const DB_VERSION = 2;
 
 let db: IDBDatabase | null = null;
 
@@ -20,8 +21,11 @@ const initDB = async (): Promise<IDBDatabase> => {
 
     request.onupgradeneeded = (event) => {
       const database = (event.target as IDBOpenDBRequest).result;
-      if (!database.objectStoreNames.contains(STORE_NAME)) {
-        database.createObjectStore(STORE_NAME);
+      if (!database.objectStoreNames.contains(IMAGE_STORE_NAME)) {
+        database.createObjectStore(IMAGE_STORE_NAME);
+      }
+      if (!database.objectStoreNames.contains(STATE_STORE_NAME)) {
+        database.createObjectStore(STATE_STORE_NAME);
       }
     };
   });
@@ -33,8 +37,8 @@ export const storeImage = async (
 ): Promise<void> => {
   const database = await initDB();
   return new Promise((resolve, reject) => {
-    const transaction = database.transaction([STORE_NAME], 'readwrite');
-    const store = transaction.objectStore(STORE_NAME);
+    const transaction = database.transaction([IMAGE_STORE_NAME], 'readwrite');
+    const store = transaction.objectStore(IMAGE_STORE_NAME);
     const request = store.put(blob, imageId);
 
     request.onerror = () => reject(request.error);
@@ -45,8 +49,8 @@ export const storeImage = async (
 export const getImage = async (imageId: string): Promise<Blob | null> => {
   const database = await initDB();
   return new Promise((resolve, reject) => {
-    const transaction = database.transaction([STORE_NAME], 'readonly');
-    const store = transaction.objectStore(STORE_NAME);
+    const transaction = database.transaction([IMAGE_STORE_NAME], 'readonly');
+    const store = transaction.objectStore(IMAGE_STORE_NAME);
     const request = store.get(imageId);
 
     request.onerror = () => reject(request.error);
@@ -60,12 +64,50 @@ export const getImage = async (imageId: string): Promise<Blob | null> => {
 export const deleteImage = async (imageId: string): Promise<void> => {
   const database = await initDB();
   return new Promise((resolve, reject) => {
-    const transaction = database.transaction([STORE_NAME], 'readwrite');
-    const store = transaction.objectStore(STORE_NAME);
+    const transaction = database.transaction([IMAGE_STORE_NAME], 'readwrite');
+    const store = transaction.objectStore(IMAGE_STORE_NAME);
     const request = store.delete(imageId);
 
     request.onerror = () => reject(request.error);
     request.onsuccess = () => resolve();
+  });
+};
+
+export const storeState = async (key: string, value: string): Promise<void> => {
+  if (typeof key !== 'string' || key.trim() === '') {
+    throw new Error('State key must be a non-empty string');
+  }
+  if (typeof value !== 'string') {
+    throw new Error('State value must be a string');
+  }
+
+  const database = await initDB();
+  return new Promise((resolve, reject) => {
+    const transaction = database.transaction([STATE_STORE_NAME], 'readwrite');
+    const store = transaction.objectStore(STATE_STORE_NAME);
+    const request = store.put(value, key);
+
+    request.onerror = () => reject(request.error);
+    request.onsuccess = () => resolve();
+  });
+};
+
+export const getState = async (key: string): Promise<string | null> => {
+  if (typeof key !== 'string' || key.trim() === '') {
+    throw new Error('State key must be a non-empty string');
+  }
+
+  const database = await initDB();
+  return new Promise((resolve, reject) => {
+    const transaction = database.transaction([STATE_STORE_NAME], 'readonly');
+    const store = transaction.objectStore(STATE_STORE_NAME);
+    const request = store.get(key);
+
+    request.onerror = () => reject(request.error);
+    request.onsuccess = () => {
+      const result = request.result as string | undefined;
+      resolve(typeof result === 'string' ? result : null);
+    };
   });
 };
 

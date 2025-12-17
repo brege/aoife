@@ -64,7 +64,9 @@ const calculateRowLayouts = (
 
     for (let i = 0; i < items.length; i += columns) {
       const rowItems = items.slice(i, i + columns);
-      const heights = rowItems.map((media) => fixedWidth / getAspectRatio(media));
+      const heights = rowItems.map(
+        (media) => fixedWidth / getAspectRatio(media),
+      );
       const height = Math.max(...heights);
 
       rows.push({
@@ -162,7 +164,15 @@ const Grid2x2: React.FC<Grid2x2Props> = ({
       minRows,
       layoutDimension,
     );
-  }, [items, columns, containerWidth, containerHeight, shouldUseBuilderLayout, minRows, layoutDimension]);
+  }, [
+    items,
+    columns,
+    containerWidth,
+    containerHeight,
+    shouldUseBuilderLayout,
+    minRows,
+    layoutDimension,
+  ]);
 
   const handleImageLoad = (
     media: MediaItem,
@@ -265,14 +275,20 @@ const Grid2x2: React.FC<Grid2x2Props> = ({
             <div
               key={rowKey}
               className="grid-row"
-              style={{ height: layoutDimension === 'width' ? 'auto' : row.height, gap }}
+              style={{
+                height: layoutDimension === 'width' ? 'auto' : row.height,
+                gap,
+              }}
             >
               {row.items.map(({ media, width }) => (
                 <div
                   key={media.id}
                   className="grid-item filled"
                   data-type={media.type}
-                  style={{ width, height: layoutDimension === 'width' ? 'auto' : row.height }}
+                  style={{
+                    width,
+                    height: layoutDimension === 'width' ? 'auto' : row.height,
+                  }}
                 >
                   <div className="poster-wrapper">
                     <button
@@ -309,7 +325,9 @@ const Grid2x2: React.FC<Grid2x2Props> = ({
     );
   };
 
-  const gridClassName = shouldUseBuilderLayout ? 'grid-builder' : 'grid-presentation';
+  const gridClassName = shouldUseBuilderLayout
+    ? 'grid-builder'
+    : 'grid-presentation';
 
   return (
     <div

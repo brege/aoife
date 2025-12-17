@@ -1,5 +1,5 @@
-import React from 'react';
 import { Switch } from '@headlessui/react';
+import type React from 'react';
 import logger from '../../lib/logger';
 
 interface MenuConfigProps {
@@ -137,7 +137,9 @@ const MenuConfig: React.FC<MenuConfigProps> = ({
         <span className="config-label">fixed width</span>
         <Switch
           checked={layoutDimension === 'width'}
-          onChange={(checked) => onLayoutDimensionChange(checked ? 'width' : 'height')}
+          onChange={(checked) =>
+            onLayoutDimensionChange(checked ? 'width' : 'height')
+          }
           className="layout-dimension-toggle"
         />
       </div>
