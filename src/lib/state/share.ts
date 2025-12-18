@@ -75,17 +75,18 @@ export const useShareState = (
 
   const applySharedState = useCallback(
     (state: SharedState, slug: string, sharedTitle: string) => {
+      const nextTitle = sharedTitle.trim() === '' ? DEFAULT_TITLE : sharedTitle;
       setColumns(state.columns);
       setMinRows(state.minRows);
       setLayoutDimension(state.layoutDimension);
       setGridItems(state.gridItems);
-      setTitle(sharedTitle);
+      setTitle(nextTitle);
       persistAppState(
         JSON.stringify(state.gridItems),
         String(state.columns),
         String(state.minRows),
         state.layoutDimension,
-        sharedTitle,
+        nextTitle,
       );
 
       const url = new URL(window.location.href);
@@ -181,7 +182,7 @@ export const useShareState = (
       }
 
       if (state.title && localStorage.getItem(TITLE_STORAGE_KEY) === null) {
-        setTitle(state.title);
+        setTitle(state.title.trim() === '' ? DEFAULT_TITLE : state.title);
       }
 
       if (state.gridItems) {

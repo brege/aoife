@@ -19,6 +19,11 @@ import { SearchResults } from './results';
 
 const GRID_CAPACITY = 4;
 
+const normalizeTitle = (value: string): string => {
+  const trimmed = value.trim();
+  return trimmed === '' ? DEFAULT_TITLE : trimmed;
+};
+
 const MediaSearch: React.FC = () => {
   useEffect(() => {
     logger.setDebugMode(true);
@@ -64,7 +69,7 @@ const MediaSearch: React.FC = () => {
   const [gridItems, setGridItems] = useState<MediaItem[]>([]);
   const [title, setTitle] = useState<string>(() => {
     const stored = localStorage.getItem(TITLE_STORAGE_KEY);
-    return stored ?? DEFAULT_TITLE;
+    return stored ? normalizeTitle(stored) : DEFAULT_TITLE;
   });
   const [alternateCoverUrls, setAlternateCoverUrls] = useState<string[]>([]);
   const [showPosterGrid, setShowPosterGrid] = useState(false);
@@ -148,7 +153,7 @@ const MediaSearch: React.FC = () => {
   );
 
   const handleTitleChange = useCallback((nextTitle: string) => {
-    setTitle(nextTitle);
+    setTitle(normalizeTitle(nextTitle));
   }, []);
 
   const clearGridAndPersist = useCallback(
