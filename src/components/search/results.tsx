@@ -1,0 +1,193 @@
+import { MdClose } from 'react-icons/md';
+import type { MediaItem, MediaType } from '../../media/types';
+
+type ExternalLink = {
+  href: string;
+  label: string;
+  domain: string;
+};
+
+const getExternalLinks = (
+  result: MediaItem,
+  mediaType: MediaType,
+  imdbId?: string,
+): ExternalLink[] => {
+  const links: ExternalLink[] = [];
+
+  if (mediaType === 'movies' || mediaType === 'tv') {
+    links.push({
+      href: `https://www.themoviedb.org/${mediaType === 'tv' ? 'tv' : 'movie'}/${result.id}`,
+      label: 'TMDB',
+      domain: 'www.themoviedb.org',
+    });
+
+    if (mediaType === 'movies') {
+      links.push({
+        href: `https://letterboxd.com/tmdb/${result.id}`,
+        label: 'Letterboxd',
+        domain: 'letterboxd.com',
+      });
+    }
+
+    if (imdbId) {
+      links.push({
+        href: `https://www.imdb.com/title/${imdbId}/`,
+        label: 'IMDb',
+        domain: 'www.imdb.com',
+      });
+    }
+  }
+
+  if (mediaType === 'books') {
+    if (
+      result.source === 'OpenLibrary' &&
+      typeof result.metadata?.openLibraryKey === 'string'
+    ) {
+      links.push({
+        href: `https://openlibrary.org${result.metadata.openLibraryKey}`,
+        label: 'Open Library',
+        domain: 'openlibrary.org',
+      });
+    } else if (
+      result.source === 'GoogleBooks' &&
+      typeof result.metadata?.volumeId === 'string'
+    ) {
+      links.push({
+        href: `https://books.google.com/books?id=${result.metadata.volumeId}`,
+        label: 'Google Books',
+        domain: 'books.google.com',
+      });
+    }
+  }
+
+  if (mediaType === 'music' && typeof result.metadata?.mbid === 'string') {
+    links.push({
+      href: `https://musicbrainz.org/release/${result.metadata.mbid}`,
+      label: 'MusicBrainz',
+      domain: 'musicbrainz.org',
+    });
+  }
+
+  if (mediaType === 'games') {
+    links.push({
+      href: `https://thegamesdb.net/game.php?id=${result.id}`,
+      label: 'TheGamesDB',
+      domain: 'thegamesdb.net',
+    });
+  }
+
+  return links;
+};
+
+type SearchResultsProps = {
+  results: MediaItem[];
+  mediaType: MediaType;
+  searchSummary: string;
+  aspectRatios: Record<string | number, number>;
+  onClose: () => void;
+  onAdd: (media: MediaItem, availableCovers: MediaItem[]) => void;
+  onPosterLoad: (
+    resultId: string | number,
+    event: React.SyntheticEvent<HTMLImageElement>,
+  ) => void;
+};
+
+export const SearchResults = ({
+  results,
+  mediaType,
+  searchSummary,
+  aspectRatios,
+  onClose,
+  onAdd,
+  onPosterLoad,
+}: SearchResultsProps) => (
+  <div className="search-results">
+    <button
+      type="button"
+      className="search-close-button"
+      onClick={onClose}
+      aria-label="Close search results"
+    >
+      <MdClose aria-hidden="true" focusable="false" />
+    </button>
+    <h3 className="search-results-subtitle">
+      Results for: "
+      {searchSummary.length > 40
+        ? `${searchSummary.substring(0, 40)}...`
+        : searchSummary}
+      "
+    </h3>
+    <div className="search-results-grid">
+      {results.map((result) => {
+        const imdbId =
+          typeof result.metadata?.imdb_id === 'string'
+            ? result.metadata.imdb_id
+            : undefined;
+        const externalLinks = getExternalLinks(result, mediaType, imdbId);
+
+        return (
+          <button
+            key={result.id}
+            type="button"
+            className="search-result-card"
+            data-media-id={result.id}
+            data-media-title={result.title}
+            onClick={() => onAdd(result, results)}
+            aria-label={`Add ${result.title}`}
+          >
+            {result.coverThumbnailUrl || result.coverUrl ? (
+              <img
+                src={result.coverThumbnailUrl || result.coverUrl || ''}
+                alt={`${result.title} cover`}
+                className="search-result-poster-large"
+                onLoad={(event) => onPosterLoad(result.id, event)}
+                style={
+                  aspectRatios[result.id]
+                    ? { aspectRatio: aspectRatios[result.id] }
+                    : undefined
+                }
+              />
+            ) : (
+              <div className="search-result-placeholder large">No cover</div>
+            )}
+            <div className="search-result-meta">
+              <div className="search-result-title">
+                <span className="search-result-name">{result.title}</span>
+                {result.subtitle && (
+                  <span className="search-result-subtitle">
+                    {result.subtitle}
+                  </span>
+                )}
+              </div>
+              {result.year && (
+                <span className="search-result-year">{result.year}</span>
+              )}
+            </div>
+            {externalLinks.length > 0 && (
+              <div className="search-result-badges">
+                {externalLinks.map((link) => (
+                  <a
+                    key={link.href}
+                    href={link.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="search-badge"
+                    aria-label={link.label}
+                    onClick={(event) => event.stopPropagation()}
+                  >
+                    <img
+                      src={`https://www.google.com/s2/favicons?sz=32&domain=${link.domain}`}
+                      alt=""
+                      aria-hidden="true"
+                    />
+                    <span>{link.label}</span>
+                  </a>
+                ))}
+              </div>
+            )}
+          </button>
+        );
+      })}
+    </div>
+  </div>
+);

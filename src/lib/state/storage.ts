@@ -1,6 +1,6 @@
 /// <reference lib="dom" />
 import { useEffect } from 'react';
-import { getState, storeState } from './indexeddb';
+import { getState, storeState } from '../indexeddb';
 
 export const GRID_STORAGE_KEY = 'gridItems';
 export const COLUMNS_STORAGE_KEY = 'gridColumns';

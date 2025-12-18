@@ -1,147 +1,23 @@
 import type React from 'react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { MdClose } from 'react-icons/md';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import '../../app/styles/global.css';
 import './search.css';
-import { type CliMenuState, useCliBridge } from '../../lib/api';
 import { useGridOperations } from '../../lib/grid-operations';
-import { storeState } from '../../lib/indexeddb';
-import { useLayoutState } from '../../lib/layout-state';
 import logger from '../../lib/logger';
 import { useModalClosed, useModalManager } from '../../lib/modalmanager';
-import { useSearchState } from '../../lib/search-state';
-import {
-  buildSharePayload,
-  createShare,
-  INDEXEDDB_SHARE_PREFIX,
-  loadShare,
-  SHARE_QUERY_PARAM,
-  type SharedState,
-} from '../../lib/share';
-import {
-  DEFAULT_TITLE,
-  GRID_STORAGE_KEY,
-  hydrateAppState,
-  persistAppState,
-  TITLE_STORAGE_KEY,
-} from '../../lib/storage';
-import { getMediaProvider } from '../../media/providers';
-import type {
-  MediaItem,
-  MediaSearchValues,
-  MediaType,
-} from '../../media/types';
+import { useLayoutState } from '../../lib/state/layout';
+import { useSearchState } from '../../lib/state/search';
+import { useShareState } from '../../lib/state/share';
+import { DEFAULT_TITLE, TITLE_STORAGE_KEY } from '../../lib/state/storage';
+import type { MediaItem, MediaType } from '../../media/types';
 import Grid2x2 from '../grid/grid';
 import AppHeader from '../ui/header';
-import Carousel from './carousel';
+import { useSearchBridges } from './bridge';
 import { MediaForm } from './mediaform';
+import { PosterPicker } from './picker';
+import { SearchResults } from './results';
 
 const GRID_CAPACITY = 4;
-
-type TestApplicationApi = {
-  setMediaType: (mediaType: MediaType) => void;
-  search: (
-    values: Partial<MediaSearchValues>,
-    mediaType?: MediaType,
-  ) => Promise<MediaItem[]>;
-  applySearchResults: (
-    results: MediaItem[],
-    mediaType?: MediaType,
-    summary?: string,
-  ) => void;
-  addMedia: (media: MediaItem, availableCovers?: MediaItem[]) => void;
-  removeMedia: (mediaId: string | number) => void;
-  clearGrid: () => void;
-  getGridItems: () => MediaItem[];
-  getStoredGridItems: () => MediaItem[];
-  setBuilderMode: (enabled: boolean) => void;
-  getBuilderMode: () => boolean;
-  getSearchValues: () => MediaSearchValues;
-  setLayoutDimension: (dimension: 'width' | 'height') => void;
-  getLayoutDimension: () => 'width' | 'height';
-};
-
-type WindowWithTestApi = Window & {
-  appTestApi?: TestApplicationApi;
-};
-
-type ExternalLink = {
-  href: string;
-  label: string;
-  domain: string;
-};
-
-const getExternalLinks = (
-  result: MediaItem,
-  mediaType: MediaType,
-  imdbId?: string,
-): ExternalLink[] => {
-  const links: ExternalLink[] = [];
-
-  if (mediaType === 'movies' || mediaType === 'tv') {
-    links.push({
-      href: `https://www.themoviedb.org/${mediaType === 'tv' ? 'tv' : 'movie'}/${result.id}`,
-      label: 'TMDB',
-      domain: 'www.themoviedb.org',
-    });
-
-    if (mediaType === 'movies') {
-      links.push({
-        href: `https://letterboxd.com/tmdb/${result.id}`,
-        label: 'Letterboxd',
-        domain: 'letterboxd.com',
-      });
-    }
-
-    if (imdbId) {
-      links.push({
-        href: `https://www.imdb.com/title/${imdbId}/`,
-        label: 'IMDb',
-        domain: 'www.imdb.com',
-      });
-    }
-  }
-
-  if (mediaType === 'books') {
-    if (
-      result.source === 'OpenLibrary' &&
-      typeof result.metadata?.openLibraryKey === 'string'
-    ) {
-      links.push({
-        href: `https://openlibrary.org${result.metadata.openLibraryKey}`,
-        label: 'Open Library',
-        domain: 'openlibrary.org',
-      });
-    } else if (
-      result.source === 'GoogleBooks' &&
-      typeof result.metadata?.volumeId === 'string'
-    ) {
-      links.push({
-        href: `https://books.google.com/books?id=${result.metadata.volumeId}`,
-        label: 'Google Books',
-        domain: 'books.google.com',
-      });
-    }
-  }
-
-  if (mediaType === 'music' && typeof result.metadata?.mbid === 'string') {
-    links.push({
-      href: `https://musicbrainz.org/release/${result.metadata.mbid}`,
-      label: 'MusicBrainz',
-      domain: 'musicbrainz.org',
-    });
-  }
-
-  if (mediaType === 'games') {
-    links.push({
-      href: `https://thegamesdb.net/game.php?id=${result.id}`,
-      label: 'TheGamesDB',
-      domain: 'thegamesdb.net',
-    });
-  }
-
-  return links;
-};
 
 const MediaSearch: React.FC = () => {
   useEffect(() => {
@@ -199,111 +75,21 @@ const MediaSearch: React.FC = () => {
     () => gridItems.find((item) => item.id === activePosterItemId) ?? null,
     [gridItems, activePosterItemId],
   );
-  const [shareUrl, setShareUrl] = useState('');
-  const [shareError, setShareError] = useState('');
-  const [isSharing, setIsSharing] = useState(false);
-  const [isLoadingShare, setIsLoadingShare] = useState(false);
-  const initialShareSlugRef = useRef<string | null>(null);
-
-  if (initialShareSlugRef.current === null) {
-    const params = new URLSearchParams(window.location.search);
-    initialShareSlugRef.current = params.get(SHARE_QUERY_PARAM);
-  }
-
-  useEffect(() => {
-    if (initialShareSlugRef.current) {
-      setIsIndexedDbHydrated(true);
-      return;
-    }
-
-    const stored = localStorage.getItem(GRID_STORAGE_KEY);
-    if (!stored) return;
-    try {
-      const parsed = JSON.parse(stored) as MediaItem[];
-      if (Array.isArray(parsed)) {
-        setGridItems(parsed);
-      }
-    } catch (storageError) {
-      logger.error('Failed to parse stored grid items', {
-        context: 'MediaSearch.storageLoad',
-        error:
-          storageError instanceof Error
-            ? storageError.message
-            : String(storageError),
-      });
-    }
-  }, []);
-
-  useEffect(() => {
-    if (initialShareSlugRef.current) {
-      setIsIndexedDbHydrated(true);
-      return;
-    }
-
-    void (async () => {
-      const state = await hydrateAppState();
-
-      if (state.columns) {
-        const parsed = parseInt(state.columns, 10);
-        if (!Number.isNaN(parsed) && parsed >= 1 && parsed <= 8) {
-          setColumns(parsed);
-        }
-      }
-
-      if (state.minRows) {
-        const parsed = parseInt(state.minRows, 10);
-        if (!Number.isNaN(parsed) && parsed >= 1 && parsed <= 6) {
-          setMinRows(parsed);
-        }
-      }
-
-      if (
-        state.layoutDimension === 'width' ||
-        state.layoutDimension === 'height'
-      ) {
-        setLayoutDimension(state.layoutDimension);
-      }
-
-      if (state.title && localStorage.getItem(TITLE_STORAGE_KEY) === null) {
-        setTitle(state.title);
-      }
-
-      if (state.gridItems) {
-        const storedLocalGrid = localStorage.getItem(GRID_STORAGE_KEY);
-        if (storedLocalGrid === null) {
-          const parsedGrid = JSON.parse(state.gridItems) as MediaItem[];
-          if (Array.isArray(parsedGrid)) {
-            setGridItems(parsedGrid);
-          }
-        }
-      }
-    })().finally(() => {
-      setIsIndexedDbHydrated(true);
+  const { shareUrl, shareError, isSharing, isLoadingShare, handleCreateShare } =
+    useShareState({
+      columns,
+      minRows,
+      layoutDimension,
+      gridItems,
+      title,
+      isHydrated: isIndexedDbHydrated,
+      setColumns,
+      setMinRows,
+      setLayoutDimension,
+      setGridItems,
+      setTitle,
+      setIsHydrated: setIsIndexedDbHydrated,
     });
-  }, [setColumns, setMinRows, setLayoutDimension]);
-
-  const applySharedState = useCallback(
-    (state: SharedState, slug: string, sharedTitle: string) => {
-      setColumns(state.columns);
-      setMinRows(state.minRows);
-      setLayoutDimension(state.layoutDimension);
-      setGridItems(state.gridItems);
-      setTitle(sharedTitle);
-      persistAppState(
-        JSON.stringify(state.gridItems),
-        String(state.columns),
-        String(state.minRows),
-        state.layoutDimension,
-        sharedTitle,
-      );
-
-      const url = new URL(window.location.href);
-      url.searchParams.set(SHARE_QUERY_PARAM, slug);
-      window.history.replaceState(null, '', url.toString());
-      setShareUrl(url.toString());
-    },
-    [setColumns, setMinRows, setLayoutDimension],
-  );
 
   const {
     handleAddMedia,
@@ -332,61 +118,6 @@ const MediaSearch: React.FC = () => {
     },
   );
 
-  const handleLoadShare = useCallback(
-    async (slug: string) => {
-      setIsLoadingShare(true);
-      setShareError('');
-      try {
-        const result = await loadShare(slug, DEFAULT_TITLE);
-        applySharedState(result.state, result.slug, result.title);
-        logger.info('SHARE: Loaded shared grid', {
-          context: 'MediaSearch.handleLoadShare',
-          action: 'share_load',
-          slug,
-          timestamp: Date.now(),
-        });
-      } catch (err) {
-        const message = err instanceof Error ? err.message : String(err);
-        setShareError(message);
-        logger.error('SHARE: Failed to load shared grid', {
-          context: 'MediaSearch.handleLoadShare',
-          slug,
-          error: message,
-        });
-      } finally {
-        setIsLoadingShare(false);
-      }
-    },
-    [applySharedState],
-  );
-
-  useEffect(() => {
-    if (!isIndexedDbHydrated) {
-      return;
-    }
-    persistAppState(
-      JSON.stringify(gridItems),
-      String(columns),
-      String(minRows),
-      layoutDimension,
-      title,
-    );
-  }, [
-    gridItems,
-    columns,
-    minRows,
-    layoutDimension,
-    title,
-    isIndexedDbHydrated,
-  ]);
-
-  useEffect(() => {
-    if (!initialShareSlugRef.current) {
-      return;
-    }
-    handleLoadShare(initialShareSlugRef.current);
-  }, [handleLoadShare]);
-
   const { openModal, closeModal } = useModalManager();
 
   useEffect(() => {
@@ -409,56 +140,6 @@ const MediaSearch: React.FC = () => {
     },
     [runSearch, searchValues, selectedMediaType, handleAddMedia],
   );
-
-  const handleCreateShare = useCallback(async () => {
-    if (gridItems.length === 0) {
-      setShareError('Add at least one item before sharing.');
-      return;
-    }
-
-    setIsSharing(true);
-    setShareError('');
-
-    try {
-      const shareState: SharedState = {
-        gridItems,
-        columns,
-        minRows,
-        layoutDimension,
-      };
-      const payload = buildSharePayload(shareState);
-      const response = await createShare(payload, title);
-      await storeState(
-        `${INDEXEDDB_SHARE_PREFIX}${response.slug}`,
-        JSON.stringify({ payload, title }),
-      );
-      const url = new URL(window.location.href);
-      url.searchParams.set(SHARE_QUERY_PARAM, response.slug);
-      window.history.replaceState(null, '', url.toString());
-      setShareUrl(url.toString());
-
-      logger.info('SHARE: Created share link', {
-        context: 'MediaSearch.handleCreateShare',
-        action: 'share_created',
-        slug: response.slug,
-        gridCount: gridItems.length,
-        columns,
-        minRows,
-        layoutDimension,
-        timestamp: Date.now(),
-      });
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      setShareError(message);
-      logger.error('SHARE: Failed to create share link', {
-        context: 'MediaSearch.handleCreateShare',
-        action: 'share_create_failed',
-        error: message,
-      });
-    } finally {
-      setIsSharing(false);
-    }
-  }, [columns, gridItems, layoutDimension, minRows, title]);
 
   const handleTitleChange = useCallback((nextTitle: string) => {
     setTitle(nextTitle);
@@ -486,193 +167,6 @@ const MediaSearch: React.FC = () => {
 
   useModalClosed('posterGrid', handleClosePosterGrid);
 
-  const handleCliSearch = async (query: string, mediaType?: string) => {
-    if (!query) return;
-
-    let activeMediaType = selectedMediaType;
-    if (mediaType && mediaType !== selectedMediaType) {
-      activeMediaType = mediaType as MediaType;
-      setSelectedMediaType(mediaType as MediaType);
-    }
-
-    const targetProvider = getMediaProvider(activeMediaType);
-    const primaryFieldId = targetProvider.searchFields[0]?.id ?? 'query';
-    const nextValues = {
-      ...targetProvider.defaultSearchValues,
-      [primaryFieldId]: query,
-    };
-    await runSearch(nextValues);
-  };
-
-  const handleCliAddMedia = useCallback(
-    (media: MediaItem) => {
-      handleAddMedia(media);
-      logger.info(`CLI-ADD: Added media "${media.title}"`, {
-        context: 'MediaSearch.handleCliAddMedia',
-        action: 'cli_add_media',
-        media: { id: media.id, title: media.title },
-      });
-    },
-    [handleAddMedia],
-  );
-
-  const handleCliRemoveMedia = useCallback(
-    (id: string | number) => {
-      handleRemoveMedia(id);
-      logger.info(`CLI-REMOVE: Removed media with ID ${id}`, {
-        context: 'MediaSearch.handleCliRemoveMedia',
-        action: 'cli_remove_media',
-        mediaId: id,
-      });
-    },
-    [handleRemoveMedia],
-  );
-
-  const handleCliClearGrid = useCallback(() => {
-    clearGridAndPersist('CLI-CLEAR: Grid cleared via CLI command');
-  }, [clearGridAndPersist]);
-
-  const handleClearGrid = useCallback(() => {
-    clearGridAndPersist('CLEAR: Grid cleared via hamburger menu');
-  }, [clearGridAndPersist]);
-
-  const handleGetMenuState = useCallback(() => {
-    const menuState: CliMenuState = {
-      sections: [
-        {
-          name: 'Mode',
-          options: [
-            {
-              name: isBuilderMode
-                ? 'Switch to presentation mode'
-                : 'Switch to builder mode',
-              type: 'action',
-              enabled: true,
-              description:
-                'Presentation hides builder UI for screenshots or display',
-            },
-          ],
-        },
-        {
-          name: 'Grid Options',
-          options: [
-            {
-              name: 'Clear Grid',
-              type: 'action',
-              enabled: gridItems.length > 0,
-              description: 'Remove all items from grid and clear localStorage',
-            },
-          ],
-        },
-        {
-          name: 'Layout Configuration',
-          options: [
-            {
-              name: 'Adaptive Grid',
-              type: 'feature',
-              enabled: false,
-              description: 'Dynamic grid sizing based on screen dimensions',
-            },
-          ],
-        },
-      ],
-      currentGridCount: gridItems.length,
-      maxGridCapacity: GRID_CAPACITY,
-    };
-
-    logger.info('MENU: State requested via CLI', {
-      context: 'MediaSearch.handleGetMenuState',
-      action: 'menu_state_requested',
-      menuState,
-      timestamp: Date.now(),
-    });
-
-    return menuState;
-  }, [gridItems.length, isBuilderMode]);
-
-  const handleMenuClearGrid = useCallback(() => {
-    clearGridAndPersist('CLI-MENU-CLEAR: Grid cleared via CLI menu command');
-  }, [clearGridAndPersist]);
-
-  const handleGetDebugInfo = useCallback(() => {
-    const debugInfo = window.gridDebugInfo ?? {
-      error: 'No debug info available',
-    };
-    return debugInfo;
-  }, []);
-
-  const handleCliAddFirstResult = async (query: string) => {
-    if (!query) return;
-    const primaryFieldId = provider.searchFields[0]?.id ?? 'query';
-    const nextValues = {
-      ...provider.defaultSearchValues,
-      ...searchValues,
-      [primaryFieldId]: query,
-    };
-    const results = await runSearch(nextValues);
-    if (results.length > 0) {
-      handleAddMedia(results[0], results);
-      logger.info(`CLI-ADD-FIRST: Added first result "${results[0].title}"`, {
-        context: 'MediaSearch.handleCliAddFirstResult',
-        action: 'cli_add_first_result',
-        query,
-        timestamp: Date.now(),
-      });
-    } else {
-      logger.warn(`CLI-ADD-FIRST: No results found for query "${query}"`, {
-        context: 'MediaSearch.handleCliAddFirstResult',
-        query: query,
-      });
-    }
-  };
-
-  const handleCliGetGridState = useCallback(() => {
-    const gridState = {
-      count: gridItems.length,
-      maxCapacity: GRID_CAPACITY,
-      positions: gridItems.map((item, index) => ({
-        position: index,
-        matrixPosition: `(${Math.floor(index / 2)}, ${index % 2})`,
-        media: {
-          id: item.id,
-          title: item.title,
-          year: item.year,
-        },
-      })),
-      emptyPositions: Array.from(
-        { length: GRID_CAPACITY - gridItems.length },
-        (_, i) => ({
-          position: gridItems.length + i,
-          matrixPosition: `(${Math.floor((gridItems.length + i) / 2)}, ${(gridItems.length + i) % 2})`,
-        }),
-      ),
-    };
-
-    logger.info(
-      `CLI-GRID: Grid state requested - ${gridItems.length}/${GRID_CAPACITY} positions filled`,
-      {
-        context: 'MediaSearch.handleCliGetGridState',
-        action: 'cli_grid_state',
-        gridState,
-        timestamp: Date.now(),
-      },
-    );
-
-    return gridState;
-  }, [gridItems]);
-
-  useCliBridge({
-    onSearch: handleCliSearch,
-    onAddMedia: handleCliAddMedia,
-    onRemoveMedia: handleCliRemoveMedia,
-    onGetGridState: handleCliGetGridState,
-    onClearGrid: handleCliClearGrid,
-    onAddFirstResult: handleCliAddFirstResult,
-    onGetMenuState: handleGetMenuState,
-    onMenuClearGrid: handleMenuClearGrid,
-    onGetDebugInfo: handleGetDebugInfo,
-  });
-
   const searchSummary = lastSearchSummary || provider.label;
 
   const handleMediaTypeChange = (type: MediaType) => {
@@ -698,61 +192,27 @@ const MediaSearch: React.FC = () => {
     );
   }, []);
 
-  useEffect(() => {
-    const windowWithTestApi = window as WindowWithTestApi;
+  const handleClearGrid = useCallback(() => {
+    clearGridAndPersist('CLEAR: Grid cleared via hamburger menu');
+  }, [clearGridAndPersist]);
 
-    const testApi: TestApplicationApi = {
-      setMediaType: (mediaType) => {
-        setSelectedMediaType(mediaType);
-      },
-      search: (values, mediaType) =>
-        runSearch(values ?? {}, mediaType ?? selectedMediaType),
-      applySearchResults: () => {
-        // No-op: search results are now managed by the hook
-      },
-      addMedia: (media, availableCovers) => {
-        handleAddMedia(media, availableCovers);
-      },
-      removeMedia: (mediaId) => {
-        handleRemoveMedia(mediaId);
-      },
-      clearGrid: handleClearGrid,
-      getGridItems: () => gridItems.map((item) => ({ ...item })),
-      getStoredGridItems: () => {
-        const stored = localStorage.getItem(GRID_STORAGE_KEY);
-        if (!stored) return [];
-        try {
-          const parsed = JSON.parse(stored) as MediaItem[];
-          return Array.isArray(parsed) ? parsed : [];
-        } catch {
-          return [];
-        }
-      },
-      setBuilderMode: handleBuilderModeToggle,
-      getBuilderMode: () => isBuilderMode,
-      getSearchValues: () => searchValues,
-      setLayoutDimension: (dimension) => setLayoutDimension(dimension),
-      getLayoutDimension: () => layoutDimension,
-    };
-
-    windowWithTestApi.appTestApi = testApi;
-    return () => {
-      delete windowWithTestApi.appTestApi;
-    };
-  }, [
+  useSearchBridges({
     gridItems,
-    handleAddMedia,
-    handleBuilderModeToggle,
-    handleClearGrid,
-    handleRemoveMedia,
+    gridCapacity: GRID_CAPACITY,
     isBuilderMode,
+    searchValues,
+    provider,
+    selectedMediaType,
     layoutDimension,
     runSearch,
-    searchValues,
-    selectedMediaType,
-    setLayoutDimension,
     setSelectedMediaType,
-  ]);
+    setLayoutDimension,
+    handleAddMedia,
+    handleRemoveMedia,
+    clearGridAndPersist,
+    handleBuilderModeToggle,
+    handleClearGrid,
+  });
 
   const searchSectionClassName = `search-section ${isBuilderMode ? 'builder-mode' : 'presentation-mode'}`;
   const searchModuleClassName = `search-module ${isBuilderMode ? 'builder-mode' : 'presentation-mode'}`;
@@ -842,186 +302,45 @@ const MediaSearch: React.FC = () => {
           </div>
           {searchIsLoading && <p>Loading...</p>}
           {searchError && <p className="error">{searchError}</p>}
-          {showPosterGrid &&
-            activePosterItem &&
-            (coverViewMode === 'carousel' ? (
-              <Carousel
-                urls={alternateCoverUrls}
-                mediaTitle={activePosterItem.title}
-                onSelectCover={(url) => {
-                  logger.info(
-                    `POSTER: Selected alternate poster from carousel`,
-                    {
-                      context: 'Carousel',
-                      action: 'poster_change',
-                      posterPath: url,
-                      timestamp: Date.now(),
-                    },
-                  );
-                  handleSelectAlternatePoster(url);
-                }}
-                onClose={handleClosePosterGrid}
-              />
-            ) : (
-              <div className="search-results poster-picker">
-                <button
-                  type="button"
-                  className="search-close-button"
-                  onClick={handleClosePosterGrid}
-                  aria-label="Close alternate covers"
-                >
-                  <MdClose aria-hidden="true" focusable="false" />
-                </button>
-                <h3 className="search-results-subtitle">
-                  Alternate covers
-                  {activePosterItem ? ` - ${activePosterItem.title}` : ''}
-                </h3>
-                <div className="poster-picker-grid">
-                  {alternateCoverUrls.length === 0 ? (
-                    <div className="poster-picker-empty">
-                      No alternate covers
-                    </div>
-                  ) : (
-                    alternateCoverUrls.map((url, index) => (
-                      <button
-                        key={url}
-                        type="button"
-                        className="poster-picker-card"
-                        onClick={() => {
-                          logger.info(
-                            `POSTER: Selected alternate poster ${index + 1}`,
-                            {
-                              context: 'Grid2x2.onSelectAlternatePoster',
-                              action: 'poster_change',
-                              posterIndex: index + 1,
-                              posterPath: url,
-                              timestamp: Date.now(),
-                            },
-                          );
-                          handleSelectAlternatePoster(url);
-                        }}
-                        aria-label={`Use alternate cover ${index + 1}`}
-                      >
-                        <img
-                          src={url}
-                          alt={`Alternate cover ${index + 1}`}
-                          className="poster-picker-image"
-                        />
-                      </button>
-                    ))
-                  )}
-                </div>
-              </div>
-            ))}
+          {showPosterGrid && activePosterItem && (
+            <PosterPicker
+              coverViewMode={coverViewMode}
+              urls={alternateCoverUrls}
+              mediaTitle={activePosterItem.title}
+              onClose={handleClosePosterGrid}
+              onSelectCarouselCover={(url) => {
+                logger.info(`POSTER: Selected alternate poster from carousel`, {
+                  context: 'Carousel',
+                  action: 'poster_change',
+                  posterPath: url,
+                  timestamp: Date.now(),
+                });
+                handleSelectAlternatePoster(url);
+              }}
+              onSelectGridCover={(url, index) => {
+                logger.info(`POSTER: Selected alternate poster ${index + 1}`, {
+                  context: 'Grid2x2.onSelectAlternatePoster',
+                  action: 'poster_change',
+                  posterIndex: index + 1,
+                  posterPath: url,
+                  timestamp: Date.now(),
+                });
+                handleSelectAlternatePoster(url);
+              }}
+            />
+          )}
           {!showPosterGrid &&
             searchResults.length > 0 &&
             selectedMediaType !== 'custom' && (
-              <div className="search-results">
-                <button
-                  type="button"
-                  className="search-close-button"
-                  onClick={closeSearchResults}
-                  aria-label="Close search results"
-                >
-                  <MdClose aria-hidden="true" focusable="false" />
-                </button>
-                <h3 className="search-results-subtitle">
-                  Results for: "
-                  {searchSummary.length > 40
-                    ? `${searchSummary.substring(0, 40)}...`
-                    : searchSummary}
-                  "
-                </h3>
-                <div className="search-results-grid">
-                  {searchResults.map((result) => {
-                    const imdbId =
-                      typeof result.metadata?.imdb_id === 'string'
-                        ? result.metadata.imdb_id
-                        : undefined;
-                    const externalLinks = getExternalLinks(
-                      result,
-                      selectedMediaType,
-                      imdbId,
-                    );
-
-                    return (
-                      <button
-                        key={result.id}
-                        type="button"
-                        className="search-result-card"
-                        data-media-id={result.id}
-                        data-media-title={result.title}
-                        onClick={() => handleAddMedia(result, searchResults)}
-                        aria-label={`Add ${result.title}`}
-                      >
-                        {result.coverThumbnailUrl || result.coverUrl ? (
-                          <img
-                            src={
-                              result.coverThumbnailUrl || result.coverUrl || ''
-                            }
-                            alt={`${result.title} cover`}
-                            className="search-result-poster-large"
-                            onLoad={(e) =>
-                              handleSearchResultImageLoad(result.id, e)
-                            }
-                            style={
-                              searchResultAspectRatios[result.id]
-                                ? {
-                                    aspectRatio:
-                                      searchResultAspectRatios[result.id],
-                                  }
-                                : undefined
-                            }
-                          />
-                        ) : (
-                          <div className="search-result-placeholder large">
-                            No cover
-                          </div>
-                        )}
-                        <div className="search-result-meta">
-                          <div className="search-result-title">
-                            <span className="search-result-name">
-                              {result.title}
-                            </span>
-                            {result.subtitle && (
-                              <span className="search-result-subtitle">
-                                {result.subtitle}
-                              </span>
-                            )}
-                          </div>
-                          {result.year && (
-                            <span className="search-result-year">
-                              {result.year}
-                            </span>
-                          )}
-                        </div>
-                        {externalLinks.length > 0 && (
-                          <div className="search-result-badges">
-                            {externalLinks.map((link) => (
-                              <a
-                                key={link.href}
-                                href={link.href}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="search-badge"
-                                aria-label={link.label}
-                                onClick={(event) => event.stopPropagation()}
-                              >
-                                <img
-                                  src={`https://www.google.com/s2/favicons?sz=32&domain=${link.domain}`}
-                                  alt=""
-                                  aria-hidden="true"
-                                />
-                                <span>{link.label}</span>
-                              </a>
-                            ))}
-                          </div>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
+              <SearchResults
+                results={searchResults}
+                mediaType={selectedMediaType}
+                searchSummary={searchSummary}
+                aspectRatios={searchResultAspectRatios}
+                onClose={closeSearchResults}
+                onAdd={handleAddMedia}
+                onPosterLoad={handleSearchResultImageLoad}
+              />
             )}
         </div>
       </div>
