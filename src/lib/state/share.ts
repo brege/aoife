@@ -41,6 +41,7 @@ type UseShareStateReturn = {
   isSharing: boolean;
   isLoadingShare: boolean;
   handleCreateShare: () => Promise<void>;
+  resetShareContext: () => void;
 };
 
 export const useShareState = (
@@ -275,11 +276,22 @@ export const useShareState = (
     }
   }, [columns, gridItems, layoutDimension, minRows, title]);
 
+  const resetShareContext = useCallback(() => {
+    setShareError('');
+    setShareUrl('');
+    setTitle(DEFAULT_TITLE);
+
+    const url = new URL(window.location.href);
+    url.searchParams.delete(SHARE_QUERY_PARAM);
+    window.history.replaceState(null, '', url.toString());
+  }, [setTitle]);
+
   return {
     shareUrl,
     shareError,
     isSharing,
     isLoadingShare,
     handleCreateShare,
+    resetShareContext,
   };
 };

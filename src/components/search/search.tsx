@@ -75,21 +75,27 @@ const MediaSearch: React.FC = () => {
     () => gridItems.find((item) => item.id === activePosterItemId) ?? null,
     [gridItems, activePosterItemId],
   );
-  const { shareUrl, shareError, isSharing, isLoadingShare, handleCreateShare } =
-    useShareState({
-      columns,
-      minRows,
-      layoutDimension,
-      gridItems,
-      title,
-      isHydrated: isIndexedDbHydrated,
-      setColumns,
-      setMinRows,
-      setLayoutDimension,
-      setGridItems,
-      setTitle,
-      setIsHydrated: setIsIndexedDbHydrated,
-    });
+  const {
+    shareUrl,
+    shareError,
+    isSharing,
+    isLoadingShare,
+    handleCreateShare,
+    resetShareContext,
+  } = useShareState({
+    columns,
+    minRows,
+    layoutDimension,
+    gridItems,
+    title,
+    isHydrated: isIndexedDbHydrated,
+    setColumns,
+    setMinRows,
+    setLayoutDimension,
+    setGridItems,
+    setTitle,
+    setIsHydrated: setIsIndexedDbHydrated,
+  });
 
   const {
     handleAddMedia,
@@ -148,13 +154,14 @@ const MediaSearch: React.FC = () => {
   const clearGridAndPersist = useCallback(
     (source: string) => {
       clearGrid();
+      resetShareContext();
       logger.info(source, {
         context: 'MediaSearch.clearGridAndPersist',
         action: 'grid_cleared',
         timestamp: Date.now(),
       });
     },
-    [clearGrid],
+    [clearGrid, resetShareContext],
   );
 
   useEffect(() => {
