@@ -87,7 +87,7 @@ def generate_slug(existing: set[str]) -> str:
 @app.after_request
 def set_csp_header(response):
     response.headers["Content-Security-Policy"] = (
-        "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; connect-src 'self' https://api.themoviedb.org https://musicbrainz.org https://thegamesdb.net https://api.thegamesdb.net https://coverartarchive.org https://itunes.apple.com https://api.deezer.com https://openlibrary.org https://www.googleapis.com https://archive.org; font-src 'self' data:"
+        "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; connect-src 'self' https://api.themoviedb.org https://musicbrainz.org https://thegamesdb.net https://api.thegamesdb.net https://coverartarchive.org https://itunes.apple.com https://openlibrary.org https://www.googleapis.com https://archive.org https://*.archive.org; font-src 'self' data:"
     )
     return response
 

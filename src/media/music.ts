@@ -7,7 +7,6 @@ interface CoverArtSource {
   priority: number;
   getCoverUrl(release: MusicBrainzRelease): Promise<string | null>;
   getThumbnailUrl(release: MusicBrainzRelease): Promise<string | null>;
-  checkAvailability?(release: MusicBrainzRelease): Promise<boolean>;
 }
 
 interface MusicBrainzRelease {
@@ -58,22 +57,6 @@ class CoverArtArchiveSource implements CoverArtSource {
   async getThumbnailUrl(release: MusicBrainzRelease): Promise<string | null> {
     return `https://coverartarchive.org/release/${release.id}/front-250`;
   }
-
-  async checkAvailability(release: MusicBrainzRelease): Promise<boolean> {
-    try {
-      const response = await axios.head(
-        `https://coverartarchive.org/release/${release.id}/front`,
-        {
-          timeout: 1500,
-          maxRedirects: 1,
-          validateStatus: (s) => s < 500,
-        },
-      );
-      return response.status === 200 || response.status === 307;
-    } catch {
-      return false;
-    }
-  }
 }
 
 class ReleaseGroupCoverArtArchiveSource implements CoverArtSource {
@@ -94,27 +77,6 @@ class ReleaseGroupCoverArtArchiveSource implements CoverArtSource {
       return null;
     }
     return `https://coverartarchive.org/release-group/${releaseGroupId}/front-250`;
-  }
-
-  async checkAvailability(release: MusicBrainzRelease): Promise<boolean> {
-    const releaseGroupId = release['release-group']?.id;
-    if (!releaseGroupId) {
-      return false;
-    }
-
-    try {
-      const response = await axios.head(
-        `https://coverartarchive.org/release-group/${releaseGroupId}/front`,
-        {
-          timeout: 1500,
-          maxRedirects: 1,
-          validateStatus: (s) => s < 500,
-        },
-      );
-      return response.status === 200 || response.status === 307;
-    } catch {
-      return false;
-    }
   }
 }
 
@@ -196,58 +158,10 @@ class iTunesSource implements CoverArtSource {
   }
 }
 
-class DeezerSource implements CoverArtSource {
-  name = 'Deezer';
-  priority = 4;
-
-  async getCoverUrl(release: MusicBrainzRelease): Promise<string | null> {
-    const artist = release['artist-credit']?.[0]?.name;
-    const album = release.title;
-    if (!artist || !album) return null;
-
-    try {
-      const response = await axios.get<{
-        data: Array<{
-          cover_big?: string;
-          cover_xl?: string;
-        }>;
-      }>('https://api.deezer.com/search/album', {
-        params: { q: `artist:"${artist}" album:"${album}"`, limit: 1 },
-        timeout: 3000,
-      });
-
-      const result = response.data.data[0];
-      return result?.cover_xl || result?.cover_big || null;
-    } catch {
-      return null;
-    }
-  }
-
-  async getThumbnailUrl(release: MusicBrainzRelease): Promise<string | null> {
-    const artist = release['artist-credit']?.[0]?.name;
-    const album = release.title;
-    if (!artist || !album) return null;
-
-    try {
-      const response = await axios.get<{
-        data: Array<{ cover_medium?: string }>;
-      }>('https://api.deezer.com/search/album', {
-        params: { q: `artist:"${artist}" album:"${album}"`, limit: 1 },
-        timeout: 3000,
-      });
-
-      return response.data.data[0]?.cover_medium || null;
-    } catch {
-      return null;
-    }
-  }
-}
-
 const defaultSources: CoverArtSource[] = [
   new CoverArtArchiveSource(),
   new ReleaseGroupCoverArtArchiveSource(),
   new iTunesSource(),
-  new DeezerSource(),
 ].sort((a, b) => a.priority - b.priority);
 
 export class MusicService extends MediaService {
@@ -401,21 +315,15 @@ export class MusicService extends MediaService {
         let coverSource: string | null = null;
 
         for (const source of this.sources) {
-          try {
-            const url = await source.getCoverUrl(release);
-            if (url) {
-              if (source.checkAvailability) {
-                const available = await source.checkAvailability(release);
-                if (!available) {
-                  continue;
-                }
-              }
-              coverUrl = url;
-              thumbnailUrl = await source.getThumbnailUrl(release);
-              coverSource = source.name;
-              break;
-            }
-          } catch {}
+          const url = await source.getCoverUrl(release);
+          if (!url) {
+            continue;
+          }
+
+          coverUrl = url;
+          thumbnailUrl = await source.getThumbnailUrl(release);
+          coverSource = source.name;
+          break;
         }
 
         return {

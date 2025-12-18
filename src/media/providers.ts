@@ -84,7 +84,7 @@ const musicProvider: MediaProviderConfig = {
   id: 'musicbrainz',
   label: 'Music',
   description:
-    'Search albums via MusicBrainz. Cover art from Cover Art Archive, iTunes, Deezer.',
+    'Search albums via MusicBrainz. Cover art from Cover Art Archive and iTunes.',
   resultLabel: 'album',
   searchFields: [
     {

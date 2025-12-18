@@ -1,5 +1,14 @@
 # Changelog
 
+## 2025-12-18
+
+- Updated screenshots, README, and favicon to cover new features
+- Made music art finding more accurate with archive.org and iTunes refinement
+- Null titles (accidents) are reset to 'aoife'
+- Made dropdowns drop 'up' on mobile layouts
+- Further timeout refinements in tests for GamesDB API calls
+- Trash/clear now nips the URL slug and resets the title
+
 ## 2025-12-17
 
 - Contained and templated gunicorn setup for production server
@@ -11,7 +20,8 @@
 - Added favicon and extended biome linting to all TypeScript files
 - Change "share" in HTML attrbutes so copy-link isn't clobbered by uBlock's social filter
 - Add swipability as alternative to grid-based poster selection
-- Refactored search module and Vite configuration for better code mantainability
+- Refactored search module and Vite configuration for better code maintainability
+- Finish all code-hygiene tasks that extract state handlers into own modules
 
 ## 2025-12-16
 
