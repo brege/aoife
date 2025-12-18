@@ -19,18 +19,17 @@ Ever wanted to share a screenshot of your favorite things you read, saw or watch
 <table>
   <tr><td colspan="3"><b>Mobile</b></td></tr>
   <tr>
-    <td><img src="docs/img/mobile-albums.png" width="180"></td>
-    <td><img src="docs/img/mobile-films-builder.png" width="180"></td>
-    <td><img src="docs/img/mobile-films.png" width="180"></td>
+    <td><img src="docs/img/mobile-single.png" width="180"></td>
+    <td><img src="docs/img/mobile-options.png" width="180"></td>
+    <td><img src="docs/img/mobile-present.png" width="180"></td>
   </tr>
 </table>
 <br>
 <table>
   <tr><td colspan="3"><b>Desktop</b></td></tr>
   <tr>
-    <td><img src="docs/img/desktop-options.png" width="282"></td>
-    <td><img src="docs/img/desktop-builder.png" width="283"></td>
-    <td><img src="docs/img/desktop-custom.png" width="283"></td>
+    <td><img src="docs/img/desktop-edit.png" width="282"></td>
+    <td><img src="docs/img/desktop-types.png" width="283"></td>
   </tr>
 </table>
 
