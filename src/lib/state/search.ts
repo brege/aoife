@@ -1,13 +1,17 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { getMediaService } from '../media/factory';
-import { getMediaProvider } from '../media/providers';
-import type { MediaItem, MediaSearchValues, MediaType } from '../media/types';
-import logger from './logger';
+import { getMediaService } from '../../media/factory';
+import { getMediaProvider } from '../../media/providers';
+import type {
+  MediaItem,
+  MediaSearchValues,
+  MediaType,
+} from '../../media/types';
+import logger from '../logger';
 
 const constrainAspectRatio = (aspectRatio: number): number => {
-  const MIN_RATIO = 0.5;
-  const MAX_RATIO = 2;
-  return Math.max(MIN_RATIO, Math.min(MAX_RATIO, aspectRatio));
+  const minimumRatio = 0.5;
+  const maximumRatio = 2;
+  return Math.max(minimumRatio, Math.min(maximumRatio, aspectRatio));
 };
 
 type UseSearchStateOptions = {
@@ -35,9 +39,7 @@ export type UseSearchStateReturn = {
   closeSearchResults: () => void;
   provider: ReturnType<typeof getMediaProvider>;
   searchInputRef: React.RefObject<HTMLInputElement>;
-  /** @internal - for grid operations */
   setSearchResults: (results: MediaItem[]) => void;
-  /** @internal - for grid operations */
   setSearchValues: (
     values:
       | MediaSearchValues
@@ -82,7 +84,7 @@ export const useSearchState = (
         ...values,
       };
       return Object.fromEntries(
-        Object.entries(merged).filter(([, v]) => v !== undefined),
+        Object.entries(merged).filter(([, value]) => value !== undefined),
       ) as MediaSearchValues;
     },
     [resolveProvider],
@@ -173,9 +175,10 @@ export const useSearchState = (
       resultId: string | number,
       event: React.SyntheticEvent<HTMLImageElement>,
     ) => {
-      const img = event.currentTarget;
-      if (img.naturalWidth > 0 && img.naturalHeight > 0) {
-        const aspectRatio = img.naturalWidth / img.naturalHeight;
+      const imageElement = event.currentTarget;
+      if (imageElement.naturalWidth > 0 && imageElement.naturalHeight > 0) {
+        const aspectRatio =
+          imageElement.naturalWidth / imageElement.naturalHeight;
         const constrainedRatio = constrainAspectRatio(aspectRatio);
         setSearchResultAspectRatios((prev) => ({
           ...prev,
