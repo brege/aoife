@@ -1,51 +1,59 @@
-import type { IncomingMessage } from 'node:http';
+import type { IncomingMessage, ServerResponse } from 'node:http';
 import https from 'node:https';
 import { URL } from 'node:url';
-import { getReactClient } from './websocket';
 import {
+  generateSlug,
   loadShareStore,
+  loadSlugWords,
   persistShareStore,
   validateAndCanonicalizeSharePayload,
-  generateSlug,
-  loadSlugWords,
 } from './share';
+import { getReactClient } from './websocket';
+
+type NextFunction = (error?: unknown) => void;
 
 const getTmdbKey = (env: Record<string, string>) =>
   env.VITE_TMDB_API_KEY ||
   process.env.VITE_TMDB_API_KEY ||
   process.env.TMDB_API_KEY;
 
-const GAMESDB_API_KEY = '46deb66fcbd4eb0d8887e1ac84876fe3b6cacfb956312e5d6e3e37d8ef798728';
+const GAMESDB_API_KEY =
+  '46deb66fcbd4eb0d8887e1ac84876fe3b6cacfb956312e5d6e3e37d8ef798728';
 
 export const createApiMiddleware = (env: Record<string, string>) => {
   const gridState: Record<string, unknown>[] = [];
   const shareStore = loadShareStore();
   const slugWords = loadSlugWords();
 
-  return (req: any, res: any, next: any) => {
+  return (req: IncomingMessage, res: ServerResponse, next: NextFunction) => {
     const url = new URL(req.url || '', 'http://localhost');
-    const path = url.pathname.replace(/^\/api/, '');
-    console.log(`[API] ${req.method} ${url.pathname}`);
+    // When mounted at specific paths like /api/games, req.url is relative
+    // When mounted at /api, req.url includes /gamesdb, /games, etc.
+    let path = url.pathname;
+    if (path.startsWith('/api/')) {
+      path = path.replace(/^\/api/, '');
+    }
+    console.log(`[API] ${req.method} ${req.url}`);
 
     if (path === '/search' && req.method === 'GET') {
       const query = url.searchParams.get('q');
       const mediaType = url.searchParams.get('type') || 'movies';
       if (!query) {
         res.writeHead(400, { 'Content-Type': 'application/json' });
-        res.end(
-          JSON.stringify({ error: 'Query parameter "q" is required' }),
-        );
+        res.end(JSON.stringify({ error: 'Query parameter "q" is required' }));
         return;
       }
 
       (async () => {
         try {
           const { getMediaService } = await import('../media/factory');
-          const { getMediaProvider } = await import(
-            '../media/providers'
+          const { getMediaProvider } = await import('../media/providers');
+          const service = getMediaService(
+            mediaType as unknown as Parameters<typeof getMediaService>[0],
           );
-          const service = getMediaService(mediaType as unknown as Parameters<typeof getMediaService>[0]);
-          const provider = getMediaProvider(mediaType as unknown as Parameters<typeof getMediaProvider>[0]);
+          const provider = getMediaProvider(
+            mediaType as unknown as Parameters<typeof getMediaProvider>[0],
+          );
           const primaryField = provider.searchFields[0]?.id || 'query';
           const results = await service.search({ [primaryField]: query });
           res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -58,8 +66,9 @@ export const createApiMiddleware = (env: Record<string, string>) => {
       })();
     } else if (path === '/share' && req.method === 'POST') {
       let body = '';
-      req.on('data', (chunk: any) => {
-        body += chunk.toString();
+      req.setEncoding('utf8');
+      req.on('data', (chunk: string) => {
+        body += chunk;
       });
       req.on('end', () => {
         try {
@@ -78,10 +87,7 @@ export const createApiMiddleware = (env: Record<string, string>) => {
             );
             return;
           }
-          if (
-            typeof parsed.title !== 'string' ||
-            parsed.title.trim() === ''
-          ) {
+          if (typeof parsed.title !== 'string' || parsed.title.trim() === '') {
             res.writeHead(400, { 'Content-Type': 'application/json' });
             res.end(
               JSON.stringify({
@@ -142,8 +148,7 @@ export const createApiMiddleware = (env: Record<string, string>) => {
         JSON.stringify({
           slug,
           payload: record.payload,
-          title:
-            typeof record.title === 'string' ? record.title : undefined,
+          title: typeof record.title === 'string' ? record.title : undefined,
         }),
       );
     } else if (path.startsWith('/tmdb/') && req.method === 'GET') {
@@ -178,8 +183,9 @@ export const createApiMiddleware = (env: Record<string, string>) => {
       });
     } else if (path === '/add' && req.method === 'POST') {
       let body = '';
-      req.on('data', (chunk: any) => {
-        body += chunk.toString();
+      req.setEncoding('utf8');
+      req.on('data', (chunk: string) => {
+        body += chunk;
       });
       req.on('end', () => {
         try {
@@ -352,8 +358,9 @@ export const createApiMiddleware = (env: Record<string, string>) => {
             `);
     } else if (path === '/log-viewport' && req.method === 'POST') {
       let body = '';
-      req.on('data', (chunk: any) => {
-        body += chunk.toString();
+      req.setEncoding('utf8');
+      req.on('data', (chunk: string) => {
+        body += chunk;
       });
       req.on('end', () => {
         try {
@@ -386,8 +393,9 @@ export const createApiMiddleware = (env: Record<string, string>) => {
       });
     } else if (path === '/log' && req.method === 'POST') {
       let body = '';
-      req.on('data', (chunk: any) => {
-        body += chunk.toString();
+      req.setEncoding('utf8');
+      req.on('data', (chunk: string) => {
+        body += chunk;
       });
       req.on('end', () => {
         try {
@@ -422,9 +430,7 @@ export const createApiMiddleware = (env: Record<string, string>) => {
 
       if (!query) {
         res.writeHead(400, { 'Content-Type': 'application/json' });
-        res.end(
-          JSON.stringify({ error: 'Query parameter "q" is required' }),
-        );
+        res.end(JSON.stringify({ error: 'Query parameter "q" is required' }));
         return;
       }
 
@@ -474,9 +480,7 @@ export const createApiMiddleware = (env: Record<string, string>) => {
 
       if (!gameId) {
         res.writeHead(400, { 'Content-Type': 'application/json' });
-        res.end(
-          JSON.stringify({ error: 'Query parameter "id" is required' }),
-        );
+        res.end(JSON.stringify({ error: 'Query parameter "id" is required' }));
         return;
       }
 
@@ -496,14 +500,13 @@ export const createApiMiddleware = (env: Record<string, string>) => {
         .on('error', (err: Error) => {
           console.error('[GAMES IMAGES ERROR]', err);
           res.writeHead(500, { 'Content-Type': 'application/json' });
-          res.end(
-            JSON.stringify({ error: 'Failed to fetch game images' }),
-          );
+          res.end(JSON.stringify({ error: 'Failed to fetch game images' }));
         });
     } else if (path.startsWith('/gamesdb')) {
-      const subpath = url.pathname.replace('/api/gamesdb', '');
+      const gamesdbPrefix = '/gamesdb';
+      const subpath = path.slice(gamesdbPrefix.length) || '/';
       const params = new URLSearchParams(url.search);
-      params.append('apikey', GAMESDB_API_KEY);
+      params.set('apikey', GAMESDB_API_KEY);
 
       const fullUrl = `https://api.thegamesdb.net${subpath}?${params.toString()}`;
 
@@ -523,9 +526,7 @@ export const createApiMiddleware = (env: Record<string, string>) => {
         .on('error', (err: Error) => {
           console.error('[GAMESDB PROXY ERROR]', err);
           res.writeHead(500, { 'Content-Type': 'application/json' });
-          res.end(
-            JSON.stringify({ error: 'Failed to fetch from GamesDB' }),
-          );
+          res.end(JSON.stringify({ error: 'Failed to fetch from GamesDB' }));
         });
     } else {
       next();

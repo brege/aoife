@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { expect } from 'chai';
-import { add, getGrid, remove, search } from './client.js';
+import { add, apiCall, getGrid, remove, search } from './client.js';
 
 loadEnvAliases();
 
@@ -107,5 +107,21 @@ describe('API integration', function () {
     expect(searchResult.statusCode).to.equal(200);
     expect(Array.isArray(searchResult.data)).to.equal(true);
     expect(searchResult.data.length > 0).to.equal(true);
+  });
+
+  it('fetches games platforms through gamesdb proxy', async () => {
+    const response = await apiCall(
+      'GET',
+      '/api/gamesdb/v1/Platforms?page_size=1',
+    );
+
+    if (response.statusCode === 404) {
+      throw new Error(
+        `GamesDB platforms endpoint returned 404: ${JSON.stringify(response.data)}`,
+      );
+    }
+
+    expect(response.statusCode).to.equal(200);
+    expect(typeof response.data).to.equal('object');
   });
 });

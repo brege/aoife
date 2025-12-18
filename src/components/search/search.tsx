@@ -5,6 +5,7 @@ import '../../app/styles/global.css';
 import './search.css';
 import { type CliMenuState, useCliBridge } from '../../lib/api';
 import { getState, storeState } from '../../lib/indexeddb';
+import { useGridOperations } from '../../lib/grid-operations';
 import logger from '../../lib/logger';
 import { useModalClosed, useModalManager } from '../../lib/modalmanager';
 import { createShare, fetchShare } from '../../lib/share';
@@ -362,19 +363,6 @@ const MediaSearch: React.FC = () => {
     }
   }, [provider, isBuilderMode]);
 
-
-  const clearGridAndPersist = useCallback(
-    (source: string) => {
-      setGridItems([]);
-      logger.info(source, {
-        context: 'MediaSearch.clearGridAndPersist',
-        action: 'grid_cleared',
-        timestamp: Date.now(),
-      });
-    },
-    [],
-  );
-
   const buildSharePayload = useCallback((): string => {
     const payload: SharedState = {
       gridItems,
@@ -725,154 +713,44 @@ const MediaSearch: React.FC = () => {
     }));
   }, []);
 
-  const handleAddMedia = useCallback(
-    (media: MediaItem, availableCovers?: MediaItem[]) => {
-      const mediaWithCovers = { ...media };
-
-      if (
-        selectedMediaType === 'custom' &&
-        searchValues.cover?.startsWith('img-')
-      ) {
-        mediaWithCovers.coverUrl = searchValues.cover;
-        mediaWithCovers.coverThumbnailUrl = searchValues.cover;
-      }
-
-      const coversSource = availableCovers ?? searchResults;
-      if (coversSource.length > 0) {
-        const coverUrls = coversSource
-          .map((result) => result.coverUrl || result.coverThumbnailUrl)
-          .filter((url): url is string => Boolean(url));
-        mediaWithCovers.alternateCoverUrls = coverUrls;
-      }
-
-      setGridItems((current) => {
-        const updatedGrid = [...current, mediaWithCovers];
-
-        logger.info(
-          `GRID: Added "${media.title}" to position ${current.length}`,
-          {
-            context: 'MediaSearch.handleAddMedia',
-            action: 'grid_media_added',
-            media: {
-              id: media.id,
-              title: media.title,
-              year: media.year,
-            },
-            position: current.length,
-            gridCount: updatedGrid.length,
-            hasAlternateCovers: Boolean(
-              mediaWithCovers.alternateCoverUrls?.length,
-            ),
-            timestamp: Date.now(),
-          },
-        );
-
-        return updatedGrid;
-      });
-      setSearchResults([]);
-      setSearchValues(provider.defaultSearchValues);
-    },
-    [
-      provider.defaultSearchValues,
-      searchResults,
+  const {
+    handleAddMedia,
+    handleRemoveMedia,
+    handleAspectRatioUpdate,
+    handleSelectAlternatePoster,
+    handleClosePosterGrid,
+    fetchAlternateCovers,
+    clearGrid,
+  } = useGridOperations(
+    {
       selectedMediaType,
       searchValues,
-    ],
+      searchResults,
+      provider,
+      gridItems,
+      activePosterItemId,
+    },
+    {
+      setGridItems,
+      setSearchResults,
+      setSearchValues,
+      setAlternateCoverUrls,
+      setShowPosterGrid,
+      setActivePosterItemId,
+    },
   );
 
-  const handleRemoveMedia = useCallback(
-    (mediaId: string | number) => {
-      setGridItems((current) => {
-        const mediaToRemove = current.find((m) => m.id === mediaId);
-        const removedPosition = current.findIndex((m) => m.id === mediaId);
-        const updatedGrid = current.filter((media) => media.id !== mediaId);
-
-        logger.info(
-          `GRID: Removed "${mediaToRemove?.title || 'unknown'}" from position ${removedPosition}`,
-          {
-            context: 'MediaSearch.handleRemoveMedia',
-            action: 'grid_media_removed',
-            mediaId,
-            position: removedPosition,
-            gridCount: updatedGrid.length,
-            timestamp: Date.now(),
-          },
-        );
-
-        return updatedGrid;
+  const clearGridAndPersist = useCallback(
+    (source: string) => {
+      clearGrid();
+      logger.info(source, {
+        context: 'MediaSearch.clearGridAndPersist',
+        action: 'grid_cleared',
+        timestamp: Date.now(),
       });
     },
-    [],
+    [clearGrid],
   );
-
-  const fetchAlternateCovers = useCallback(
-    async (
-      mediaId: string | number,
-      mediaType: MediaType,
-      storedCovers?: string[],
-    ) => {
-      try {
-        const service = getMediaService(mediaType);
-        const covers = await service.getAlternateCovers(mediaId);
-        if (covers.length > 0) {
-          setAlternateCoverUrls(covers);
-          return;
-        }
-      } catch (err) {
-        logger.error('Failed to fetch alternate covers from API', {
-          context: 'MediaSearch.fetchAlternateCovers',
-          mediaId,
-          mediaType,
-          error: err instanceof Error ? err.message : String(err),
-        });
-      }
-
-      if (storedCovers && storedCovers.length > 0) {
-        setAlternateCoverUrls(storedCovers);
-      } else {
-        setAlternateCoverUrls([]);
-      }
-    },
-    [],
-  );
-
-  const handleClosePosterGrid = () => {
-    logger.info('POSTER: Closing alternate poster grid', {
-      context: 'MediaSearch.handleClosePosterGrid',
-      action: 'poster_grid_close',
-      timestamp: Date.now(),
-    });
-    setShowPosterGrid(false);
-    setActivePosterItemId(null);
-    setAlternateCoverUrls([]);
-  };
-
-  const handleSelectAlternatePoster = (url: string) => {
-    if (!activePosterItemId) return;
-
-    const updatedGrid = gridItems.map((item) =>
-      item.id === activePosterItemId
-        ? { ...item, coverUrl: url, coverThumbnailUrl: url }
-        : item,
-    );
-
-    const updatedItem = updatedGrid.find(
-      (item) => item.id === activePosterItemId,
-    );
-
-    logger.info('POSTER: Applied alternate cover', {
-      context: 'MediaSearch.handleSelectAlternatePoster',
-      action: 'poster_applied',
-      media: updatedItem
-        ? { id: updatedItem.id, title: updatedItem.title }
-        : null,
-      url,
-    });
-
-    setGridItems(updatedGrid);
-    setShowPosterGrid(false);
-    setActivePosterItemId(null);
-  };
 
   useEffect(() => {
     if (showPosterGrid) {
@@ -883,18 +761,6 @@ const MediaSearch: React.FC = () => {
   }, [showPosterGrid, openModal, closeModal]);
 
   useModalClosed('posterGrid', handleClosePosterGrid);
-
-  const handleAspectRatioUpdate = useCallback(
-    (mediaId: string | number, aspectRatio: number) => {
-      setGridItems((current) => {
-        const updated = current.map((item) =>
-          item.id === mediaId ? { ...item, aspectRatio } : item,
-        );
-        return updated;
-      });
-    },
-    [],
-  );
 
   const handleCliSearch = async (query: string, mediaType?: string) => {
     if (!query) return;
