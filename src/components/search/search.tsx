@@ -4,11 +4,18 @@ import { MdClose } from 'react-icons/md';
 import '../../app/styles/global.css';
 import './search.css';
 import { type CliMenuState, useCliBridge } from '../../lib/api';
-import { getState, storeState } from '../../lib/indexeddb';
+import { storeState } from '../../lib/indexeddb';
 import { useGridOperations } from '../../lib/grid-operations';
 import logger from '../../lib/logger';
 import { useModalClosed, useModalManager } from '../../lib/modalmanager';
-import { createShare, fetchShare } from '../../lib/share';
+import {
+  buildSharePayload,
+  createShare,
+  INDEXEDDB_SHARE_PREFIX,
+  loadShare,
+  SHARE_QUERY_PARAM,
+  type SharedState,
+} from '../../lib/share';
 import {
   COLUMNS_STORAGE_KEY,
   COVER_VIEW_STORAGE_KEY,
@@ -18,7 +25,6 @@ import {
   INDEXEDDB_COLUMNS_KEY,
   INDEXEDDB_LAYOUT_DIMENSION_KEY,
   INDEXEDDB_MIN_ROWS_KEY,
-  INDEXEDDB_SHARE_PREFIX,
   LAYOUT_DIMENSION_STORAGE_KEY,
   MIN_ROWS_STORAGE_KEY,
   persistAppState,
@@ -38,19 +44,6 @@ import { MediaForm } from './mediaform';
 import Carousel from './carousel';
 
 const GRID_CAPACITY = 4;
-const SHARE_QUERY_PARAM = 'share';
-
-type SharedState = {
-  gridItems: MediaItem[];
-  columns: number;
-  minRows: number;
-  layoutDimension: 'width' | 'height';
-};
-
-type ShareCacheRecord = {
-  payload: string;
-  title?: string;
-};
 
 type TestApplicationApi = {
   setMediaType: (mediaType: MediaType) => void;
@@ -363,37 +356,8 @@ const MediaSearch: React.FC = () => {
     }
   }, [provider, isBuilderMode]);
 
-  const buildSharePayload = useCallback((): string => {
-    const payload: SharedState = {
-      gridItems,
-      columns,
-      minRows,
-      layoutDimension,
-    };
-    return JSON.stringify(payload);
-  }, [columns, gridItems, layoutDimension, minRows]);
-
   const applySharedState = useCallback(
     (state: SharedState, slug: string, sharedTitle: string) => {
-      if (!Array.isArray(state.gridItems)) {
-        throw new Error('Shared state is missing grid items');
-      }
-      if (typeof state.columns !== 'number' || Number.isNaN(state.columns)) {
-        throw new Error('Shared state columns value is invalid');
-      }
-      if (typeof state.minRows !== 'number' || Number.isNaN(state.minRows)) {
-        throw new Error('Shared state minRows value is invalid');
-      }
-      if (
-        state.layoutDimension !== 'width' &&
-        state.layoutDimension !== 'height'
-      ) {
-        throw new Error('Shared state layout dimension is invalid');
-      }
-      if (typeof sharedTitle !== 'string' || sharedTitle.trim() === '') {
-        throw new Error('Shared state title is invalid');
-      }
-
       setColumns(state.columns);
       setMinRows(state.minRows);
       setLayoutDimension(state.layoutDimension);
@@ -415,85 +379,28 @@ const MediaSearch: React.FC = () => {
     [],
   );
 
-  const loadShare = useCallback(
+  const handleLoadShare = useCallback(
     async (slug: string) => {
       setIsLoadingShare(true);
       setShareError('');
       try {
-        const response = await fetchShare(slug);
-        const cacheRecord: ShareCacheRecord = {
-          payload: response.payload,
-          title: response.title,
-        };
-        await storeState(
-          `${INDEXEDDB_SHARE_PREFIX}${slug}`,
-          JSON.stringify(cacheRecord),
-        );
-        const parsed = JSON.parse(response.payload) as SharedState;
-        if (!parsed || typeof parsed !== 'object') {
-          throw new Error('Share payload is invalid');
-        }
-        const sharedTitle =
-          typeof response.title === 'string' && response.title.trim() !== ''
-            ? response.title
-            : DEFAULT_TITLE;
-        applySharedState(parsed, slug, sharedTitle);
+        const result = await loadShare(slug, DEFAULT_TITLE);
+        applySharedState(result.state, result.slug, result.title);
         logger.info('SHARE: Loaded shared grid', {
-          context: 'MediaSearch.loadShare',
+          context: 'MediaSearch.handleLoadShare',
           action: 'share_load',
           slug,
           timestamp: Date.now(),
         });
       } catch (err) {
-        try {
-          const cached = await getState(`${INDEXEDDB_SHARE_PREFIX}${slug}`);
-          if (!cached) {
-            throw err;
-          }
-          let cachedTitle = DEFAULT_TITLE;
-          let cachedPayload = cached;
-          try {
-            const parsedCache = JSON.parse(cached) as ShareCacheRecord;
-            if (
-              parsedCache &&
-              typeof parsedCache === 'object' &&
-              typeof parsedCache.payload === 'string'
-            ) {
-              cachedPayload = parsedCache.payload;
-              if (
-                typeof parsedCache.title === 'string' &&
-                parsedCache.title.trim() !== ''
-              ) {
-                cachedTitle = parsedCache.title;
-              }
-            }
-          } catch {
-            cachedPayload = cached;
-          }
-
-          const parsed = JSON.parse(cachedPayload) as SharedState;
-          if (!parsed || typeof parsed !== 'object') {
-            throw new Error('Cached share payload is invalid');
-          }
-          applySharedState(parsed, slug, cachedTitle);
-          logger.info('SHARE: Loaded shared grid from cache', {
-            context: 'MediaSearch.loadShare',
-            action: 'share_load_cached',
-            slug,
-            timestamp: Date.now(),
-          });
-        } catch (cacheError) {
-          const message =
-            cacheError instanceof Error
-              ? cacheError.message
-              : String(cacheError);
-          setShareError(message);
-          logger.error('SHARE: Failed to load shared grid', {
-            context: 'MediaSearch.loadShare',
-            slug,
-            error: message,
-          });
-        }
+        const message =
+          err instanceof Error ? err.message : String(err);
+        setShareError(message);
+        logger.error('SHARE: Failed to load shared grid', {
+          context: 'MediaSearch.handleLoadShare',
+          slug,
+          error: message,
+        });
       } finally {
         setIsLoadingShare(false);
       }
@@ -543,8 +450,8 @@ const MediaSearch: React.FC = () => {
     if (!initialShareSlugRef.current) {
       return;
     }
-    loadShare(initialShareSlugRef.current);
-  }, [loadShare]);
+    handleLoadShare(initialShareSlugRef.current);
+  }, [handleLoadShare]);
 
   const { openModal, closeModal } = useModalManager();
 
@@ -660,12 +567,17 @@ const MediaSearch: React.FC = () => {
     setShareError('');
 
     try {
-      const payload = buildSharePayload();
+      const shareState: SharedState = {
+        gridItems,
+        columns,
+        minRows,
+        layoutDimension,
+      };
+      const payload = buildSharePayload(shareState);
       const response = await createShare(payload, title);
-      const cacheRecord: ShareCacheRecord = { payload, title };
       await storeState(
         `${INDEXEDDB_SHARE_PREFIX}${response.slug}`,
-        JSON.stringify(cacheRecord),
+        JSON.stringify({ payload, title }),
       );
       const url = new URL(window.location.href);
       url.searchParams.set(SHARE_QUERY_PARAM, response.slug);
@@ -694,9 +606,8 @@ const MediaSearch: React.FC = () => {
       setIsSharing(false);
     }
   }, [
-    buildSharePayload,
     columns,
-    gridItems.length,
+    gridItems,
     layoutDimension,
     minRows,
     title,

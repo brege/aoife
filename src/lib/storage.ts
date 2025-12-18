@@ -13,7 +13,6 @@ export const INDEXEDDB_COLUMNS_KEY = 'gridColumns';
 export const INDEXEDDB_MIN_ROWS_KEY = 'gridMinRows';
 export const INDEXEDDB_LAYOUT_DIMENSION_KEY = 'layoutDimension';
 export const INDEXEDDB_TITLE_KEY = 'gridTitle';
-export const INDEXEDDB_SHARE_PREFIX = 'share:';
 export const DEFAULT_TITLE = 'aoife';
 
 export const useStorageSync = (
