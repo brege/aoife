@@ -7,13 +7,24 @@
 - CSS Grid for responsive layouts
 - Cypress layers for AI-development and testing
 - Biome for linting, formatting, and type checking
+- Ruff for backend python linting
+- Mocha for test orchestration
 
 ### APIs
 
 - TMDB API for movie/TV data
-- Musicbrainz API for music
+- MusicBrainz, iTunes, and CoverArtArchive for music
 - OpenLibrary and Google Books APIs for books
-- Many more to be added
+- TheGamesDB for video games
+
+| Media Types  | APIs                                        |
+|:-------------|:--------------------------------------------|
+| movies       | TMDb                                        |
+| TV shows     | TMDb                                        |
+| books        | OpenLibrary, Google Books                   |
+| music albums | MusicBrainz, iTunes, CoverArtArchive        |
+| video games  | TheGamesDB                                  |
+| custom media | Manual Upload, URL upload                   |
 
 ### Commands
 
@@ -21,6 +32,7 @@
 npm run dev     # start development server
 npm run build   # build for production
 npm run lint    # run biome linter
+npm run test    # run all tests (:e2e, :integration)
 ```
 
 ### API Endpoints
@@ -85,11 +97,17 @@ curl -s https://flavorpair.me/data/flavor/nodes.json \
   > src/lib/slugs.json
 ```
 
-Inspecting the Shared URL database:
+Inspecting the Shared URL database remotely:
 
 ```bash
 ./inspect -h
 #  inspect [-s <slug-fragment> | -n <count>] [-r | -f <path>]
 ```
 
-This will be migrated to a SQL db once development has stabalized.
+Examples:
+```bash
+./inspect -s chanterelle -r       # urls slugs containing 'chanterelle' on remote
+./inspect -n 10 -f                # last 10 urls generated (local json)
+```
+
+I will be migrating from JSON storage to a SQL database once development has stabilized.

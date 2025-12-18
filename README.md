@@ -40,7 +40,7 @@ Ever wanted to share a screenshot of your favorite things you read, saw or watch
 
 ### Share URLs
 
-URLs have memorable slugs so it's easier to manual copy between devices.  From the screenshots above:
+URLs have memorable slugs so it's easier to manually copy between devices.  From the screenshots above:
 
 **Music Albums** [?share=guava-buttermilk-savory](https://aoife.brege.org/?share=guava-buttermilk-savory)
 
