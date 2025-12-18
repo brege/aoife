@@ -3,7 +3,7 @@
 ### Infrastructure
 
 - React + TypeScript
-- Vite for build and development
+- Vite for build and development; Gunicorn for production
 - CSS Grid for responsive layouts
 - Cypress layers for AI-development and testing
 - Biome for linting, formatting, and type checking
@@ -12,7 +12,7 @@
 
 - TMDB API for movie/TV data
 - Musicbrainz API for music
-- OpenLibrary and Google Books API's books
+- OpenLibrary and Google Books APIs for books
 - Many more to be added
 
 ### Commands
@@ -59,28 +59,21 @@ curl -X DELETE http://localhost:8080/api/clear
 
 ### Test Coverage Matrix
 
-Current tests:
-- `grid_operations`:
-  - add custom item with id 123
-  - add second custom item with id 456
-  - fetch grid with two items
-  - remove first item
-  - fetch grid with one item
-  - remove missing item and expect 404
-- `search_and_add_workflows`:
-  - search movies on TMDB
-  - search movies and add first result to grid
-  - search TV shows on TMDB
+Current tests (YAML-driven workflows):
+- `grid_operations`: add, remove, retrieve operations with custom items
+- `search_and_add_workflows`: TMDB search (movies, TV) and add-from-search
+- `layout_dimension`: layout toggle between fixed width and height
+- `grid_persistence`: verify grid clears and persists across reload
 
 Coverage (✔ = covered, ○ = missing):
-| Media type | Search | Add from search | Add custom | Remove | Grid fetch |
-| ---------- | ------ | --------------- | ---------- | ------ | ---------- |
-| Movies     | ✔ | ✔ | ○ | ○ | ○ |
-| TV         | ✔ | ○ | ○ | ○ | ○ |
-| Custom     | ○ | ○ | ✔ | ✔ | ✔ |
-| Books      | ○ | ○ | ○ | ○ | ○ |
-| Music      | ○ | ○ | ○ | ○ | ○ |
-| Games      | ○ | ○ | ○ | ○ | ○ |
+| Media type | Search | Add from search | Add custom | Remove | Grid fetch | Persistence |
+| ---------- | ------ | --------------- | ---------- | ------ | ---------- | ----------- |
+| Movies     | ✔ | ✔ | ✔ | ✔ | ✔ | ✔ |
+| TV         | ✔ | ○ | ✔ | ✔ | ✔ | ○ |
+| Custom     | ○ | ○ | ✔ | ✔ | ✔ | ✔ |
+| Music      | ○ | ○ | ✔ | ○ | ○ | ○ |
+| Books      | ○ | ○ | ○ | ○ | ○ | ○ |
+| Games      | ○ | ○ | ○ | ○ | ○ | ○ |
 
 ### slugs.json
 
@@ -92,3 +85,11 @@ curl -s https://flavorpair.me/data/flavor/nodes.json \
   > src/lib/slugs.json
 ```
 
+Inspecting the Shared URL database:
+
+```bash
+./inspect -h
+#  inspect [-s <slug-fragment> | -n <count>] [-r | -f <path>]
+```
+
+This will be migrated to a SQL db once development has stabalized.
