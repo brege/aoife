@@ -8,8 +8,8 @@ import {
   PiMusicNotesFill,
   PiTelevisionSimpleBold,
 } from 'react-icons/pi';
-import type { MediaType } from '../../media/types';
 import { useOutside } from '../../lib/escape';
+import type { MediaType } from '../../media/types';
 import './dropdown.css';
 
 interface DropdownProps {

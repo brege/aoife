@@ -1,8 +1,8 @@
 import { useCallback } from 'react';
-import logger from './logger';
 import { getMediaService } from '../media/factory';
 import type { getMediaProvider } from '../media/providers';
 import type { MediaItem, MediaSearchValues, MediaType } from '../media/types';
+import logger from './logger';
 
 type GridOperationDeps = {
   selectedMediaType: MediaType;
@@ -14,9 +14,15 @@ type GridOperationDeps = {
 };
 
 type GridOperationSetters = {
-  setGridItems: (items: MediaItem[] | ((current: MediaItem[]) => MediaItem[])) => void;
+  setGridItems: (
+    items: MediaItem[] | ((current: MediaItem[]) => MediaItem[]),
+  ) => void;
   setSearchResults: (results: MediaItem[]) => void;
-  setSearchValues: (values: MediaSearchValues | ((prev: MediaSearchValues) => MediaSearchValues)) => void;
+  setSearchValues: (
+    values:
+      | MediaSearchValues
+      | ((prev: MediaSearchValues) => MediaSearchValues),
+  ) => void;
   setAlternateCoverUrls: (urls: string[]) => void;
   setShowPosterGrid: (show: boolean) => void;
   setActivePosterItemId: (id: string | number | null) => void;
@@ -25,7 +31,10 @@ type GridOperationSetters = {
 type GridOperations = {
   handleAddMedia: (media: MediaItem, availableCovers?: MediaItem[]) => void;
   handleRemoveMedia: (mediaId: string | number) => void;
-  handleAspectRatioUpdate: (mediaId: string | number, aspectRatio: number) => void;
+  handleAspectRatioUpdate: (
+    mediaId: string | number,
+    aspectRatio: number,
+  ) => void;
   handleSelectAlternatePoster: (url: string) => void;
   handleClosePosterGrid: () => void;
   fetchAlternateCovers: (
@@ -179,7 +188,13 @@ export const useGridOperations = (
       setShowPosterGrid(false);
       setActivePosterItemId(null);
     },
-    [activePosterItemId, gridItems, setGridItems, setShowPosterGrid, setActivePosterItemId],
+    [
+      activePosterItemId,
+      gridItems,
+      setGridItems,
+      setShowPosterGrid,
+      setActivePosterItemId,
+    ],
   );
 
   const handleClosePosterGrid = useCallback(() => {

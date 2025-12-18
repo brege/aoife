@@ -98,12 +98,12 @@ export const validateSharedState = (state: unknown): state is SharedState => {
   const obj = state as Record<string, unknown>;
 
   if (!Array.isArray(obj.gridItems)) return false;
-  if (typeof obj.columns !== 'number' || Number.isNaN(obj.columns)) return false;
-  if (typeof obj.minRows !== 'number' || Number.isNaN(obj.minRows)) return false;
-  if (
-    obj.layoutDimension !== 'width' &&
-    obj.layoutDimension !== 'height'
-  ) return false;
+  if (typeof obj.columns !== 'number' || Number.isNaN(obj.columns))
+    return false;
+  if (typeof obj.minRows !== 'number' || Number.isNaN(obj.minRows))
+    return false;
+  if (obj.layoutDimension !== 'width' && obj.layoutDimension !== 'height')
+    return false;
 
   return true;
 };
@@ -161,12 +161,14 @@ export const loadShare = async (
           'payload' in parsedCache &&
           typeof (parsedCache as Record<string, unknown>).payload === 'string'
         ) {
-          cachedPayload = (parsedCache as Record<string, unknown>).payload as string;
+          cachedPayload = (parsedCache as Record<string, unknown>)
+            .payload as string;
           if (
             'title' in parsedCache &&
             validateSharedTitle((parsedCache as Record<string, unknown>).title)
           ) {
-            cachedTitle = (parsedCache as Record<string, unknown>).title as string;
+            cachedTitle = (parsedCache as Record<string, unknown>)
+              .title as string;
           }
         }
       } catch {

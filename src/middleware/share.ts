@@ -3,7 +3,11 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { URL } from 'node:url';
 
-export type ShareStoreRecord = { payload: string; createdAt: number; title?: string };
+export type ShareStoreRecord = {
+  payload: string;
+  createdAt: number;
+  title?: string;
+};
 export type ShareStore = Record<string, ShareStoreRecord>;
 
 export type SharedStateItem = {
@@ -73,7 +77,9 @@ export const isAllowedCoverUrl = (value: string): boolean => {
   return false;
 };
 
-export const validateAndCanonicalizeSharePayload = (payload: string): string => {
+export const validateAndCanonicalizeSharePayload = (
+  payload: string,
+): string => {
   if (Buffer.byteLength(payload, 'utf-8') > MAX_SHARE_PAYLOAD_BYTES) {
     throw new Error('Share payload is too large');
   }
@@ -243,7 +249,10 @@ export const persistShareStore = (store: ShareStore): void => {
   fs.writeFileSync(SHARE_STORE_PATH, JSON.stringify(store));
 };
 
-export const generateSlug = (existing: Set<string>, wordList: string[]): string => {
+export const generateSlug = (
+  existing: Set<string>,
+  wordList: string[],
+): string => {
   for (let i = 0; i < 10; i += 1) {
     const slug = Array.from({ length: 3 })
       .map(() => wordList[crypto.randomInt(0, wordList.length)])

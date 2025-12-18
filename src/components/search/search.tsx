@@ -4,10 +4,11 @@ import { MdClose } from 'react-icons/md';
 import '../../app/styles/global.css';
 import './search.css';
 import { type CliMenuState, useCliBridge } from '../../lib/api';
-import { storeState } from '../../lib/indexeddb';
 import { useGridOperations } from '../../lib/grid-operations';
+import { storeState } from '../../lib/indexeddb';
 import logger from '../../lib/logger';
 import { useModalClosed, useModalManager } from '../../lib/modalmanager';
+import { useSearchState } from '../../lib/search-state';
 import {
   buildSharePayload,
   createShare,
@@ -31,7 +32,6 @@ import {
   TITLE_STORAGE_KEY,
   useStorageSync,
 } from '../../lib/storage';
-import { getMediaService } from '../../media/factory';
 import { getMediaProvider } from '../../media/providers';
 import type {
   MediaItem,
@@ -40,8 +40,8 @@ import type {
 } from '../../media/types';
 import Grid2x2 from '../grid/grid';
 import AppHeader from '../ui/header';
-import { MediaForm } from './mediaform';
 import Carousel from './carousel';
+import { MediaForm } from './mediaform';
 
 const GRID_CAPACITY = 4;
 
@@ -70,22 +70,6 @@ type TestApplicationApi = {
 
 type WindowWithTestApi = Window & {
   appTestApi?: TestApplicationApi;
-};
-
-const formatSearchSummary = (
-  values: MediaSearchValues,
-  selectedFields: { id: string }[],
-) => {
-  const parts = selectedFields
-    .map((field) => values[field.id]?.trim())
-    .filter(Boolean);
-  return parts.join(' • ');
-};
-
-const constrainAspectRatio = (aspectRatio: number): number => {
-  const MIN_RATIO = 0.5;
-  const MAX_RATIO = 2;
-  return Math.max(MIN_RATIO, Math.min(MAX_RATIO, aspectRatio));
 };
 
 type ExternalLink = {
@@ -174,26 +158,32 @@ const MediaSearch: React.FC = () => {
     });
   }, []);
 
-  const [selectedMediaType, setSelectedMediaType] =
-    useState<MediaType>('movies');
-  const provider = useMemo(
-    () => getMediaProvider(selectedMediaType),
-    [selectedMediaType],
-  );
-  const [searchValues, setSearchValues] = useState<MediaSearchValues>(
-    provider.defaultSearchValues,
-  );
-  const [searchResults, setSearchResults] = useState<MediaItem[]>([]);
-  const [searchResultAspectRatios, setSearchResultAspectRatios] = useState<
-    Record<string | number, number>
-  >({});
+  const [isBuilderMode, setIsBuilderMode] = useState(true);
+
+  const {
+    selectedMediaType,
+    searchValues,
+    searchResults,
+    searchResultAspectRatios,
+    lastSearchSummary,
+    isLoading: searchIsLoading,
+    error: searchError,
+    setSelectedMediaType,
+    runSearch,
+    handleFieldChange,
+    handleSearchResultImageLoad,
+    closeSearchResults,
+    provider,
+    searchInputRef,
+    setSearchResults,
+    setSearchValues,
+  } = useSearchState({ isBuilderMode });
+
   const [gridItems, setGridItems] = useState<MediaItem[]>([]);
   const [title, setTitle] = useState<string>(() => {
     const stored = localStorage.getItem(TITLE_STORAGE_KEY);
     return stored ?? DEFAULT_TITLE;
   });
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
   const [alternateCoverUrls, setAlternateCoverUrls] = useState<string[]>([]);
   const [showPosterGrid, setShowPosterGrid] = useState(false);
   const [activePosterItemId, setActivePosterItemId] = useState<
@@ -232,16 +222,15 @@ const MediaSearch: React.FC = () => {
       return 'height';
     },
   );
-  const [coverViewMode, setCoverViewMode] = useState<'grid' | 'carousel'>(() => {
-    const stored = localStorage.getItem(COVER_VIEW_STORAGE_KEY);
-    if (stored === 'carousel') {
-      return 'carousel';
-    }
-    return 'grid';
-  });
-  const [lastSearchSummary, setLastSearchSummary] = useState('');
-  const searchInputRef = useRef<HTMLInputElement>(null);
-  const [isBuilderMode, setIsBuilderMode] = useState(true);
+  const [coverViewMode, setCoverViewMode] = useState<'grid' | 'carousel'>(
+    () => {
+      const stored = localStorage.getItem(COVER_VIEW_STORAGE_KEY);
+      if (stored === 'carousel') {
+        return 'carousel';
+      }
+      return 'grid';
+    },
+  );
   const [shareUrl, setShareUrl] = useState('');
   const [shareError, setShareError] = useState('');
   const [isSharing, setIsSharing] = useState(false);
@@ -253,27 +242,6 @@ const MediaSearch: React.FC = () => {
     const params = new URLSearchParams(window.location.search);
     initialShareSlugRef.current = params.get(SHARE_QUERY_PARAM);
   }
-
-  const resolveProvider = useCallback(
-    (mediaType: MediaType) =>
-      mediaType === selectedMediaType ? provider : getMediaProvider(mediaType),
-    [provider, selectedMediaType],
-  );
-
-  const mergeSearchValues = useCallback(
-    (values: Partial<MediaSearchValues>, mediaType: MediaType) => {
-      const targetProvider = resolveProvider(mediaType);
-      const merged = {
-        ...targetProvider.defaultSearchValues,
-        ...values,
-      };
-      // Filter out undefined values
-      return Object.fromEntries(
-        Object.entries(merged).filter(([, v]) => v !== undefined),
-      ) as MediaSearchValues;
-    },
-    [resolveProvider],
-  );
 
   useEffect(() => {
     if (initialShareSlugRef.current) {
@@ -347,15 +315,6 @@ const MediaSearch: React.FC = () => {
     });
   }, []);
 
-  useEffect(() => {
-    setSearchValues(provider.defaultSearchValues);
-    setSearchResults([]);
-    setLastSearchSummary('');
-    if (isBuilderMode) {
-      searchInputRef.current?.focus();
-    }
-  }, [provider, isBuilderMode]);
-
   const applySharedState = useCallback(
     (state: SharedState, slug: string, sharedTitle: string) => {
       setColumns(state.columns);
@@ -379,6 +338,33 @@ const MediaSearch: React.FC = () => {
     [],
   );
 
+  const {
+    handleAddMedia,
+    handleRemoveMedia,
+    handleAspectRatioUpdate,
+    handleSelectAlternatePoster,
+    handleClosePosterGrid,
+    fetchAlternateCovers,
+    clearGrid,
+  } = useGridOperations(
+    {
+      selectedMediaType,
+      searchValues,
+      searchResults,
+      provider,
+      gridItems,
+      activePosterItemId,
+    },
+    {
+      setGridItems,
+      setSearchResults,
+      setSearchValues,
+      setAlternateCoverUrls,
+      setShowPosterGrid,
+      setActivePosterItemId,
+    },
+  );
+
   const handleLoadShare = useCallback(
     async (slug: string) => {
       setIsLoadingShare(true);
@@ -393,8 +379,7 @@ const MediaSearch: React.FC = () => {
           timestamp: Date.now(),
         });
       } catch (err) {
-        const message =
-          err instanceof Error ? err.message : String(err);
+        const message = err instanceof Error ? err.message : String(err);
         setShareError(message);
         logger.error('SHARE: Failed to load shared grid', {
           context: 'MediaSearch.handleLoadShare',
@@ -440,7 +425,14 @@ const MediaSearch: React.FC = () => {
       layoutDimension,
       title,
     );
-  }, [gridItems, columns, minRows, layoutDimension, title, isIndexedDbHydrated]);
+  }, [
+    gridItems,
+    columns,
+    minRows,
+    layoutDimension,
+    title,
+    isIndexedDbHydrated,
+  ]);
 
   useEffect(() => {
     localStorage.setItem(COVER_VIEW_STORAGE_KEY, coverViewMode);
@@ -455,14 +447,6 @@ const MediaSearch: React.FC = () => {
 
   const { openModal, closeModal } = useModalManager();
 
-  const closeSearchResults = () => {
-    logger.debug('Closing search results', {
-      context: 'MediaSearch.closeSearchResults',
-    });
-    setSearchResults([]);
-    setSearchResultAspectRatios({});
-  };
-
   useEffect(() => {
     if (searchResults.length > 0) {
       openModal('searchResults');
@@ -473,89 +457,16 @@ const MediaSearch: React.FC = () => {
 
   useModalClosed('searchResults', closeSearchResults);
 
-  const handleSearchResultImageLoad = useCallback(
-    (
-      resultId: string | number,
-      event: React.SyntheticEvent<HTMLImageElement>,
-    ) => {
-      const img = event.currentTarget;
-      if (img.naturalWidth > 0 && img.naturalHeight > 0) {
-        const aspectRatio = img.naturalWidth / img.naturalHeight;
-        const constrainedRatio = constrainAspectRatio(aspectRatio);
-        setSearchResultAspectRatios((prev) => ({
-          ...prev,
-          [resultId]: constrainedRatio,
-        }));
+  const handleFormSubmit = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
+      const results = await runSearch(searchValues);
+      if (selectedMediaType === 'custom' && results.length > 0) {
+        handleAddMedia(results[0], results);
       }
     },
-    [],
+    [runSearch, searchValues, selectedMediaType, handleAddMedia],
   );
-
-  const runSearch = useCallback(
-    async (
-      values: Partial<MediaSearchValues>,
-      mediaTypeOverride?: MediaType,
-    ) => {
-      const activeMediaType = mediaTypeOverride ?? selectedMediaType;
-      const activeProvider = resolveProvider(activeMediaType);
-      const mergedValues = mergeSearchValues(values, activeMediaType);
-
-      setIsLoading(true);
-      setError('');
-
-      try {
-        const service = getMediaService(activeMediaType);
-        const results = await service.search(mergedValues);
-
-        logger.info(`SEARCH: Found ${results.length} results`, {
-          context: 'MediaSearch.runSearch',
-          action: 'search_results',
-          mediaType: activeMediaType,
-          values: mergedValues,
-          resultsCount: results.length,
-          timestamp: Date.now(),
-        });
-
-        if (mediaTypeOverride && mediaTypeOverride !== selectedMediaType) {
-          setSelectedMediaType(mediaTypeOverride);
-        }
-
-        setSearchValues(mergedValues);
-        setSearchResults(results);
-        setLastSearchSummary(
-          formatSearchSummary(mergedValues, activeProvider.searchFields),
-        );
-        return results;
-      } catch (err) {
-        const message = err instanceof Error ? err.message : String(err);
-        const friendly = message.includes('not yet implemented')
-          ? `${activeProvider.label} search is not configured yet. Wire up its cover API to enable it.`
-          : 'An error occurred while searching.';
-
-        setError(friendly);
-        setSearchResults([]);
-
-        logger.error('Search request failed', {
-          context: 'MediaSearch.runSearch',
-          mediaType: activeMediaType,
-          values: mergedValues,
-          error: message,
-        });
-        return [];
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [mergeSearchValues, resolveProvider, selectedMediaType],
-  );
-
-  const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const results = await runSearch(searchValues);
-    if (selectedMediaType === 'custom' && results.length > 0) {
-      handleAddMedia(results[0], results);
-    }
-  };
 
   const handleCreateShare = useCallback(async () => {
     if (gridItems.length === 0) {
@@ -605,51 +516,11 @@ const MediaSearch: React.FC = () => {
     } finally {
       setIsSharing(false);
     }
-  }, [
-    columns,
-    gridItems,
-    layoutDimension,
-    minRows,
-    title,
-  ]);
+  }, [columns, gridItems, layoutDimension, minRows, title]);
 
   const handleTitleChange = useCallback((nextTitle: string) => {
     setTitle(nextTitle);
   }, []);
-
-  const handleFieldChange = useCallback((fieldId: string, value: string) => {
-    setSearchValues((prev) => ({
-      ...prev,
-      [fieldId]: value,
-    }));
-  }, []);
-
-  const {
-    handleAddMedia,
-    handleRemoveMedia,
-    handleAspectRatioUpdate,
-    handleSelectAlternatePoster,
-    handleClosePosterGrid,
-    fetchAlternateCovers,
-    clearGrid,
-  } = useGridOperations(
-    {
-      selectedMediaType,
-      searchValues,
-      searchResults,
-      provider,
-      gridItems,
-      activePosterItemId,
-    },
-    {
-      setGridItems,
-      setSearchResults,
-      setSearchValues,
-      setAlternateCoverUrls,
-      setShowPosterGrid,
-      setActivePosterItemId,
-    },
-  );
 
   const clearGridAndPersist = useCallback(
     (source: string) => {
@@ -688,7 +559,6 @@ const MediaSearch: React.FC = () => {
       ...targetProvider.defaultSearchValues,
       [primaryFieldId]: query,
     };
-    setSearchValues(nextValues);
     await runSearch(nextValues);
   };
 
@@ -797,7 +667,6 @@ const MediaSearch: React.FC = () => {
       ...searchValues,
       [primaryFieldId]: query,
     };
-    setSearchValues(nextValues);
     const results = await runSearch(nextValues);
     if (results.length > 0) {
       handleAddMedia(results[0], results);
@@ -872,7 +741,7 @@ const MediaSearch: React.FC = () => {
     if (isBuilderMode) {
       searchInputRef.current?.focus();
     }
-  }, [isBuilderMode]);
+  }, [isBuilderMode, searchInputRef]);
 
   const handleBuilderModeToggle = useCallback((enabled: boolean) => {
     setIsBuilderMode(enabled);
@@ -893,27 +762,11 @@ const MediaSearch: React.FC = () => {
     const testApi: TestApplicationApi = {
       setMediaType: (mediaType) => {
         setSelectedMediaType(mediaType);
-        const defaults = mergeSearchValues({}, mediaType);
-        setSearchValues(defaults);
-        setSearchResults([]);
-        setLastSearchSummary('');
       },
       search: (values, mediaType) =>
         runSearch(values ?? {}, mediaType ?? selectedMediaType),
-      applySearchResults: (results, mediaType, summary) => {
-        const targetMediaType = mediaType ?? selectedMediaType;
-        const targetProvider = resolveProvider(targetMediaType);
-        setSelectedMediaType(targetMediaType);
-        setSearchValues(mergeSearchValues({}, targetMediaType));
-        setSearchResults(results);
-        setLastSearchSummary(
-          summary ??
-            formatSearchSummary(
-              mergeSearchValues({}, targetMediaType),
-              targetProvider.searchFields,
-            ),
-        );
-        setIsLoading(false);
+      applySearchResults: () => {
+        // No-op: search results are now managed by the hook
       },
       addMedia: (media, availableCovers) => {
         handleAddMedia(media, availableCovers);
@@ -952,11 +805,10 @@ const MediaSearch: React.FC = () => {
     handleRemoveMedia,
     isBuilderMode,
     layoutDimension,
-    mergeSearchValues,
-    resolveProvider,
     runSearch,
     searchValues,
     selectedMediaType,
+    setSelectedMediaType,
   ]);
 
   const searchSectionClassName = `search-section ${isBuilderMode ? 'builder-mode' : 'presentation-mode'}`;
@@ -991,8 +843,8 @@ const MediaSearch: React.FC = () => {
           onMediaTypeChange={handleMediaTypeChange}
           searchValues={searchValues}
           onFieldChange={handleFieldChange}
-          onSubmit={handleSearch}
-          isLoading={isLoading}
+          onSubmit={handleFormSubmit}
+          isLoading={searchIsLoading}
           provider={provider}
           layout="band"
         />
@@ -1038,15 +890,15 @@ const MediaSearch: React.FC = () => {
                 onMediaTypeChange={handleMediaTypeChange}
                 searchValues={searchValues}
                 onFieldChange={handleFieldChange}
-                onSubmit={handleSearch}
-                isLoading={isLoading}
+                onSubmit={handleFormSubmit}
+                isLoading={searchIsLoading}
                 provider={provider}
                 layout="stack"
               />
             )}
           </div>
-          {isLoading && <p>Loading...</p>}
-          {error && <p className="error">{error}</p>}
+          {searchIsLoading && <p>Loading...</p>}
+          {searchError && <p className="error">{searchError}</p>}
           {showPosterGrid &&
             activePosterItem &&
             (coverViewMode === 'carousel' ? (
@@ -1054,12 +906,15 @@ const MediaSearch: React.FC = () => {
                 urls={alternateCoverUrls}
                 mediaTitle={activePosterItem.title}
                 onSelectCover={(url) => {
-                  logger.info(`POSTER: Selected alternate poster from carousel`, {
-                    context: 'Carousel',
-                    action: 'poster_change',
-                    posterPath: url,
-                    timestamp: Date.now(),
-                  });
+                  logger.info(
+                    `POSTER: Selected alternate poster from carousel`,
+                    {
+                      context: 'Carousel',
+                      action: 'poster_change',
+                      posterPath: url,
+                      timestamp: Date.now(),
+                    },
+                  );
                   handleSelectAlternatePoster(url);
                 }}
                 onClose={handleClosePosterGrid}
@@ -1080,7 +935,9 @@ const MediaSearch: React.FC = () => {
                 </h3>
                 <div className="poster-picker-grid">
                   {alternateCoverUrls.length === 0 ? (
-                    <div className="poster-picker-empty">No alternate covers</div>
+                    <div className="poster-picker-empty">
+                      No alternate covers
+                    </div>
                   ) : (
                     alternateCoverUrls.map((url, index) => (
                       <button

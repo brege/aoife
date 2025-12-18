@@ -194,9 +194,7 @@ const Grid2x2: React.FC<Grid2x2Props> = ({
     if (isBuilderMode && placeholderLabel && items.length === 0) {
       return (
         <div className="grid-container grid-container-empty">
-          <div className="empty-state-hint">
-            Add a {placeholderLabel}
-          </div>
+          <div className="empty-state-hint">Add a {placeholderLabel}</div>
         </div>
       );
     }

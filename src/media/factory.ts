@@ -14,7 +14,9 @@ const serviceCache: ServiceCache = {};
 
 function getTmdbKey(): string {
   const metaEnv =
-    typeof import.meta !== 'undefined' ? (import.meta as ImportMeta).env : undefined;
+    typeof import.meta !== 'undefined'
+      ? (import.meta as ImportMeta).env
+      : undefined;
   return (
     metaEnv?.VITE_TMDB_API_KEY ||
     process.env.VITE_TMDB_API_KEY ||
