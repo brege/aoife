@@ -27,6 +27,8 @@ The goal is to support more media types without constant rebuilding of the core 
 - **Music Albums**
   - explore Fanart.tv API for better album art
 
+- **Letterboxd Lists** imports (support friendly services)
+
 ## Backend Resilience
 
 1. Add nginx caching for `/api/gamesdb/*` JSON responses with short TTLs

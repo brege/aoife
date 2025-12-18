@@ -6,15 +6,13 @@ import {
   FaGithub,
   FaRegCopy,
 } from 'react-icons/fa';
-import { FiGrid, FiShare2 } from 'react-icons/fi';
-import { HiOutlinePencilAlt } from 'react-icons/hi';
+import { FiShare2 } from 'react-icons/fi';
 import { VscSourceControl } from 'react-icons/vsc';
 import './menu.css';
 import packageJson from '../../../package.json';
 import { useOutside } from '../../lib/escape';
 import logger from '../../lib/logger';
 import { useModalClosed, useModalManager } from '../../lib/modalmanager';
-import MenuClear from './clear';
 import MenuConfig from './config';
 
 interface MenuProps {
@@ -23,8 +21,6 @@ interface MenuProps {
   onColumnsChange: (columns: number) => void;
   minRows: number;
   onMinRowsChange: (minRows: number) => void;
-  isBuilderMode: boolean;
-  onBuilderModeToggle: (enabled: boolean) => void;
   layoutDimension: 'width' | 'height';
   onLayoutDimensionChange: (dimension: 'width' | 'height') => void;
   onShare: () => void;
@@ -42,8 +38,6 @@ const Menu: React.FC<MenuProps> = ({
   onColumnsChange,
   minRows,
   onMinRowsChange,
-  isBuilderMode,
-  onBuilderModeToggle,
   layoutDimension,
   onLayoutDimensionChange,
   onShare,
@@ -55,8 +49,10 @@ const Menu: React.FC<MenuProps> = ({
   onCoverViewModeChange,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
+  const confirmRef = useRef<HTMLDivElement>(null);
   const { openModal, closeModal } = useModalManager();
   const [copyError, setCopyError] = useState('');
   const [copySuccess, setCopySuccess] = useState(false);
@@ -76,6 +72,24 @@ const Menu: React.FC<MenuProps> = ({
     },
     isOpen,
   );
+
+  useEffect(() => {
+    if (!showResetConfirm) return;
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        confirmRef.current &&
+        !confirmRef.current.contains(event.target as Node)
+      ) {
+        setShowResetConfirm(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showResetConfirm]);
 
   useEffect(() => {
     if (isOpen) {
@@ -124,25 +138,6 @@ const Menu: React.FC<MenuProps> = ({
     }
   };
 
-  const handleModeSelect = (builderModeEnabled: boolean) => {
-    if (isBuilderMode === builderModeEnabled) {
-      return;
-    }
-
-    onBuilderModeToggle(builderModeEnabled);
-    logger.info(
-      `MENU: Switched to ${
-        builderModeEnabled ? 'builder' : 'presentation'
-      } mode`,
-      {
-        context: 'MenuMode.toggle',
-        action: 'mode_toggle',
-        builderMode: builderModeEnabled,
-        timestamp: Date.now(),
-      },
-    );
-  };
-
   const appVersion = packageJson.version ?? '';
 
   return (
@@ -154,7 +149,7 @@ const Menu: React.FC<MenuProps> = ({
         onClick={toggleMenu}
         aria-label={isOpen ? 'Close menu' : 'Open menu'}
       >
-        <div className={`hamburger-icon ${isOpen ? 'open' : ''}`}>
+        <div className="hamburger-icon">
           <span></span>
           <span></span>
           <span></span>
@@ -163,37 +158,9 @@ const Menu: React.FC<MenuProps> = ({
 
       {isOpen && (
         <div className="menu-dropdown" ref={menuRef}>
-          <div className="menu-actions">
-            <MenuClear onClearGrid={onClearGrid} onMenuClose={closeMenu} />
-            <button
-              type="button"
-              className={`menu-icon-button menu-view-toggle${isBuilderMode ? ' active' : ''}`}
-              aria-pressed={isBuilderMode}
-              aria-label="Toggle editor"
-              title={isBuilderMode ? 'Show grid' : 'Show editor'}
-              onClick={() => handleModeSelect(!isBuilderMode)}
-            >
-              {isBuilderMode ? (
-                <FiGrid size={20} />
-              ) : (
-                <HiOutlinePencilAlt size={20} />
-              )}
-            </button>
-            <button
-              type="button"
-              className={`menu-icon-button menu-permalink-button${isSharing ? ' active' : ''}`}
-              aria-label="Create share link"
-              title="Create share link"
-              onClick={onShare}
-              disabled={isSharing || isLoadingShare}
-            >
-              <FiShare2 size={20} />
-            </button>
-          </div>
-
           <div className="menu-permalink">
             <div className="menu-permalink-header">
-              <span>Share link</span>
+              <h3>Share</h3>
               {isSharing && (
                 <span className="menu-permalink-status">Creating…</span>
               )}
@@ -228,6 +195,16 @@ const Menu: React.FC<MenuProps> = ({
                 <FaRegCopy size={16} aria-hidden="true" focusable="false" />
                 <span className="menu-permalink-copy-label">Copy</span>
               </button>
+              <button
+                type="button"
+                className={`menu-permalink-button${isSharing ? ' active' : ''}`}
+                aria-label="Create share link"
+                title="Create share link"
+                onClick={onShare}
+                disabled={isSharing || isLoadingShare}
+              >
+                <FiShare2 size={20} />
+              </button>
             </div>
             {(shareError || copyError) && (
               <div className="menu-permalink-error">
@@ -251,6 +228,7 @@ const Menu: React.FC<MenuProps> = ({
           <details className="menu-status menu-grid-config-section">
             <summary className="menu-status-summary">
               <span className="menu-status-summary-label">
+                <span>Is it down?</span>
                 <FaChevronRight
                   className="menu-status-chevron menu-status-chevron-right"
                   aria-hidden="true"
@@ -261,11 +239,11 @@ const Menu: React.FC<MenuProps> = ({
                   aria-hidden="true"
                   focusable="false"
                 />
-                <span>Is it down?</span>
               </span>
             </summary>
             <ul className="menu-status-links">
               <li>
+                <span className="menu-status-link-label">games</span>
                 <a
                   className="menu-status-link"
                   href="https://downforeveryoneorjustme.com/api.thegamesdb.net"
@@ -273,10 +251,10 @@ const Menu: React.FC<MenuProps> = ({
                   rel="noreferrer"
                 >
                   api.thegamesdb.net
-                  <b> [ games ] </b>
                 </a>
               </li>
               <li>
+                <span className="menu-status-link-label">movies/tv</span>
                 <a
                   className="menu-status-link"
                   href="https://downforeveryoneorjustme.com/api.themoviedb.org"
@@ -284,10 +262,10 @@ const Menu: React.FC<MenuProps> = ({
                   rel="noreferrer"
                 >
                   api.themoviedb.org
-                  <b> [ movies/TV ] </b>
                 </a>
               </li>
               <li>
+                <span className="menu-status-link-label">music</span>
                 <a
                   className="menu-status-link"
                   href="https://downforeveryoneorjustme.com/musicbrainz.org"
@@ -295,10 +273,10 @@ const Menu: React.FC<MenuProps> = ({
                   rel="noreferrer"
                 >
                   musicbrainz.org
-                  <b> [ music ] </b>
                 </a>
               </li>
               <li>
+                <span className="menu-status-link-label">books</span>
                 <a
                   className="menu-status-link"
                   href="https://downforeveryoneorjustme.com/openlibrary.org"
@@ -306,7 +284,6 @@ const Menu: React.FC<MenuProps> = ({
                   rel="noreferrer"
                 >
                   openlibrary.org
-                  <b> [ books ]</b>
                 </a>
               </li>
             </ul>
@@ -315,6 +292,42 @@ const Menu: React.FC<MenuProps> = ({
           <div className="menu-about menu-grid-config-section">
             <div className="grid-config-header">
               <h3>About</h3>
+              {showResetConfirm ? (
+                <div className="reset-confirmation" ref={confirmRef}>
+                  <span>Clear all data:</span>
+                  <button
+                    type="button"
+                    className="reset-confirm-yes"
+                    onClick={() => {
+                      onClearGrid();
+                      setShowResetConfirm(false);
+                      logger.info('MENU: Grid cleared', {
+                        context: 'Menu.handleResetConfirm',
+                        action: 'grid_clear',
+                        timestamp: Date.now(),
+                      });
+                    }}
+                  >
+                    yes
+                  </button>
+                  <button
+                    type="button"
+                    className="reset-confirm-no"
+                    onClick={() => setShowResetConfirm(false)}
+                  >
+                    no
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  className="reset-button"
+                  onClick={() => setShowResetConfirm(true)}
+                  aria-label="Clear all data"
+                >
+                  reset
+                </button>
+              )}
             </div>
             <div className="menu-about-row">
               <a

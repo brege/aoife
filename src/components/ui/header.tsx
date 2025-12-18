@@ -1,4 +1,5 @@
 import type React from 'react';
+import { GrAdd } from 'react-icons/gr';
 import './header.css';
 import './title.css';
 import Menu from '../menu/menu';
@@ -45,6 +46,10 @@ const AppHeader: React.FC<AppHeaderProps> = ({
   coverViewMode,
   onCoverViewModeChange,
 }) => {
+  const handleAddToggle = () => {
+    onBuilderModeToggle(!isBuilderMode);
+  };
+
   return (
     <div className="app-header">
       <div className="header-left">
@@ -52,14 +57,22 @@ const AppHeader: React.FC<AppHeaderProps> = ({
       </div>
 
       <div className="header-right">
+        <button
+          type="button"
+          className={`header-add-button${isBuilderMode ? ' active' : ''}`}
+          onClick={handleAddToggle}
+          aria-label={isBuilderMode ? 'Show grid' : 'Show editor'}
+          title={isBuilderMode ? 'Show grid' : 'Add item'}
+        >
+          <GrAdd size={20} />
+        </button>
+
         <Menu
           onClearGrid={onClearGrid}
           columns={columns}
           onColumnsChange={onColumnsChange}
           minRows={minRows}
           onMinRowsChange={onMinRowsChange}
-          isBuilderMode={isBuilderMode}
-          onBuilderModeToggle={onBuilderModeToggle}
           layoutDimension={layoutDimension}
           onLayoutDimensionChange={onLayoutDimensionChange}
           onShare={onShare}
