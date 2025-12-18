@@ -1,7 +1,7 @@
-import type React from 'react';
-import { useState } from 'react';
 import { useGesture } from '@use-gesture/react';
 import { AnimatePresence, motion } from 'framer-motion';
+import type React from 'react';
+import { useState } from 'react';
 import { MdClose } from 'react-icons/md';
 import './carousel.css';
 
@@ -19,7 +19,9 @@ const Carousel: React.FC<CarouselProps> = ({
   onClose,
 }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [slideDirection, setSlideDirection] = useState<'left' | 'right'>('left');
+  const [slideDirection, setSlideDirection] = useState<'left' | 'right'>(
+    'left',
+  );
 
   const handleNavigate = (direction: 'left' | 'right') => {
     if (direction === 'left' && currentIndex < urls.length - 1) {

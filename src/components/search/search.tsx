@@ -4,11 +4,27 @@ import { MdClose } from 'react-icons/md';
 import '../../app/styles/global.css';
 import './search.css';
 import { type CliMenuState, useCliBridge } from '../../lib/api';
-import { getState, storeState } from '../../lib/indexeddb';
+import { useGridOperations } from '../../lib/grid-operations';
+import { storeState } from '../../lib/indexeddb';
+import { useLayoutState } from '../../lib/layout-state';
 import logger from '../../lib/logger';
 import { useModalClosed, useModalManager } from '../../lib/modalmanager';
-import { createShare, fetchShare } from '../../lib/share';
-import { getMediaService } from '../../media/factory';
+import { useSearchState } from '../../lib/search-state';
+import {
+  buildSharePayload,
+  createShare,
+  INDEXEDDB_SHARE_PREFIX,
+  loadShare,
+  SHARE_QUERY_PARAM,
+  type SharedState,
+} from '../../lib/share';
+import {
+  DEFAULT_TITLE,
+  GRID_STORAGE_KEY,
+  hydrateAppState,
+  persistAppState,
+  TITLE_STORAGE_KEY,
+} from '../../lib/storage';
 import { getMediaProvider } from '../../media/providers';
 import type {
   MediaItem,
@@ -17,36 +33,10 @@ import type {
 } from '../../media/types';
 import Grid2x2 from '../grid/grid';
 import AppHeader from '../ui/header';
-import { MediaForm } from './mediaform';
 import Carousel from './carousel';
+import { MediaForm } from './mediaform';
 
-const GRID_STORAGE_KEY = 'gridItems';
-const COLUMNS_STORAGE_KEY = 'gridColumns';
-const MIN_ROWS_STORAGE_KEY = 'gridMinRows';
-const LAYOUT_DIMENSION_STORAGE_KEY = 'layoutDimension';
-const TITLE_STORAGE_KEY = 'gridTitle';
-const COVER_VIEW_STORAGE_KEY = 'coverViewMode';
 const GRID_CAPACITY = 4;
-const SHARE_QUERY_PARAM = 'share';
-const INDEXEDDB_GRID_KEY = 'gridItems';
-const INDEXEDDB_COLUMNS_KEY = 'gridColumns';
-const INDEXEDDB_MIN_ROWS_KEY = 'gridMinRows';
-const INDEXEDDB_LAYOUT_DIMENSION_KEY = 'layoutDimension';
-const INDEXEDDB_TITLE_KEY = 'gridTitle';
-const INDEXEDDB_SHARE_PREFIX = 'share:';
-const DEFAULT_TITLE = 'aoife';
-
-type SharedState = {
-  gridItems: MediaItem[];
-  columns: number;
-  minRows: number;
-  layoutDimension: 'width' | 'height';
-};
-
-type ShareCacheRecord = {
-  payload: string;
-  title?: string;
-};
 
 type TestApplicationApi = {
   setMediaType: (mediaType: MediaType) => void;
@@ -73,22 +63,6 @@ type TestApplicationApi = {
 
 type WindowWithTestApi = Window & {
   appTestApi?: TestApplicationApi;
-};
-
-const formatSearchSummary = (
-  values: MediaSearchValues,
-  selectedFields: { id: string }[],
-) => {
-  const parts = selectedFields
-    .map((field) => values[field.id]?.trim())
-    .filter(Boolean);
-  return parts.join(' • ');
-};
-
-const constrainAspectRatio = (aspectRatio: number): number => {
-  const MIN_RATIO = 0.5;
-  const MAX_RATIO = 2;
-  return Math.max(MIN_RATIO, Math.min(MAX_RATIO, aspectRatio));
 };
 
 type ExternalLink = {
@@ -177,26 +151,45 @@ const MediaSearch: React.FC = () => {
     });
   }, []);
 
-  const [selectedMediaType, setSelectedMediaType] =
-    useState<MediaType>('movies');
-  const provider = useMemo(
-    () => getMediaProvider(selectedMediaType),
-    [selectedMediaType],
-  );
-  const [searchValues, setSearchValues] = useState<MediaSearchValues>(
-    provider.defaultSearchValues,
-  );
-  const [searchResults, setSearchResults] = useState<MediaItem[]>([]);
-  const [searchResultAspectRatios, setSearchResultAspectRatios] = useState<
-    Record<string | number, number>
-  >({});
+  const [isBuilderMode, setIsBuilderMode] = useState(true);
+
+  const {
+    selectedMediaType,
+    searchValues,
+    searchResults,
+    searchResultAspectRatios,
+    lastSearchSummary,
+    isLoading: searchIsLoading,
+    error: searchError,
+    setSelectedMediaType,
+    runSearch,
+    handleFieldChange,
+    handleSearchResultImageLoad,
+    closeSearchResults,
+    provider,
+    searchInputRef,
+    setSearchResults,
+    setSearchValues,
+  } = useSearchState({ isBuilderMode });
+
+  const [isIndexedDbHydrated, setIsIndexedDbHydrated] = useState(false);
+
+  const {
+    columns,
+    setColumns,
+    minRows,
+    setMinRows,
+    layoutDimension,
+    setLayoutDimension,
+    coverViewMode,
+    setCoverViewMode,
+  } = useLayoutState({ isHydrated: isIndexedDbHydrated });
+
   const [gridItems, setGridItems] = useState<MediaItem[]>([]);
   const [title, setTitle] = useState<string>(() => {
     const stored = localStorage.getItem(TITLE_STORAGE_KEY);
     return stored ?? DEFAULT_TITLE;
   });
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
   const [alternateCoverUrls, setAlternateCoverUrls] = useState<string[]>([]);
   const [showPosterGrid, setShowPosterGrid] = useState(false);
   const [activePosterItemId, setActivePosterItemId] = useState<
@@ -206,77 +199,16 @@ const MediaSearch: React.FC = () => {
     () => gridItems.find((item) => item.id === activePosterItemId) ?? null,
     [gridItems, activePosterItemId],
   );
-  const [columns, setColumns] = useState(() => {
-    const stored = localStorage.getItem(COLUMNS_STORAGE_KEY);
-    if (stored) {
-      const parsed = parseInt(stored, 10);
-      if (!Number.isNaN(parsed) && parsed >= 1 && parsed <= 8) {
-        return parsed;
-      }
-    }
-    return 4;
-  });
-  const [minRows, setMinRows] = useState(() => {
-    const stored = localStorage.getItem(MIN_ROWS_STORAGE_KEY);
-    if (stored) {
-      const parsed = parseInt(stored, 10);
-      if (!Number.isNaN(parsed) && parsed >= 1 && parsed <= 6) {
-        return parsed;
-      }
-    }
-    return 2;
-  });
-  const [layoutDimension, setLayoutDimension] = useState<'width' | 'height'>(
-    () => {
-      const stored = localStorage.getItem(LAYOUT_DIMENSION_STORAGE_KEY);
-      if (stored === 'width' || stored === 'height') {
-        return stored;
-      }
-      return 'height';
-    },
-  );
-  const [coverViewMode, setCoverViewMode] = useState<'grid' | 'carousel'>(() => {
-    const stored = localStorage.getItem(COVER_VIEW_STORAGE_KEY);
-    if (stored === 'carousel') {
-      return 'carousel';
-    }
-    return 'grid';
-  });
-  const [lastSearchSummary, setLastSearchSummary] = useState('');
-  const searchInputRef = useRef<HTMLInputElement>(null);
-  const [isBuilderMode, setIsBuilderMode] = useState(true);
   const [shareUrl, setShareUrl] = useState('');
   const [shareError, setShareError] = useState('');
   const [isSharing, setIsSharing] = useState(false);
   const [isLoadingShare, setIsLoadingShare] = useState(false);
   const initialShareSlugRef = useRef<string | null>(null);
-  const [isIndexedDbHydrated, setIsIndexedDbHydrated] = useState(false);
 
   if (initialShareSlugRef.current === null) {
     const params = new URLSearchParams(window.location.search);
     initialShareSlugRef.current = params.get(SHARE_QUERY_PARAM);
   }
-
-  const resolveProvider = useCallback(
-    (mediaType: MediaType) =>
-      mediaType === selectedMediaType ? provider : getMediaProvider(mediaType),
-    [provider, selectedMediaType],
-  );
-
-  const mergeSearchValues = useCallback(
-    (values: Partial<MediaSearchValues>, mediaType: MediaType) => {
-      const targetProvider = resolveProvider(mediaType);
-      const merged = {
-        ...targetProvider.defaultSearchValues,
-        ...values,
-      };
-      // Filter out undefined values
-      return Object.fromEntries(
-        Object.entries(merged).filter(([, v]) => v !== undefined),
-      ) as MediaSearchValues;
-    },
-    [resolveProvider],
-  );
 
   useEffect(() => {
     if (initialShareSlugRef.current) {
@@ -309,218 +241,118 @@ const MediaSearch: React.FC = () => {
     }
 
     void (async () => {
-      const storedColumns = await getState(INDEXEDDB_COLUMNS_KEY);
-      if (storedColumns) {
-        const parsed = parseInt(storedColumns, 10);
+      const state = await hydrateAppState();
+
+      if (state.columns) {
+        const parsed = parseInt(state.columns, 10);
         if (!Number.isNaN(parsed) && parsed >= 1 && parsed <= 8) {
           setColumns(parsed);
         }
       }
 
-      const storedMinRows = await getState(INDEXEDDB_MIN_ROWS_KEY);
-      if (storedMinRows) {
-        const parsed = parseInt(storedMinRows, 10);
+      if (state.minRows) {
+        const parsed = parseInt(state.minRows, 10);
         if (!Number.isNaN(parsed) && parsed >= 1 && parsed <= 6) {
           setMinRows(parsed);
         }
       }
 
-      const storedLayoutDimension = await getState(
-        INDEXEDDB_LAYOUT_DIMENSION_KEY,
-      );
       if (
-        storedLayoutDimension === 'width' ||
-        storedLayoutDimension === 'height'
+        state.layoutDimension === 'width' ||
+        state.layoutDimension === 'height'
       ) {
-        setLayoutDimension(storedLayoutDimension);
+        setLayoutDimension(state.layoutDimension);
       }
 
-      const storedTitle = await getState(INDEXEDDB_TITLE_KEY);
-      if (storedTitle && localStorage.getItem(TITLE_STORAGE_KEY) === null) {
-        setTitle(storedTitle);
+      if (state.title && localStorage.getItem(TITLE_STORAGE_KEY) === null) {
+        setTitle(state.title);
       }
 
-      const storedGrid = await getState(INDEXEDDB_GRID_KEY);
-      if (!storedGrid) {
-        return;
-      }
-      const storedLocalGrid = localStorage.getItem(GRID_STORAGE_KEY);
-      if (storedLocalGrid !== null) {
-        return;
-      }
-      const parsedGrid = JSON.parse(storedGrid) as MediaItem[];
-      if (Array.isArray(parsedGrid)) {
-        setGridItems(parsedGrid);
+      if (state.gridItems) {
+        const storedLocalGrid = localStorage.getItem(GRID_STORAGE_KEY);
+        if (storedLocalGrid === null) {
+          const parsedGrid = JSON.parse(state.gridItems) as MediaItem[];
+          if (Array.isArray(parsedGrid)) {
+            setGridItems(parsedGrid);
+          }
+        }
       }
     })().finally(() => {
       setIsIndexedDbHydrated(true);
     });
-  }, []);
-
-  useEffect(() => {
-    setSearchValues(provider.defaultSearchValues);
-    setSearchResults([]);
-    setLastSearchSummary('');
-    if (isBuilderMode) {
-      searchInputRef.current?.focus();
-    }
-  }, [provider, isBuilderMode]);
-
-  const persistGrid = useCallback((items: MediaItem[]) => {
-    localStorage.setItem(GRID_STORAGE_KEY, JSON.stringify(items));
-    storeState(INDEXEDDB_GRID_KEY, JSON.stringify(items));
-  }, []);
-
-  const persistTitle = useCallback((nextTitle: string) => {
-    localStorage.setItem(TITLE_STORAGE_KEY, nextTitle);
-    storeState(INDEXEDDB_TITLE_KEY, nextTitle);
-  }, []);
-
-  const clearGridAndPersist = useCallback(
-    (source: string) => {
-      setGridItems([]);
-      persistGrid([]);
-      logger.info(source, {
-        context: 'MediaSearch.clearGridAndPersist',
-        action: 'grid_cleared',
-        timestamp: Date.now(),
-      });
-    },
-    [persistGrid],
-  );
-
-  const buildSharePayload = useCallback((): string => {
-    const payload: SharedState = {
-      gridItems,
-      columns,
-      minRows,
-      layoutDimension,
-    };
-    return JSON.stringify(payload);
-  }, [columns, gridItems, layoutDimension, minRows]);
+  }, [setColumns, setMinRows, setLayoutDimension]);
 
   const applySharedState = useCallback(
     (state: SharedState, slug: string, sharedTitle: string) => {
-      if (!Array.isArray(state.gridItems)) {
-        throw new Error('Shared state is missing grid items');
-      }
-      if (typeof state.columns !== 'number' || Number.isNaN(state.columns)) {
-        throw new Error('Shared state columns value is invalid');
-      }
-      if (typeof state.minRows !== 'number' || Number.isNaN(state.minRows)) {
-        throw new Error('Shared state minRows value is invalid');
-      }
-      if (
-        state.layoutDimension !== 'width' &&
-        state.layoutDimension !== 'height'
-      ) {
-        throw new Error('Shared state layout dimension is invalid');
-      }
-      if (typeof sharedTitle !== 'string' || sharedTitle.trim() === '') {
-        throw new Error('Shared state title is invalid');
-      }
-
       setColumns(state.columns);
       setMinRows(state.minRows);
       setLayoutDimension(state.layoutDimension);
       setGridItems(state.gridItems);
       setTitle(sharedTitle);
-      persistGrid(state.gridItems);
-      persistTitle(sharedTitle);
-      localStorage.setItem(COLUMNS_STORAGE_KEY, String(state.columns));
-      localStorage.setItem(MIN_ROWS_STORAGE_KEY, String(state.minRows));
-      localStorage.setItem(LAYOUT_DIMENSION_STORAGE_KEY, state.layoutDimension);
-      storeState(INDEXEDDB_COLUMNS_KEY, String(state.columns));
-      storeState(INDEXEDDB_MIN_ROWS_KEY, String(state.minRows));
-      storeState(INDEXEDDB_LAYOUT_DIMENSION_KEY, state.layoutDimension);
+      persistAppState(
+        JSON.stringify(state.gridItems),
+        String(state.columns),
+        String(state.minRows),
+        state.layoutDimension,
+        sharedTitle,
+      );
 
       const url = new URL(window.location.href);
       url.searchParams.set(SHARE_QUERY_PARAM, slug);
       window.history.replaceState(null, '', url.toString());
       setShareUrl(url.toString());
     },
-    [persistGrid, persistTitle],
+    [setColumns, setMinRows, setLayoutDimension],
   );
 
-  const loadShare = useCallback(
+  const {
+    handleAddMedia,
+    handleRemoveMedia,
+    handleAspectRatioUpdate,
+    handleSelectAlternatePoster,
+    handleClosePosterGrid,
+    fetchAlternateCovers,
+    clearGrid,
+  } = useGridOperations(
+    {
+      selectedMediaType,
+      searchValues,
+      searchResults,
+      provider,
+      gridItems,
+      activePosterItemId,
+    },
+    {
+      setGridItems,
+      setSearchResults,
+      setSearchValues,
+      setAlternateCoverUrls,
+      setShowPosterGrid,
+      setActivePosterItemId,
+    },
+  );
+
+  const handleLoadShare = useCallback(
     async (slug: string) => {
       setIsLoadingShare(true);
       setShareError('');
       try {
-        const response = await fetchShare(slug);
-        const cacheRecord: ShareCacheRecord = {
-          payload: response.payload,
-          title: response.title,
-        };
-        await storeState(
-          `${INDEXEDDB_SHARE_PREFIX}${slug}`,
-          JSON.stringify(cacheRecord),
-        );
-        const parsed = JSON.parse(response.payload) as SharedState;
-        if (!parsed || typeof parsed !== 'object') {
-          throw new Error('Share payload is invalid');
-        }
-        const sharedTitle =
-          typeof response.title === 'string' && response.title.trim() !== ''
-            ? response.title
-            : DEFAULT_TITLE;
-        applySharedState(parsed, slug, sharedTitle);
+        const result = await loadShare(slug, DEFAULT_TITLE);
+        applySharedState(result.state, result.slug, result.title);
         logger.info('SHARE: Loaded shared grid', {
-          context: 'MediaSearch.loadShare',
+          context: 'MediaSearch.handleLoadShare',
           action: 'share_load',
           slug,
           timestamp: Date.now(),
         });
       } catch (err) {
-        try {
-          const cached = await getState(`${INDEXEDDB_SHARE_PREFIX}${slug}`);
-          if (!cached) {
-            throw err;
-          }
-          let cachedTitle = DEFAULT_TITLE;
-          let cachedPayload = cached;
-          try {
-            const parsedCache = JSON.parse(cached) as ShareCacheRecord;
-            if (
-              parsedCache &&
-              typeof parsedCache === 'object' &&
-              typeof parsedCache.payload === 'string'
-            ) {
-              cachedPayload = parsedCache.payload;
-              if (
-                typeof parsedCache.title === 'string' &&
-                parsedCache.title.trim() !== ''
-              ) {
-                cachedTitle = parsedCache.title;
-              }
-            }
-          } catch {
-            cachedPayload = cached;
-          }
-
-          const parsed = JSON.parse(cachedPayload) as SharedState;
-          if (!parsed || typeof parsed !== 'object') {
-            throw new Error('Cached share payload is invalid');
-          }
-          applySharedState(parsed, slug, cachedTitle);
-          logger.info('SHARE: Loaded shared grid from cache', {
-            context: 'MediaSearch.loadShare',
-            action: 'share_load_cached',
-            slug,
-            timestamp: Date.now(),
-          });
-        } catch (cacheError) {
-          const message =
-            cacheError instanceof Error
-              ? cacheError.message
-              : String(cacheError);
-          setShareError(message);
-          logger.error('SHARE: Failed to load shared grid', {
-            context: 'MediaSearch.loadShare',
-            slug,
-            error: message,
-          });
-        }
+        const message = err instanceof Error ? err.message : String(err);
+        setShareError(message);
+        logger.error('SHARE: Failed to load shared grid', {
+          context: 'MediaSearch.handleLoadShare',
+          slug,
+          error: message,
+        });
       } finally {
         setIsLoadingShare(false);
       }
@@ -532,46 +364,30 @@ const MediaSearch: React.FC = () => {
     if (!isIndexedDbHydrated) {
       return;
     }
-    localStorage.setItem(COLUMNS_STORAGE_KEY, String(columns));
-    storeState(INDEXEDDB_COLUMNS_KEY, String(columns));
-  }, [columns, isIndexedDbHydrated]);
-
-  useEffect(() => {
-    if (!isIndexedDbHydrated) {
-      return;
-    }
-    localStorage.setItem(MIN_ROWS_STORAGE_KEY, String(minRows));
-    storeState(INDEXEDDB_MIN_ROWS_KEY, String(minRows));
-  }, [minRows, isIndexedDbHydrated]);
-
-  useEffect(() => {
-    if (!isIndexedDbHydrated) {
-      return;
-    }
-    localStorage.setItem(LAYOUT_DIMENSION_STORAGE_KEY, layoutDimension);
-    storeState(INDEXEDDB_LAYOUT_DIMENSION_KEY, layoutDimension);
-  }, [layoutDimension, isIndexedDbHydrated]);
-
-  useEffect(() => {
-    localStorage.setItem(COVER_VIEW_STORAGE_KEY, coverViewMode);
-  }, [coverViewMode]);
+    persistAppState(
+      JSON.stringify(gridItems),
+      String(columns),
+      String(minRows),
+      layoutDimension,
+      title,
+    );
+  }, [
+    gridItems,
+    columns,
+    minRows,
+    layoutDimension,
+    title,
+    isIndexedDbHydrated,
+  ]);
 
   useEffect(() => {
     if (!initialShareSlugRef.current) {
       return;
     }
-    loadShare(initialShareSlugRef.current);
-  }, [loadShare]);
+    handleLoadShare(initialShareSlugRef.current);
+  }, [handleLoadShare]);
 
   const { openModal, closeModal } = useModalManager();
-
-  const closeSearchResults = () => {
-    logger.debug('Closing search results', {
-      context: 'MediaSearch.closeSearchResults',
-    });
-    setSearchResults([]);
-    setSearchResultAspectRatios({});
-  };
 
   useEffect(() => {
     if (searchResults.length > 0) {
@@ -583,89 +399,16 @@ const MediaSearch: React.FC = () => {
 
   useModalClosed('searchResults', closeSearchResults);
 
-  const handleSearchResultImageLoad = useCallback(
-    (
-      resultId: string | number,
-      event: React.SyntheticEvent<HTMLImageElement>,
-    ) => {
-      const img = event.currentTarget;
-      if (img.naturalWidth > 0 && img.naturalHeight > 0) {
-        const aspectRatio = img.naturalWidth / img.naturalHeight;
-        const constrainedRatio = constrainAspectRatio(aspectRatio);
-        setSearchResultAspectRatios((prev) => ({
-          ...prev,
-          [resultId]: constrainedRatio,
-        }));
+  const handleFormSubmit = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
+      const results = await runSearch(searchValues);
+      if (selectedMediaType === 'custom' && results.length > 0) {
+        handleAddMedia(results[0], results);
       }
     },
-    [],
+    [runSearch, searchValues, selectedMediaType, handleAddMedia],
   );
-
-  const runSearch = useCallback(
-    async (
-      values: Partial<MediaSearchValues>,
-      mediaTypeOverride?: MediaType,
-    ) => {
-      const activeMediaType = mediaTypeOverride ?? selectedMediaType;
-      const activeProvider = resolveProvider(activeMediaType);
-      const mergedValues = mergeSearchValues(values, activeMediaType);
-
-      setIsLoading(true);
-      setError('');
-
-      try {
-        const service = getMediaService(activeMediaType);
-        const results = await service.search(mergedValues);
-
-        logger.info(`SEARCH: Found ${results.length} results`, {
-          context: 'MediaSearch.runSearch',
-          action: 'search_results',
-          mediaType: activeMediaType,
-          values: mergedValues,
-          resultsCount: results.length,
-          timestamp: Date.now(),
-        });
-
-        if (mediaTypeOverride && mediaTypeOverride !== selectedMediaType) {
-          setSelectedMediaType(mediaTypeOverride);
-        }
-
-        setSearchValues(mergedValues);
-        setSearchResults(results);
-        setLastSearchSummary(
-          formatSearchSummary(mergedValues, activeProvider.searchFields),
-        );
-        return results;
-      } catch (err) {
-        const message = err instanceof Error ? err.message : String(err);
-        const friendly = message.includes('not yet implemented')
-          ? `${activeProvider.label} search is not configured yet. Wire up its cover API to enable it.`
-          : 'An error occurred while searching.';
-
-        setError(friendly);
-        setSearchResults([]);
-
-        logger.error('Search request failed', {
-          context: 'MediaSearch.runSearch',
-          mediaType: activeMediaType,
-          values: mergedValues,
-          error: message,
-        });
-        return [];
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [mergeSearchValues, resolveProvider, selectedMediaType],
-  );
-
-  const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const results = await runSearch(searchValues);
-    if (selectedMediaType === 'custom' && results.length > 0) {
-      handleAddMedia(results[0], results);
-    }
-  };
 
   const handleCreateShare = useCallback(async () => {
     if (gridItems.length === 0) {
@@ -677,12 +420,17 @@ const MediaSearch: React.FC = () => {
     setShareError('');
 
     try {
-      const payload = buildSharePayload();
+      const shareState: SharedState = {
+        gridItems,
+        columns,
+        minRows,
+        layoutDimension,
+      };
+      const payload = buildSharePayload(shareState);
       const response = await createShare(payload, title);
-      const cacheRecord: ShareCacheRecord = { payload, title };
       await storeState(
         `${INDEXEDDB_SHARE_PREFIX}${response.slug}`,
-        JSON.stringify(cacheRecord),
+        JSON.stringify({ payload, title }),
       );
       const url = new URL(window.location.href);
       url.searchParams.set(SHARE_QUERY_PARAM, response.slug);
@@ -710,182 +458,23 @@ const MediaSearch: React.FC = () => {
     } finally {
       setIsSharing(false);
     }
-  }, [
-    buildSharePayload,
-    columns,
-    gridItems.length,
-    layoutDimension,
-    minRows,
-    title,
-  ]);
+  }, [columns, gridItems, layoutDimension, minRows, title]);
 
-  const handleTitleChange = useCallback(
-    (nextTitle: string) => {
-      setTitle(nextTitle);
-      persistTitle(nextTitle);
-    },
-    [persistTitle],
-  );
-
-  const handleFieldChange = useCallback((fieldId: string, value: string) => {
-    setSearchValues((prev) => ({
-      ...prev,
-      [fieldId]: value,
-    }));
+  const handleTitleChange = useCallback((nextTitle: string) => {
+    setTitle(nextTitle);
   }, []);
 
-  const handleAddMedia = useCallback(
-    (media: MediaItem, availableCovers?: MediaItem[]) => {
-      const mediaWithCovers = { ...media };
-
-      if (
-        selectedMediaType === 'custom' &&
-        searchValues.cover?.startsWith('img-')
-      ) {
-        mediaWithCovers.coverUrl = searchValues.cover;
-        mediaWithCovers.coverThumbnailUrl = searchValues.cover;
-      }
-
-      const coversSource = availableCovers ?? searchResults;
-      if (coversSource.length > 0) {
-        const coverUrls = coversSource
-          .map((result) => result.coverUrl || result.coverThumbnailUrl)
-          .filter((url): url is string => Boolean(url));
-        mediaWithCovers.alternateCoverUrls = coverUrls;
-      }
-
-      setGridItems((current) => {
-        const updatedGrid = [...current, mediaWithCovers];
-        persistGrid(updatedGrid);
-
-        logger.info(
-          `GRID: Added "${media.title}" to position ${current.length}`,
-          {
-            context: 'MediaSearch.handleAddMedia',
-            action: 'grid_media_added',
-            media: {
-              id: media.id,
-              title: media.title,
-              year: media.year,
-            },
-            position: current.length,
-            gridCount: updatedGrid.length,
-            hasAlternateCovers: Boolean(
-              mediaWithCovers.alternateCoverUrls?.length,
-            ),
-            timestamp: Date.now(),
-          },
-        );
-
-        return updatedGrid;
-      });
-      setSearchResults([]);
-      setSearchValues(provider.defaultSearchValues);
-    },
-    [
-      provider.defaultSearchValues,
-      searchResults,
-      persistGrid,
-      selectedMediaType,
-      searchValues,
-    ],
-  );
-
-  const handleRemoveMedia = useCallback(
-    (mediaId: string | number) => {
-      setGridItems((current) => {
-        const mediaToRemove = current.find((m) => m.id === mediaId);
-        const removedPosition = current.findIndex((m) => m.id === mediaId);
-        const updatedGrid = current.filter((media) => media.id !== mediaId);
-        persistGrid(updatedGrid);
-
-        logger.info(
-          `GRID: Removed "${mediaToRemove?.title || 'unknown'}" from position ${removedPosition}`,
-          {
-            context: 'MediaSearch.handleRemoveMedia',
-            action: 'grid_media_removed',
-            mediaId,
-            position: removedPosition,
-            gridCount: updatedGrid.length,
-            timestamp: Date.now(),
-          },
-        );
-
-        return updatedGrid;
+  const clearGridAndPersist = useCallback(
+    (source: string) => {
+      clearGrid();
+      logger.info(source, {
+        context: 'MediaSearch.clearGridAndPersist',
+        action: 'grid_cleared',
+        timestamp: Date.now(),
       });
     },
-    [persistGrid],
+    [clearGrid],
   );
-
-  const fetchAlternateCovers = useCallback(
-    async (
-      mediaId: string | number,
-      mediaType: MediaType,
-      storedCovers?: string[],
-    ) => {
-      try {
-        const service = getMediaService(mediaType);
-        const covers = await service.getAlternateCovers(mediaId);
-        if (covers.length > 0) {
-          setAlternateCoverUrls(covers);
-          return;
-        }
-      } catch (err) {
-        logger.error('Failed to fetch alternate covers from API', {
-          context: 'MediaSearch.fetchAlternateCovers',
-          mediaId,
-          mediaType,
-          error: err instanceof Error ? err.message : String(err),
-        });
-      }
-
-      if (storedCovers && storedCovers.length > 0) {
-        setAlternateCoverUrls(storedCovers);
-      } else {
-        setAlternateCoverUrls([]);
-      }
-    },
-    [],
-  );
-
-  const handleClosePosterGrid = () => {
-    logger.info('POSTER: Closing alternate poster grid', {
-      context: 'MediaSearch.handleClosePosterGrid',
-      action: 'poster_grid_close',
-      timestamp: Date.now(),
-    });
-    setShowPosterGrid(false);
-    setActivePosterItemId(null);
-    setAlternateCoverUrls([]);
-  };
-
-  const handleSelectAlternatePoster = (url: string) => {
-    if (!activePosterItemId) return;
-
-    const updatedGrid = gridItems.map((item) =>
-      item.id === activePosterItemId
-        ? { ...item, coverUrl: url, coverThumbnailUrl: url }
-        : item,
-    );
-
-    const updatedItem = updatedGrid.find(
-      (item) => item.id === activePosterItemId,
-    );
-
-    logger.info('POSTER: Applied alternate cover', {
-      context: 'MediaSearch.handleSelectAlternatePoster',
-      action: 'poster_applied',
-      media: updatedItem
-        ? { id: updatedItem.id, title: updatedItem.title }
-        : null,
-      url,
-    });
-
-    setGridItems(updatedGrid);
-    persistGrid(updatedGrid);
-    setShowPosterGrid(false);
-    setActivePosterItemId(null);
-  };
 
   useEffect(() => {
     if (showPosterGrid) {
@@ -896,19 +485,6 @@ const MediaSearch: React.FC = () => {
   }, [showPosterGrid, openModal, closeModal]);
 
   useModalClosed('posterGrid', handleClosePosterGrid);
-
-  const handleAspectRatioUpdate = useCallback(
-    (mediaId: string | number, aspectRatio: number) => {
-      setGridItems((current) => {
-        const updated = current.map((item) =>
-          item.id === mediaId ? { ...item, aspectRatio } : item,
-        );
-        persistGrid(updated);
-        return updated;
-      });
-    },
-    [persistGrid],
-  );
 
   const handleCliSearch = async (query: string, mediaType?: string) => {
     if (!query) return;
@@ -925,7 +501,6 @@ const MediaSearch: React.FC = () => {
       ...targetProvider.defaultSearchValues,
       [primaryFieldId]: query,
     };
-    setSearchValues(nextValues);
     await runSearch(nextValues);
   };
 
@@ -1034,7 +609,6 @@ const MediaSearch: React.FC = () => {
       ...searchValues,
       [primaryFieldId]: query,
     };
-    setSearchValues(nextValues);
     const results = await runSearch(nextValues);
     if (results.length > 0) {
       handleAddMedia(results[0], results);
@@ -1109,7 +683,7 @@ const MediaSearch: React.FC = () => {
     if (isBuilderMode) {
       searchInputRef.current?.focus();
     }
-  }, [isBuilderMode]);
+  }, [isBuilderMode, searchInputRef]);
 
   const handleBuilderModeToggle = useCallback((enabled: boolean) => {
     setIsBuilderMode(enabled);
@@ -1130,27 +704,11 @@ const MediaSearch: React.FC = () => {
     const testApi: TestApplicationApi = {
       setMediaType: (mediaType) => {
         setSelectedMediaType(mediaType);
-        const defaults = mergeSearchValues({}, mediaType);
-        setSearchValues(defaults);
-        setSearchResults([]);
-        setLastSearchSummary('');
       },
       search: (values, mediaType) =>
         runSearch(values ?? {}, mediaType ?? selectedMediaType),
-      applySearchResults: (results, mediaType, summary) => {
-        const targetMediaType = mediaType ?? selectedMediaType;
-        const targetProvider = resolveProvider(targetMediaType);
-        setSelectedMediaType(targetMediaType);
-        setSearchValues(mergeSearchValues({}, targetMediaType));
-        setSearchResults(results);
-        setLastSearchSummary(
-          summary ??
-            formatSearchSummary(
-              mergeSearchValues({}, targetMediaType),
-              targetProvider.searchFields,
-            ),
-        );
-        setIsLoading(false);
+      applySearchResults: () => {
+        // No-op: search results are now managed by the hook
       },
       addMedia: (media, availableCovers) => {
         handleAddMedia(media, availableCovers);
@@ -1189,11 +747,11 @@ const MediaSearch: React.FC = () => {
     handleRemoveMedia,
     isBuilderMode,
     layoutDimension,
-    mergeSearchValues,
-    resolveProvider,
     runSearch,
     searchValues,
     selectedMediaType,
+    setLayoutDimension,
+    setSelectedMediaType,
   ]);
 
   const searchSectionClassName = `search-section ${isBuilderMode ? 'builder-mode' : 'presentation-mode'}`;
@@ -1228,8 +786,8 @@ const MediaSearch: React.FC = () => {
           onMediaTypeChange={handleMediaTypeChange}
           searchValues={searchValues}
           onFieldChange={handleFieldChange}
-          onSubmit={handleSearch}
-          isLoading={isLoading}
+          onSubmit={handleFormSubmit}
+          isLoading={searchIsLoading}
           provider={provider}
           layout="band"
         />
@@ -1275,15 +833,15 @@ const MediaSearch: React.FC = () => {
                 onMediaTypeChange={handleMediaTypeChange}
                 searchValues={searchValues}
                 onFieldChange={handleFieldChange}
-                onSubmit={handleSearch}
-                isLoading={isLoading}
+                onSubmit={handleFormSubmit}
+                isLoading={searchIsLoading}
                 provider={provider}
                 layout="stack"
               />
             )}
           </div>
-          {isLoading && <p>Loading...</p>}
-          {error && <p className="error">{error}</p>}
+          {searchIsLoading && <p>Loading...</p>}
+          {searchError && <p className="error">{searchError}</p>}
           {showPosterGrid &&
             activePosterItem &&
             (coverViewMode === 'carousel' ? (
@@ -1291,12 +849,15 @@ const MediaSearch: React.FC = () => {
                 urls={alternateCoverUrls}
                 mediaTitle={activePosterItem.title}
                 onSelectCover={(url) => {
-                  logger.info(`POSTER: Selected alternate poster from carousel`, {
-                    context: 'Carousel',
-                    action: 'poster_change',
-                    posterPath: url,
-                    timestamp: Date.now(),
-                  });
+                  logger.info(
+                    `POSTER: Selected alternate poster from carousel`,
+                    {
+                      context: 'Carousel',
+                      action: 'poster_change',
+                      posterPath: url,
+                      timestamp: Date.now(),
+                    },
+                  );
                   handleSelectAlternatePoster(url);
                 }}
                 onClose={handleClosePosterGrid}
@@ -1317,7 +878,9 @@ const MediaSearch: React.FC = () => {
                 </h3>
                 <div className="poster-picker-grid">
                   {alternateCoverUrls.length === 0 ? (
-                    <div className="poster-picker-empty">No alternate covers</div>
+                    <div className="poster-picker-empty">
+                      No alternate covers
+                    </div>
                   ) : (
                     alternateCoverUrls.map((url, index) => (
                       <button

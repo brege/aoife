@@ -15,13 +15,11 @@ interface PlatformProps {
   ariaLabel: string;
 }
 
-export function Platform({
-  onChange,
-  placeholder,
-  ariaLabel,
-}: PlatformProps) {
+export function Platform({ onChange, placeholder, ariaLabel }: PlatformProps) {
   const [platforms, setPlatforms] = useState<PlatformItem[]>([]);
-  const [filteredPlatforms, setFilteredPlatforms] = useState<PlatformItem[]>([]);
+  const [filteredPlatforms, setFilteredPlatforms] = useState<PlatformItem[]>(
+    [],
+  );
   const [showDropdown, setShowDropdown] = useState(false);
   const [inputValue, setInputValue] = useState('');
   const [highlightedIndex, setHighlightedIndex] = useState(-1);

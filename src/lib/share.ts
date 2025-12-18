@@ -1,3 +1,6 @@
+import type { MediaItem } from '../media/types';
+import { getState, storeState } from './indexeddb';
+
 type ShareCreateResponse = {
   slug: string;
   id: string;
@@ -8,6 +11,21 @@ type ShareFetchResponse = {
   payload: string;
   title?: string;
 };
+
+export type SharedState = {
+  gridItems: MediaItem[];
+  columns: number;
+  minRows: number;
+  layoutDimension: 'width' | 'height';
+};
+
+type ShareCacheRecord = {
+  payload: string;
+  title?: string;
+};
+
+export const SHARE_QUERY_PARAM = 'share';
+export const INDEXEDDB_SHARE_PREFIX = 'share:';
 
 const parseErrorMessage = async (response: Response): Promise<string> => {
   try {
@@ -69,4 +87,102 @@ export const fetchShare = async (slug: string): Promise<ShareFetchResponse> => {
   }
 
   return data;
+};
+
+export const buildSharePayload = (state: SharedState): string => {
+  return JSON.stringify(state);
+};
+
+export const validateSharedState = (state: unknown): state is SharedState => {
+  if (!state || typeof state !== 'object') return false;
+  const obj = state as Record<string, unknown>;
+
+  if (!Array.isArray(obj.gridItems)) return false;
+  if (typeof obj.columns !== 'number' || Number.isNaN(obj.columns))
+    return false;
+  if (typeof obj.minRows !== 'number' || Number.isNaN(obj.minRows))
+    return false;
+  if (obj.layoutDimension !== 'width' && obj.layoutDimension !== 'height')
+    return false;
+
+  return true;
+};
+
+export const validateSharedTitle = (title: unknown): title is string => {
+  return typeof title === 'string' && title.trim() !== '';
+};
+
+export type ApplySharedStateResult = {
+  state: SharedState;
+  slug: string;
+  title: string;
+};
+
+export const loadShare = async (
+  slug: string,
+  defaultTitle: string,
+): Promise<ApplySharedStateResult> => {
+  try {
+    const response = await fetchShare(slug);
+    const cacheRecord: ShareCacheRecord = {
+      payload: response.payload,
+      title: response.title,
+    };
+    await storeState(
+      `${INDEXEDDB_SHARE_PREFIX}${slug}`,
+      JSON.stringify(cacheRecord),
+    );
+
+    const parsed = JSON.parse(response.payload) as unknown;
+    if (!validateSharedState(parsed)) {
+      throw new Error('Share payload is invalid');
+    }
+
+    const title = validateSharedTitle(response.title)
+      ? response.title
+      : defaultTitle;
+
+    return { state: parsed, slug, title };
+  } catch (err) {
+    try {
+      const cached = await getState(`${INDEXEDDB_SHARE_PREFIX}${slug}`);
+      if (!cached) {
+        throw err;
+      }
+
+      let cachedTitle = defaultTitle;
+      let cachedPayload = cached;
+
+      try {
+        const parsedCache = JSON.parse(cached) as unknown;
+        if (
+          parsedCache &&
+          typeof parsedCache === 'object' &&
+          'payload' in parsedCache &&
+          typeof (parsedCache as Record<string, unknown>).payload === 'string'
+        ) {
+          cachedPayload = (parsedCache as Record<string, unknown>)
+            .payload as string;
+          if (
+            'title' in parsedCache &&
+            validateSharedTitle((parsedCache as Record<string, unknown>).title)
+          ) {
+            cachedTitle = (parsedCache as Record<string, unknown>)
+              .title as string;
+          }
+        }
+      } catch {
+        cachedPayload = cached;
+      }
+
+      const parsed = JSON.parse(cachedPayload) as unknown;
+      if (!validateSharedState(parsed)) {
+        throw new Error('Cached share payload is invalid');
+      }
+
+      return { state: parsed, slug, title: cachedTitle };
+    } catch (cacheError) {
+      throw cacheError;
+    }
+  }
 };
