@@ -109,7 +109,8 @@ describe('API integration', function () {
     expect(searchResult.data.length > 0).to.equal(true);
   });
 
-  it('fetches games platforms through gamesdb proxy', async () => {
+  it('fetches games platforms through gamesdb proxy', async function () {
+    this.timeout(60000);
     const response = await apiCall(
       'GET',
       '/api/gamesdb/v1/Platforms?page_size=1',
