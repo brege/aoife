@@ -6,6 +6,7 @@ import './search.css';
 import { type CliMenuState, useCliBridge } from '../../lib/api';
 import { useGridOperations } from '../../lib/grid-operations';
 import { storeState } from '../../lib/indexeddb';
+import { useLayoutState } from '../../lib/layout-state';
 import logger from '../../lib/logger';
 import { useModalClosed, useModalManager } from '../../lib/modalmanager';
 import { useSearchState } from '../../lib/search-state';
@@ -18,19 +19,11 @@ import {
   type SharedState,
 } from '../../lib/share';
 import {
-  COLUMNS_STORAGE_KEY,
-  COVER_VIEW_STORAGE_KEY,
   DEFAULT_TITLE,
   GRID_STORAGE_KEY,
   hydrateAppState,
-  INDEXEDDB_COLUMNS_KEY,
-  INDEXEDDB_LAYOUT_DIMENSION_KEY,
-  INDEXEDDB_MIN_ROWS_KEY,
-  LAYOUT_DIMENSION_STORAGE_KEY,
-  MIN_ROWS_STORAGE_KEY,
   persistAppState,
   TITLE_STORAGE_KEY,
-  useStorageSync,
 } from '../../lib/storage';
 import { getMediaProvider } from '../../media/providers';
 import type {
@@ -179,6 +172,19 @@ const MediaSearch: React.FC = () => {
     setSearchValues,
   } = useSearchState({ isBuilderMode });
 
+  const [isIndexedDbHydrated, setIsIndexedDbHydrated] = useState(false);
+
+  const {
+    columns,
+    setColumns,
+    minRows,
+    setMinRows,
+    layoutDimension,
+    setLayoutDimension,
+    coverViewMode,
+    setCoverViewMode,
+  } = useLayoutState({ isHydrated: isIndexedDbHydrated });
+
   const [gridItems, setGridItems] = useState<MediaItem[]>([]);
   const [title, setTitle] = useState<string>(() => {
     const stored = localStorage.getItem(TITLE_STORAGE_KEY);
@@ -193,50 +199,11 @@ const MediaSearch: React.FC = () => {
     () => gridItems.find((item) => item.id === activePosterItemId) ?? null,
     [gridItems, activePosterItemId],
   );
-  const [columns, setColumns] = useState(() => {
-    const stored = localStorage.getItem(COLUMNS_STORAGE_KEY);
-    if (stored) {
-      const parsed = parseInt(stored, 10);
-      if (!Number.isNaN(parsed) && parsed >= 1 && parsed <= 8) {
-        return parsed;
-      }
-    }
-    return 4;
-  });
-  const [minRows, setMinRows] = useState(() => {
-    const stored = localStorage.getItem(MIN_ROWS_STORAGE_KEY);
-    if (stored) {
-      const parsed = parseInt(stored, 10);
-      if (!Number.isNaN(parsed) && parsed >= 1 && parsed <= 6) {
-        return parsed;
-      }
-    }
-    return 2;
-  });
-  const [layoutDimension, setLayoutDimension] = useState<'width' | 'height'>(
-    () => {
-      const stored = localStorage.getItem(LAYOUT_DIMENSION_STORAGE_KEY);
-      if (stored === 'width' || stored === 'height') {
-        return stored;
-      }
-      return 'height';
-    },
-  );
-  const [coverViewMode, setCoverViewMode] = useState<'grid' | 'carousel'>(
-    () => {
-      const stored = localStorage.getItem(COVER_VIEW_STORAGE_KEY);
-      if (stored === 'carousel') {
-        return 'carousel';
-      }
-      return 'grid';
-    },
-  );
   const [shareUrl, setShareUrl] = useState('');
   const [shareError, setShareError] = useState('');
   const [isSharing, setIsSharing] = useState(false);
   const [isLoadingShare, setIsLoadingShare] = useState(false);
   const initialShareSlugRef = useRef<string | null>(null);
-  const [isIndexedDbHydrated, setIsIndexedDbHydrated] = useState(false);
 
   if (initialShareSlugRef.current === null) {
     const params = new URLSearchParams(window.location.search);
@@ -313,7 +280,7 @@ const MediaSearch: React.FC = () => {
     })().finally(() => {
       setIsIndexedDbHydrated(true);
     });
-  }, []);
+  }, [setColumns, setMinRows, setLayoutDimension]);
 
   const applySharedState = useCallback(
     (state: SharedState, slug: string, sharedTitle: string) => {
@@ -335,7 +302,7 @@ const MediaSearch: React.FC = () => {
       window.history.replaceState(null, '', url.toString());
       setShareUrl(url.toString());
     },
-    [],
+    [setColumns, setMinRows, setLayoutDimension],
   );
 
   const {
@@ -393,27 +360,6 @@ const MediaSearch: React.FC = () => {
     [applySharedState],
   );
 
-  useStorageSync(
-    COLUMNS_STORAGE_KEY,
-    INDEXEDDB_COLUMNS_KEY,
-    String(columns),
-    isIndexedDbHydrated,
-  );
-
-  useStorageSync(
-    MIN_ROWS_STORAGE_KEY,
-    INDEXEDDB_MIN_ROWS_KEY,
-    String(minRows),
-    isIndexedDbHydrated,
-  );
-
-  useStorageSync(
-    LAYOUT_DIMENSION_STORAGE_KEY,
-    INDEXEDDB_LAYOUT_DIMENSION_KEY,
-    layoutDimension,
-    isIndexedDbHydrated,
-  );
-
   useEffect(() => {
     if (!isIndexedDbHydrated) {
       return;
@@ -433,10 +379,6 @@ const MediaSearch: React.FC = () => {
     title,
     isIndexedDbHydrated,
   ]);
-
-  useEffect(() => {
-    localStorage.setItem(COVER_VIEW_STORAGE_KEY, coverViewMode);
-  }, [coverViewMode]);
 
   useEffect(() => {
     if (!initialShareSlugRef.current) {
@@ -808,6 +750,7 @@ const MediaSearch: React.FC = () => {
     runSearch,
     searchValues,
     selectedMediaType,
+    setLayoutDimension,
     setSelectedMediaType,
   ]);
 
