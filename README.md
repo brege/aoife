@@ -18,17 +18,20 @@ Play with [the prototype](https://aoife.brege.org)!
 Ever wanted to share a screenshot of your favorite things you read, saw or watched?
 **aoife** fetches poster and cover art into a minimalist grid to share with your friends.
 
+
+### Mobile
+
 <table>
-  <tr><td colspan="3"><b>Mobile</b></td></tr>
   <tr>
     <td><img src="docs/img/mobile-present.png" width="180"></td>
     <td><img src="docs/img/mobile-single.png" width="180"></td>
     <td><img src="docs/img/mobile-options.png" width="180"></td>
   </tr>
 </table>
-<br>
+
+### Desktop
+
 <table>
-  <tr><td colspan="3"><b>Desktop</b></td></tr>
   <tr>
     <td><img src="docs/img/desktop-edit.png" width="282"></td>
     <td><img src="docs/img/desktop-types.png" width="283"></td>
@@ -55,7 +58,7 @@ npm run dev
 
 This will start a [Vite](https://vitejs.dev/) React server, which will print the local URL and port number to console.
 
-**aoife** has an API that's easy to curl and test behaviors against through a CLI bridge. In production, the backend, `backend/`, is served by a Flask server with Gunicorn workers. Vite is only used in development and building `dist/`.
+**aoife** has an API that's easy to curl and test behaviors against through a CLI bridge. In production, the backend, `backend/`, is served by Flask/Gunicorn workers. Vite is only used in development and building `dist/`.
 
 API Keys are not included in the repo. They are configured in a `.env` file.
 
