@@ -51,3 +51,21 @@
 .platform-option:last-child {
   border-radius: 0 0 4px 4px;
 }
+
+@media (max-width: 600px) {
+  .media-search-form.stack .platform-dropdown {
+    top: auto;
+    bottom: 100%;
+    border-top: 1px solid #3a4656;
+    border-bottom: none;
+    border-radius: 4px 4px 0 0;
+  }
+
+  .media-search-form.stack .platform-option:first-child {
+    border-radius: 4px 4px 0 0;
+  }
+
+  .media-search-form.stack .platform-option:last-child {
+    border-radius: 0;
+  }
+}

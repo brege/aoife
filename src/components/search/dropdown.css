@@ -115,3 +115,11 @@
   min-height: 46px;
   font-size: 14px;
 }
+
+@media (max-width: 600px) {
+  .media-search-form.stack .dropdown-menu {
+    top: auto;
+    bottom: calc(100% + 8px);
+    border-radius: 8px 8px 0 0;
+  }
+}
