@@ -22,6 +22,6 @@
    - serve stale on upstream errors/timeouts
    - relax/drop cache /api/gamesdb/images/* (image bytes) when disk space is low
 
-2. Add rate limiting that won’t trip fail2ban to early or during dev/benchmarking
+2. Add rate limiting that won’t trip fail2ban too early or during dev/benchmarking
    - prefer app-level limiting with `flask-limiter`
    - whitelist dev-machine IP

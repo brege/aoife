@@ -4,7 +4,7 @@
 
 - Updated screenshots, README, and favicon to cover new features
 - Made music art finding more accurate with archive.org and iTunes refinement
-- Null titles (accidents) are reset to 'aoife'
+- Null header titles (accidents) are reset to 'aoife'
 - Made dropdowns drop 'up' on mobile layouts
 - Further timeout refinements in tests for GamesDB API calls
 - Trash/clear now nips the URL slug and resets the title

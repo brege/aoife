@@ -18,13 +18,13 @@
 - TheGamesDB for video games
 
 | Media Types  | APIs                                        |
-|:-------------|:--------------------------------------------|
-| movies       | TMDb                                        |
-| TV shows     | TMDb                                        |
-| books        | OpenLibrary, Google Books                   |
-| music albums | MusicBrainz, iTunes, CoverArtArchive        |
-| video games  | TheGamesDB                                  |
-| custom media | Manual Upload, URL upload                   |
+|:-------------|:--------------------------------------|
+| movies       | TMDb                                  |
+| TV shows     | TMDb                                  |
+| books        | OpenLibrary, Google Books             |
+| music albums | MusicBrainz, iTunes, CoverArtArchive  |
+| video games  | TheGamesDB                            |
+| custom media | Manual Upload, URL upload             |
 
 ### Commands
 
@@ -89,7 +89,7 @@ Coverage (✔ = covered, ○ = missing):
 
 ### slugs.json
 
-To regenerate the shared slug vocabulary from the flavor network dataset:
+To regenerate the shared slug vocabulary from the [flavor network](https://github.com/brege/flavor-project) dataset:
 
 ```bash
 curl -s https://flavorpair.me/data/flavor/nodes.json \
@@ -98,16 +98,14 @@ curl -s https://flavorpair.me/data/flavor/nodes.json \
 ```
 
 Inspecting the Shared URL database remotely:
-
 ```bash
-./inspect -h
-#  inspect [-s <slug-fragment> | -n <count>] [-r | -f <path>]
+./inspect [-h | -s <slug-fragment> | -n <count>] [-r | -f <path>]
 ```
 
 Examples:
 ```bash
-./inspect -s chanterelle -r       # urls slugs containing 'chanterelle' on remote
+./inspect -s chanterelle -r       # url slugs containing 'chanterelle' on remote
 ./inspect -n 10 -f                # last 10 urls generated (local json)
 ```
 
-I will be migrating from JSON storage to a SQL database once development has stabilized.
+TODO: migrate from JSON storage to a SQL database once development has stabilized.
