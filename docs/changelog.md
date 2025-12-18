@@ -10,6 +10,8 @@
 - Added regression wirkflow test for clear & reloads, fixing IndexDB v. lS race condition
 - Added favicon and extended biome linting to all TypeScript files
 - Change "share" in HTML attrbutes so copy-link isn't clobbered by uBlock's social filter
+- Add swipability as alternative to grid-based poster selection
+- Refactored search module and Vite configuration for better code mantainability
 
 ## 2025-12-16
 
