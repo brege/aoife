@@ -8,6 +8,22 @@ import { getState, storeState } from '../../lib/indexeddb';
 import logger from '../../lib/logger';
 import { useModalClosed, useModalManager } from '../../lib/modalmanager';
 import { createShare, fetchShare } from '../../lib/share';
+import {
+  COLUMNS_STORAGE_KEY,
+  COVER_VIEW_STORAGE_KEY,
+  DEFAULT_TITLE,
+  GRID_STORAGE_KEY,
+  hydrateAppState,
+  INDEXEDDB_COLUMNS_KEY,
+  INDEXEDDB_LAYOUT_DIMENSION_KEY,
+  INDEXEDDB_MIN_ROWS_KEY,
+  INDEXEDDB_SHARE_PREFIX,
+  LAYOUT_DIMENSION_STORAGE_KEY,
+  MIN_ROWS_STORAGE_KEY,
+  persistAppState,
+  TITLE_STORAGE_KEY,
+  useStorageSync,
+} from '../../lib/storage';
 import { getMediaService } from '../../media/factory';
 import { getMediaProvider } from '../../media/providers';
 import type {
@@ -20,21 +36,8 @@ import AppHeader from '../ui/header';
 import { MediaForm } from './mediaform';
 import Carousel from './carousel';
 
-const GRID_STORAGE_KEY = 'gridItems';
-const COLUMNS_STORAGE_KEY = 'gridColumns';
-const MIN_ROWS_STORAGE_KEY = 'gridMinRows';
-const LAYOUT_DIMENSION_STORAGE_KEY = 'layoutDimension';
-const TITLE_STORAGE_KEY = 'gridTitle';
-const COVER_VIEW_STORAGE_KEY = 'coverViewMode';
 const GRID_CAPACITY = 4;
 const SHARE_QUERY_PARAM = 'share';
-const INDEXEDDB_GRID_KEY = 'gridItems';
-const INDEXEDDB_COLUMNS_KEY = 'gridColumns';
-const INDEXEDDB_MIN_ROWS_KEY = 'gridMinRows';
-const INDEXEDDB_LAYOUT_DIMENSION_KEY = 'layoutDimension';
-const INDEXEDDB_TITLE_KEY = 'gridTitle';
-const INDEXEDDB_SHARE_PREFIX = 'share:';
-const DEFAULT_TITLE = 'aoife';
 
 type SharedState = {
   gridItems: MediaItem[];
@@ -309,48 +312,41 @@ const MediaSearch: React.FC = () => {
     }
 
     void (async () => {
-      const storedColumns = await getState(INDEXEDDB_COLUMNS_KEY);
-      if (storedColumns) {
-        const parsed = parseInt(storedColumns, 10);
+      const state = await hydrateAppState();
+
+      if (state.columns) {
+        const parsed = parseInt(state.columns, 10);
         if (!Number.isNaN(parsed) && parsed >= 1 && parsed <= 8) {
           setColumns(parsed);
         }
       }
 
-      const storedMinRows = await getState(INDEXEDDB_MIN_ROWS_KEY);
-      if (storedMinRows) {
-        const parsed = parseInt(storedMinRows, 10);
+      if (state.minRows) {
+        const parsed = parseInt(state.minRows, 10);
         if (!Number.isNaN(parsed) && parsed >= 1 && parsed <= 6) {
           setMinRows(parsed);
         }
       }
 
-      const storedLayoutDimension = await getState(
-        INDEXEDDB_LAYOUT_DIMENSION_KEY,
-      );
       if (
-        storedLayoutDimension === 'width' ||
-        storedLayoutDimension === 'height'
+        state.layoutDimension === 'width' ||
+        state.layoutDimension === 'height'
       ) {
-        setLayoutDimension(storedLayoutDimension);
+        setLayoutDimension(state.layoutDimension);
       }
 
-      const storedTitle = await getState(INDEXEDDB_TITLE_KEY);
-      if (storedTitle && localStorage.getItem(TITLE_STORAGE_KEY) === null) {
-        setTitle(storedTitle);
+      if (state.title && localStorage.getItem(TITLE_STORAGE_KEY) === null) {
+        setTitle(state.title);
       }
 
-      const storedGrid = await getState(INDEXEDDB_GRID_KEY);
-      if (!storedGrid) {
-        return;
-      }
-      const storedLocalGrid = localStorage.getItem(GRID_STORAGE_KEY);
-      if (storedLocalGrid !== null) {
-        return;
-      }
-      const parsedGrid = JSON.parse(storedGrid) as MediaItem[];
-      if (Array.isArray(parsedGrid)) {
-        setGridItems(parsedGrid);
+      if (state.gridItems) {
+        const storedLocalGrid = localStorage.getItem(GRID_STORAGE_KEY);
+        if (storedLocalGrid === null) {
+          const parsedGrid = JSON.parse(state.gridItems) as MediaItem[];
+          if (Array.isArray(parsedGrid)) {
+            setGridItems(parsedGrid);
+          }
+        }
       }
     })().finally(() => {
       setIsIndexedDbHydrated(true);
@@ -366,27 +362,17 @@ const MediaSearch: React.FC = () => {
     }
   }, [provider, isBuilderMode]);
 
-  const persistGrid = useCallback((items: MediaItem[]) => {
-    localStorage.setItem(GRID_STORAGE_KEY, JSON.stringify(items));
-    storeState(INDEXEDDB_GRID_KEY, JSON.stringify(items));
-  }, []);
-
-  const persistTitle = useCallback((nextTitle: string) => {
-    localStorage.setItem(TITLE_STORAGE_KEY, nextTitle);
-    storeState(INDEXEDDB_TITLE_KEY, nextTitle);
-  }, []);
 
   const clearGridAndPersist = useCallback(
     (source: string) => {
       setGridItems([]);
-      persistGrid([]);
       logger.info(source, {
         context: 'MediaSearch.clearGridAndPersist',
         action: 'grid_cleared',
         timestamp: Date.now(),
       });
     },
-    [persistGrid],
+    [],
   );
 
   const buildSharePayload = useCallback((): string => {
@@ -425,21 +411,20 @@ const MediaSearch: React.FC = () => {
       setLayoutDimension(state.layoutDimension);
       setGridItems(state.gridItems);
       setTitle(sharedTitle);
-      persistGrid(state.gridItems);
-      persistTitle(sharedTitle);
-      localStorage.setItem(COLUMNS_STORAGE_KEY, String(state.columns));
-      localStorage.setItem(MIN_ROWS_STORAGE_KEY, String(state.minRows));
-      localStorage.setItem(LAYOUT_DIMENSION_STORAGE_KEY, state.layoutDimension);
-      storeState(INDEXEDDB_COLUMNS_KEY, String(state.columns));
-      storeState(INDEXEDDB_MIN_ROWS_KEY, String(state.minRows));
-      storeState(INDEXEDDB_LAYOUT_DIMENSION_KEY, state.layoutDimension);
+      persistAppState(
+        JSON.stringify(state.gridItems),
+        String(state.columns),
+        String(state.minRows),
+        state.layoutDimension,
+        sharedTitle,
+      );
 
       const url = new URL(window.location.href);
       url.searchParams.set(SHARE_QUERY_PARAM, slug);
       window.history.replaceState(null, '', url.toString());
       setShareUrl(url.toString());
     },
-    [persistGrid, persistTitle],
+    [],
   );
 
   const loadShare = useCallback(
@@ -528,29 +513,39 @@ const MediaSearch: React.FC = () => {
     [applySharedState],
   );
 
-  useEffect(() => {
-    if (!isIndexedDbHydrated) {
-      return;
-    }
-    localStorage.setItem(COLUMNS_STORAGE_KEY, String(columns));
-    storeState(INDEXEDDB_COLUMNS_KEY, String(columns));
-  }, [columns, isIndexedDbHydrated]);
+  useStorageSync(
+    COLUMNS_STORAGE_KEY,
+    INDEXEDDB_COLUMNS_KEY,
+    String(columns),
+    isIndexedDbHydrated,
+  );
+
+  useStorageSync(
+    MIN_ROWS_STORAGE_KEY,
+    INDEXEDDB_MIN_ROWS_KEY,
+    String(minRows),
+    isIndexedDbHydrated,
+  );
+
+  useStorageSync(
+    LAYOUT_DIMENSION_STORAGE_KEY,
+    INDEXEDDB_LAYOUT_DIMENSION_KEY,
+    layoutDimension,
+    isIndexedDbHydrated,
+  );
 
   useEffect(() => {
     if (!isIndexedDbHydrated) {
       return;
     }
-    localStorage.setItem(MIN_ROWS_STORAGE_KEY, String(minRows));
-    storeState(INDEXEDDB_MIN_ROWS_KEY, String(minRows));
-  }, [minRows, isIndexedDbHydrated]);
-
-  useEffect(() => {
-    if (!isIndexedDbHydrated) {
-      return;
-    }
-    localStorage.setItem(LAYOUT_DIMENSION_STORAGE_KEY, layoutDimension);
-    storeState(INDEXEDDB_LAYOUT_DIMENSION_KEY, layoutDimension);
-  }, [layoutDimension, isIndexedDbHydrated]);
+    persistAppState(
+      JSON.stringify(gridItems),
+      String(columns),
+      String(minRows),
+      layoutDimension,
+      title,
+    );
+  }, [gridItems, columns, minRows, layoutDimension, title, isIndexedDbHydrated]);
 
   useEffect(() => {
     localStorage.setItem(COVER_VIEW_STORAGE_KEY, coverViewMode);
@@ -719,13 +714,9 @@ const MediaSearch: React.FC = () => {
     title,
   ]);
 
-  const handleTitleChange = useCallback(
-    (nextTitle: string) => {
-      setTitle(nextTitle);
-      persistTitle(nextTitle);
-    },
-    [persistTitle],
-  );
+  const handleTitleChange = useCallback((nextTitle: string) => {
+    setTitle(nextTitle);
+  }, []);
 
   const handleFieldChange = useCallback((fieldId: string, value: string) => {
     setSearchValues((prev) => ({
@@ -756,7 +747,6 @@ const MediaSearch: React.FC = () => {
 
       setGridItems((current) => {
         const updatedGrid = [...current, mediaWithCovers];
-        persistGrid(updatedGrid);
 
         logger.info(
           `GRID: Added "${media.title}" to position ${current.length}`,
@@ -785,7 +775,6 @@ const MediaSearch: React.FC = () => {
     [
       provider.defaultSearchValues,
       searchResults,
-      persistGrid,
       selectedMediaType,
       searchValues,
     ],
@@ -797,7 +786,6 @@ const MediaSearch: React.FC = () => {
         const mediaToRemove = current.find((m) => m.id === mediaId);
         const removedPosition = current.findIndex((m) => m.id === mediaId);
         const updatedGrid = current.filter((media) => media.id !== mediaId);
-        persistGrid(updatedGrid);
 
         logger.info(
           `GRID: Removed "${mediaToRemove?.title || 'unknown'}" from position ${removedPosition}`,
@@ -814,7 +802,7 @@ const MediaSearch: React.FC = () => {
         return updatedGrid;
       });
     },
-    [persistGrid],
+    [],
   );
 
   const fetchAlternateCovers = useCallback(
@@ -882,7 +870,6 @@ const MediaSearch: React.FC = () => {
     });
 
     setGridItems(updatedGrid);
-    persistGrid(updatedGrid);
     setShowPosterGrid(false);
     setActivePosterItemId(null);
   };
@@ -903,11 +890,10 @@ const MediaSearch: React.FC = () => {
         const updated = current.map((item) =>
           item.id === mediaId ? { ...item, aspectRatio } : item,
         );
-        persistGrid(updated);
         return updated;
       });
     },
-    [persistGrid],
+    [],
   );
 
   const handleCliSearch = async (query: string, mediaType?: string) => {
