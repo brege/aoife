@@ -61,6 +61,18 @@ const getExternalLinks = (
   }
 
   if (mediaType === 'music' && typeof result.metadata?.mbid === 'string') {
+    if (
+      result.metadata?.coverSource === 'CoverArtArchiveReleaseGroup' &&
+      typeof result.metadata?.releaseGroup === 'string'
+    ) {
+      links.push({
+        href: `https://musicbrainz.org/release-group/${result.metadata.releaseGroup}`,
+        label: 'MusicBrainz',
+        domain: 'musicbrainz.org',
+      });
+      return links;
+    }
+
     links.push({
       href: `https://musicbrainz.org/release/${result.metadata.mbid}`,
       label: 'MusicBrainz',
