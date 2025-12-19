@@ -219,10 +219,9 @@ export const useSearchState = (
         if (Object.hasOwn(current, resultId)) {
           return current;
         }
-        return {
-          ...current,
-          [resultId]: true,
-        };
+        const next = { ...current } as Record<string | number, true>;
+        next[resultId] = true;
+        return next;
       });
     },
     [],

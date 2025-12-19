@@ -14,7 +14,7 @@ const groups = {
 
 const specs = groups[group] || groups.all;
 
-if (process.argv[1] && process.argv[1].includes('.mocharc')) {
+if (process.argv[1]?.includes('.mocharc')) {
   // lint-skip-next-line no-console
   console.log(`[mocha] group=${group} specs=${JSON.stringify(specs)}`);
 }

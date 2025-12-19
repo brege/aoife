@@ -373,9 +373,7 @@ export class MusicService extends MediaService {
       }),
     );
 
-    const withCovers = results.filter((result): result is MediaSearchResult =>
-      Boolean(result?.coverUrl),
-    );
+    const withCovers = results.filter((result) => Boolean(result?.coverUrl));
 
     return withCovers.sort((a, b) => {
       if (a.coverUrl && !b.coverUrl) return -1;

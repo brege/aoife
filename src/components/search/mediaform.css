@@ -227,8 +227,8 @@
     bottom: auto;
   }
 
-.media-search-form.band.band-bottom {
-  top: auto;
-  bottom: calc(var(--spacing-md) + 12px + env(safe-area-inset-bottom));
-}
+  .media-search-form.band.band-bottom {
+    top: auto;
+    bottom: calc(var(--spacing-md) + 12px + env(safe-area-inset-bottom));
+  }
 }
