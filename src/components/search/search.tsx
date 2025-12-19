@@ -31,6 +31,9 @@ const MediaSearch: React.FC = () => {
   }, []);
 
   const [showSearch, setShowSearch] = useState(true);
+  const visibleResultsStep = 12;
+  const [visibleResultsCount, setVisibleResultsCount] =
+    useState(visibleResultsStep);
 
   const {
     selectedMediaType,
@@ -136,6 +139,10 @@ const MediaSearch: React.FC = () => {
     }
   }, [searchResults.length, openModal, closeModal]);
 
+  useEffect(() => {
+    setVisibleResultsCount(Math.min(searchResults.length, visibleResultsStep));
+  }, [searchResults]);
+
   useModalClosed('searchResults', closeSearchResults);
 
   const handleFormSubmit = useCallback(
@@ -184,20 +191,29 @@ const MediaSearch: React.FC = () => {
 
   const handleShowSearchToggle = useCallback((enabled: boolean) => {
     setShowSearch(enabled);
-    logger.info(
-      `SEARCH: ${enabled ? 'Showing' : 'Hiding'} search`,
-      {
-        context: 'MediaSearch.handleShowSearchToggle',
-        action: 'search_toggle',
-        showSearch: enabled,
-        timestamp: Date.now(),
-      },
-    );
+    logger.info(`SEARCH: ${enabled ? 'Showing' : 'Hiding'} search`, {
+      context: 'MediaSearch.handleShowSearchToggle',
+      action: 'search_toggle',
+      showSearch: enabled,
+      timestamp: Date.now(),
+    });
   }, []);
 
   const handleClearGrid = useCallback(() => {
     clearGridAndPersist('CLEAR: Grid cleared via hamburger menu');
   }, [clearGridAndPersist]);
+
+  const handleShowMoreResults = useCallback(() => {
+    setVisibleResultsCount((current) =>
+      Math.min(searchResults.length, current + visibleResultsStep),
+    );
+  }, [searchResults.length]);
+
+  const visibleResults = searchResults.slice(0, visibleResultsCount);
+  const showMoreCount = Math.min(
+    visibleResultsStep,
+    Math.max(0, searchResults.length - visibleResultsCount),
+  );
 
   useSearchBridges({
     gridItems,
@@ -332,13 +348,16 @@ const MediaSearch: React.FC = () => {
             searchResults.length > 0 &&
             selectedMediaType !== 'custom' && (
               <SearchResults
-                results={searchResults}
+                results={visibleResults}
+                availableCovers={searchResults}
                 mediaType={selectedMediaType}
                 searchSummary={searchSummary}
                 aspectRatios={searchResultAspectRatios}
                 onClose={closeSearchResults}
                 onAdd={handleAddMedia}
                 onPosterLoad={handleSearchResultImageLoad}
+                showMoreCount={showMoreCount}
+                onShowMore={handleShowMoreResults}
               />
             )}
         </div>

@@ -1,16 +1,9 @@
 import type React from 'react';
-import {
-  useCallback,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import './grid.css';
 import { MdClose } from 'react-icons/md';
 import logger from '../../lib/logger';
-import type { MediaType } from '../../media/types';
-import type { MediaItem } from '../../media/types';
+import type { MediaItem, MediaType } from '../../media/types';
 import { MEDIA_TYPE_ICONS } from '../search/dropdown';
 import { CustomImage } from '../ui/customimage';
 

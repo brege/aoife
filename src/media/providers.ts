@@ -67,7 +67,7 @@ const booksProvider: MediaProviderConfig = {
       label: 'Title',
       placeholder: 'Title...',
       type: 'text',
-      required: true,
+      required: false,
     },
   ],
   defaultSearchValues: {

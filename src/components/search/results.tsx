@@ -7,6 +7,24 @@ type ExternalLink = {
   domain: string;
 };
 
+const pickInternationalStandardBookNumber = (
+  identifiers: unknown,
+): string | null => {
+  if (!Array.isArray(identifiers)) {
+    return null;
+  }
+  const normalized = identifiers
+    .filter((identifier) => typeof identifier === 'string')
+    .map((identifier) => identifier.replace(/[^0-9Xx]/g, '').toUpperCase())
+    .filter((identifier) => identifier.length > 0);
+  const preferred = normalized.find((identifier) => identifier.length === 13);
+  if (preferred) {
+    return preferred;
+  }
+  const fallback = normalized.find((identifier) => identifier.length === 10);
+  return fallback || null;
+};
+
 const getExternalLinks = (
   result: MediaItem,
   mediaType: MediaType,
@@ -57,6 +75,16 @@ const getExternalLinks = (
         label: 'Google Books',
         domain: 'books.google.com',
       });
+      const isbn = pickInternationalStandardBookNumber(
+        result.metadata?.internationalStandardBookNumbers,
+      );
+      if (isbn) {
+        links.push({
+          href: `https://openlibrary.org/isbn/${isbn}`,
+          label: 'Open Library',
+          domain: 'openlibrary.org',
+        });
+      }
     }
   }
 
@@ -93,6 +121,7 @@ const getExternalLinks = (
 
 type SearchResultsProps = {
   results: MediaItem[];
+  availableCovers: MediaItem[];
   mediaType: MediaType;
   searchSummary: string;
   aspectRatios: Record<string | number, number>;
@@ -102,16 +131,21 @@ type SearchResultsProps = {
     resultId: string | number,
     event: React.SyntheticEvent<HTMLImageElement>,
   ) => void;
+  showMoreCount: number;
+  onShowMore: () => void;
 };
 
 export const SearchResults = ({
   results,
+  availableCovers,
   mediaType,
   searchSummary,
   aspectRatios,
   onClose,
   onAdd,
   onPosterLoad,
+  showMoreCount,
+  onShowMore,
 }: SearchResultsProps) => (
   <div className="search-results">
     <button
@@ -144,7 +178,7 @@ export const SearchResults = ({
             className="search-result-card"
             data-media-id={result.id}
             data-media-title={result.title}
-            onClick={() => onAdd(result, results)}
+            onClick={() => onAdd(result, availableCovers)}
             aria-label={`Add ${result.title}`}
           >
             {result.coverThumbnailUrl || result.coverUrl ? (
@@ -201,5 +235,16 @@ export const SearchResults = ({
         );
       })}
     </div>
+    {showMoreCount > 0 && (
+      <div className="search-results-footer">
+        <button
+          type="button"
+          className="search-results-more"
+          onClick={onShowMore}
+        >
+          Add {showMoreCount} more
+        </button>
+      </div>
+    )}
   </div>
 );

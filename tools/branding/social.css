@@ -25,7 +25,7 @@ body {
   padding: 40px;
   box-sizing: border-box;
   background-color: #1f2933;
-  background-image: url('./img/social-background.png');
+  background-image: url("./img/social-background.png");
   background-repeat: no-repeat;
   background-position: center;
   background-size: 1280px 640px;

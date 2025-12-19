@@ -8,9 +8,9 @@ import {
   removeMediaDirectly,
   resetApplicationState,
   searchThroughApplication,
-  setShowSearchState,
   setLayoutDimension,
   setMediaType,
+  setShowSearchState,
 } from '../support/actions';
 
 const workflowEnv = Cypress.env('workflow');

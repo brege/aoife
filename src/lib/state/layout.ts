@@ -45,11 +45,15 @@ export const useLayoutState = (
   };
 
   const [columns, setColumns] = useState(() => {
-    return parseStoredNumber(localStorage.getItem(COLUMNS_STORAGE_KEY), 1, 8) ?? 4;
+    return (
+      parseStoredNumber(localStorage.getItem(COLUMNS_STORAGE_KEY), 1, 8) ?? 4
+    );
   });
 
   const [minRows, setMinRows] = useState(() => {
-    return parseStoredNumber(localStorage.getItem(MIN_ROWS_STORAGE_KEY), 1, 6) ?? 2;
+    return (
+      parseStoredNumber(localStorage.getItem(MIN_ROWS_STORAGE_KEY), 1, 6) ?? 2
+    );
   });
 
   const [layoutDimension, setLayoutDimension] = useState<'width' | 'height'>(

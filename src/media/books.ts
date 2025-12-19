@@ -65,10 +65,7 @@ export class BooksService extends MediaService {
   private readonly CACHE_TTL = 5 * 60 * 1000; // 5 minutes
   private itemToSearchParams = new Map<string | number, string>();
 
-  private buildGoogleBooksCoverUrl(
-    volumeId: string,
-    zoom: number,
-  ): string {
+  private buildGoogleBooksCoverUrl(volumeId: string, zoom: number): string {
     const url = new URL('https://books.google.com/books/content');
     url.searchParams.set('id', volumeId);
     url.searchParams.set('printsec', 'frontcover');
@@ -77,10 +74,7 @@ export class BooksService extends MediaService {
     return url.toString();
   }
 
-  private buildOpenLibraryCoverUrl(
-    coverId: number,
-    size: 'L' | 'S',
-  ): string {
+  private buildOpenLibraryCoverUrl(coverId: number, size: 'L' | 'S'): string {
     return `https://covers.openlibrary.org/b/id/${coverId}-${size}.jpg`;
   }
 
@@ -106,7 +100,7 @@ export class BooksService extends MediaService {
       this.searchCache.params === strictCacheKey &&
       Date.now() - this.searchCache.timestamp < this.CACHE_TTL
     ) {
-      return this.searchCache.results.slice(0, 10);
+      return this.searchCache.results;
     }
 
     const strictResults =
@@ -129,7 +123,7 @@ export class BooksService extends MediaService {
         this.searchCache.params === broadCacheKey &&
         Date.now() - this.searchCache.timestamp < this.CACHE_TTL
       ) {
-        return this.searchCache.results.slice(0, 10);
+        return this.searchCache.results;
       }
       const broadResults = await this.searchBooks({
         mode: 'broad',
@@ -139,9 +133,15 @@ export class BooksService extends MediaService {
     }
 
     const searchTokens = this.getSearchTokens(combinedQuery);
-    const scoredResults = this.scoreResults(results, searchTokens, searchMode);
+    const validatedResults = await this.validateOpenLibraryCovers(results);
+    const scoredResults = this.scoreResults(
+      validatedResults,
+      searchTokens,
+      searchMode,
+    );
 
-    const cacheKey = searchMode === 'strict' ? strictCacheKey : `broad:${combinedQuery}`;
+    const cacheKey =
+      searchMode === 'strict' ? strictCacheKey : `broad:${combinedQuery}`;
     this.searchCache = {
       params: cacheKey,
       results: scoredResults,
@@ -152,7 +152,7 @@ export class BooksService extends MediaService {
       this.itemToSearchParams.set(item.id, cacheKey);
     });
 
-    return scoredResults.slice(0, 10);
+    return scoredResults;
   }
 
   async getDetails(id: string | number): Promise<MediaSearchResult | null> {
@@ -381,7 +381,10 @@ export class BooksService extends MediaService {
           this.selectInternationalStandardBookNumber(
             internationalStandardBookNumbers,
           );
-        const openLibraryKey = doc.key ? doc.key.replace('/works/', '') : null;
+        const openLibraryKey = doc.key ?? null;
+        const openLibraryWorkId = openLibraryKey
+          ? openLibraryKey.replace('/works/', '')
+          : null;
         const coverUrl = coverId
           ? this.buildOpenLibraryCoverUrl(coverId, 'L')
           : selectedInternationalStandardBookNumber
@@ -400,8 +403,8 @@ export class BooksService extends MediaService {
             : null;
 
         return {
-          id: openLibraryKey
-            ? `ol:${openLibraryKey}`
+          id: openLibraryWorkId
+            ? `ol:${openLibraryWorkId}`
             : coverId
               ? `ol:${coverId}`
               : `ol:${doc.title}`,
@@ -415,6 +418,7 @@ export class BooksService extends MediaService {
           metadata: {
             coverId: coverId || null,
             openLibraryKey,
+            openLibraryWorkId,
             editionCount: doc.edition_count,
             internationalStandardBookNumbers,
           },
@@ -433,8 +437,16 @@ export class BooksService extends MediaService {
           ? parseInt(volumeInfo.publishedDate.substring(0, 4), 10)
           : undefined;
 
-        const coverUrl = this.buildGoogleBooksCoverUrl(item.id, 2);
-        const coverThumbnailUrl = this.buildGoogleBooksCoverUrl(item.id, 1);
+        const hasCoverImageLinks = Boolean(
+          volumeInfo.imageLinks?.thumbnail ||
+            volumeInfo.imageLinks?.smallThumbnail ||
+            volumeInfo.imageLinks?.medium ||
+            volumeInfo.imageLinks?.large,
+        );
+        const coverUrl = hasCoverImageLinks
+          ? this.buildGoogleBooksCoverUrl(item.id, 2)
+          : null;
+        const coverThumbnailUrl = coverUrl;
         const internationalStandardBookNumbers =
           this.getInternationalStandardBookNumbersFromGoogleBooks(volumeInfo);
 
@@ -469,7 +481,9 @@ export class BooksService extends MediaService {
       return [];
     }
     return result.isbn
-      .map((identifier) => this.normalizeInternationalStandardBookNumber(identifier))
+      .map((identifier) =>
+        this.normalizeInternationalStandardBookNumber(identifier),
+      )
       .filter((identifier) => identifier.length > 0);
   }
 
@@ -486,21 +500,77 @@ export class BooksService extends MediaService {
       .filter((identifier) => identifier.length > 0);
   }
 
-  private normalizeInternationalStandardBookNumber(
-    value: string,
-  ): string {
+  private normalizeInternationalStandardBookNumber(value: string): string {
     return value.replace(/[^0-9Xx]/g, '').toUpperCase();
   }
 
   private selectInternationalStandardBookNumber(
     identifiers: string[],
   ): string | null {
-    const preferred = identifiers.find((identifier) => identifier.length === 13);
+    const preferred = identifiers.find(
+      (identifier) => identifier.length === 13,
+    );
     if (preferred) {
       return preferred;
     }
     const fallback = identifiers.find((identifier) => identifier.length === 10);
     return fallback || null;
+  }
+
+  private async validateOpenLibraryCovers(
+    results: MediaSearchResult[],
+  ): Promise<MediaSearchResult[]> {
+    const maximumCoverChecks = 8;
+    const candidates = results.filter((item) => {
+      if (item.source !== 'OpenLibrary') {
+        return false;
+      }
+      const metadata = item.metadata as Record<string, unknown> | undefined;
+      const coverId = metadata?.coverId;
+      if (typeof coverId === 'number' && Number.isFinite(coverId)) {
+        return false;
+      }
+      return Boolean(item.coverUrl || item.coverThumbnailUrl);
+    });
+
+    if (candidates.length === 0) {
+      return results;
+    }
+
+    const limitedCandidates = candidates.slice(0, maximumCoverChecks);
+    const checks = await Promise.all(
+      limitedCandidates.map(async (item) => ({
+        id: item.id,
+        isAvailable: await this.hasOpenLibraryCover(
+          item.coverThumbnailUrl || item.coverUrl || '',
+        ),
+      })),
+    );
+
+    const missingIds = new Set(
+      checks.filter((check) => !check.isAvailable).map((check) => check.id),
+    );
+
+    if (missingIds.size === 0) {
+      return results;
+    }
+
+    return results.map((item) =>
+      missingIds.has(item.id)
+        ? { ...item, coverUrl: null, coverThumbnailUrl: null }
+        : item,
+    );
+  }
+
+  private async hasOpenLibraryCover(url: string): Promise<boolean> {
+    if (!url) {
+      return false;
+    }
+    const response = await axios.head(url, {
+      timeout: 1500,
+      validateStatus: () => true,
+    });
+    return response.status >= 200 && response.status < 400;
   }
 
   private normalizeToken(value: string): string {
@@ -543,11 +613,7 @@ export class BooksService extends MediaService {
 
       const hasCover = Boolean(item.coverUrl);
       const source = item.source || 'Unknown';
-      const coverScore = hasCover
-        ? source === 'GoogleBooks'
-          ? 1
-          : 0.35
-        : 0;
+      const coverScore = hasCover ? (source === 'GoogleBooks' ? 1 : 0.35) : 0;
 
       const year = item.year ?? null;
       let recencyScore = 0;
@@ -670,8 +736,16 @@ export class BooksService extends MediaService {
         ? parseInt(volumeInfo.publishedDate.substring(0, 4), 10)
         : undefined;
 
-      const coverUrl = this.buildGoogleBooksCoverUrl(volumeId, 2);
-      const coverThumbnailUrl = this.buildGoogleBooksCoverUrl(volumeId, 1);
+      const hasCoverImageLinks = Boolean(
+        volumeInfo.imageLinks?.thumbnail ||
+          volumeInfo.imageLinks?.smallThumbnail ||
+          volumeInfo.imageLinks?.medium ||
+          volumeInfo.imageLinks?.large,
+      );
+      const coverUrl = hasCoverImageLinks
+        ? this.buildGoogleBooksCoverUrl(volumeId, 2)
+        : null;
+      const coverThumbnailUrl = coverUrl;
 
       return {
         id: `gb:${volumeId}`,

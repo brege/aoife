@@ -196,7 +196,7 @@ export class MusicService extends MediaService {
       this.searchCache.params === cacheKey &&
       Date.now() - this.searchCache.timestamp < this.CACHE_TTL
     ) {
-      return this.searchCache.results.slice(0, 10);
+      return this.searchCache.results;
     }
 
     try {
@@ -214,7 +214,7 @@ export class MusicService extends MediaService {
         this.itemToSearchParams.set(item.id, cacheKey);
       });
 
-      return results.slice(0, 10);
+      return results;
     } catch (error) {
       console.error('Music search error:', error);
       throw new Error('Failed to search music');

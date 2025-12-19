@@ -62,7 +62,7 @@ export class GamesService extends MediaService {
       this.searchCache.params === cacheKey &&
       Date.now() - this.searchCache.timestamp < this.CACHE_TTL
     ) {
-      return this.searchCache.results.slice(0, 25);
+      return this.searchCache.results;
     }
 
     const params: Record<string, string> = { name: query };
@@ -102,11 +102,15 @@ export class GamesService extends MediaService {
         gameId: number,
       ): Promise<{ full?: string; thumb?: string }> => {
         try {
-          const imageResponse = await axios.get(`${this.baseUrl}/Games/Images`, {
-            params: { games_id: gameId },
-          });
+          const imageResponse = await axios.get(
+            `${this.baseUrl}/Games/Images`,
+            {
+              params: { games_id: gameId },
+            },
+          );
 
-          const imageData = imageResponse.data.data as GameImagesResponse['data'];
+          const imageData = imageResponse.data
+            .data as GameImagesResponse['data'];
           const baseUrl = imageData?.base_url;
           const imageList = imageData?.images?.[gameId.toString()];
           if (!imageList) return {};
@@ -131,7 +135,10 @@ export class GamesService extends MediaService {
 
       const concurrencyLimit = 5;
       const imagePromises = gameList.map((game) => fetchImageUrl(game.id));
-      const imageUrls = await this.promiseLimit(concurrencyLimit, imagePromises);
+      const imageUrls = await this.promiseLimit(
+        concurrencyLimit,
+        imagePromises,
+      );
 
       const results = gameList.map((game, index) => {
         const year = game.release_date
@@ -168,7 +175,7 @@ export class GamesService extends MediaService {
         this.itemToSearchParams.set(item.id, cacheKey);
       });
 
-      return results.slice(0, 25);
+      return results;
     } catch (error) {
       console.error('Games search error:', error);
       throw new Error('Failed to search games');

@@ -144,45 +144,41 @@ export const loadShare = async (
 
     return { state: parsed, slug, title };
   } catch (err) {
-    try {
-      const cached = await getState(`${INDEXEDDB_SHARE_PREFIX}${slug}`);
-      if (!cached) {
-        throw err;
-      }
-
-      let cachedTitle = defaultTitle;
-      let cachedPayload = cached;
-
-      try {
-        const parsedCache = JSON.parse(cached) as unknown;
-        if (
-          parsedCache &&
-          typeof parsedCache === 'object' &&
-          'payload' in parsedCache &&
-          typeof (parsedCache as Record<string, unknown>).payload === 'string'
-        ) {
-          cachedPayload = (parsedCache as Record<string, unknown>)
-            .payload as string;
-          if (
-            'title' in parsedCache &&
-            validateSharedTitle((parsedCache as Record<string, unknown>).title)
-          ) {
-            cachedTitle = (parsedCache as Record<string, unknown>)
-              .title as string;
-          }
-        }
-      } catch {
-        cachedPayload = cached;
-      }
-
-      const parsed = JSON.parse(cachedPayload) as unknown;
-      if (!validateSharedState(parsed)) {
-        throw new Error('Cached share payload is invalid');
-      }
-
-      return { state: parsed, slug, title: cachedTitle };
-    } catch (cacheError) {
-      throw cacheError;
+    const cached = await getState(`${INDEXEDDB_SHARE_PREFIX}${slug}`);
+    if (!cached) {
+      throw err;
     }
+
+    let cachedTitle = defaultTitle;
+    let cachedPayload = cached;
+
+    try {
+      const parsedCache = JSON.parse(cached) as unknown;
+      if (
+        parsedCache &&
+        typeof parsedCache === 'object' &&
+        'payload' in parsedCache &&
+        typeof (parsedCache as Record<string, unknown>).payload === 'string'
+      ) {
+        cachedPayload = (parsedCache as Record<string, unknown>)
+          .payload as string;
+        if (
+          'title' in parsedCache &&
+          validateSharedTitle((parsedCache as Record<string, unknown>).title)
+        ) {
+          cachedTitle = (parsedCache as Record<string, unknown>)
+            .title as string;
+        }
+      }
+    } catch {
+      cachedPayload = cached;
+    }
+
+    const parsed = JSON.parse(cachedPayload) as unknown;
+    if (!validateSharedState(parsed)) {
+      throw new Error('Cached share payload is invalid');
+    }
+
+    return { state: parsed, slug, title: cachedTitle };
   }
 };
