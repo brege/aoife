@@ -8,8 +8,7 @@
 ### Next Features
 
 - **Captions and Overlays**
-  1. whether to provide an editable caption or description for each title
-  2. options for persistent media type badge overlay
+  - provide an editable caption for each title, overlay or underneath
 - **Music Albums**
   - explore Fanart.tv API for better album art
 - **Letterboxd Lists**
@@ -24,4 +23,4 @@
 
 2. Add rate limiting that won’t trip fail2ban too early or during dev/benchmarking
    - prefer app-level limiting with `flask-limiter`
-   - whitelist dev-machine IP
+   - whitelist dev-machine WAN IP

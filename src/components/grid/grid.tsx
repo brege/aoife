@@ -1,20 +1,26 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import type React from 'react';
+import {
+  useCallback,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import './grid.css';
 import { MdClose } from 'react-icons/md';
 import logger from '../../lib/logger';
 import type { MediaType } from '../../media/types';
-import { type MediaItem, TMDB_IMAGE_BASE } from '../../media/types';
+import type { MediaItem } from '../../media/types';
 import { MEDIA_TYPE_ICONS } from '../search/dropdown';
 import { CustomImage } from '../ui/customimage';
 
-interface Grid2x2Props {
+interface GridProps {
   items: MediaItem[];
   onRemoveMedia: (mediaId: string | number) => void;
   onPosterClick: (media: MediaItem) => void;
   columns: number;
   minRows: number;
   placeholderLabel?: string;
-  isBuilderMode?: boolean;
   onAspectRatioUpdate?: (mediaId: string | number, aspectRatio: number) => void;
   layoutDimension?: 'width' | 'height';
 }
@@ -25,19 +31,18 @@ const DEFAULT_ASPECT_RATIOS: Record<string, number> = {
   music: 1,
 };
 
-const getCoverSrc = (media: MediaItem) => {
-  if (media.coverUrl) return media.coverUrl;
-  if (media.coverThumbnailUrl) return media.coverThumbnailUrl;
-  const posterPath =
-    typeof media.metadata?.poster_path === 'string'
-      ? media.metadata?.poster_path
-      : undefined;
-  return posterPath ? `${TMDB_IMAGE_BASE}/w300${posterPath}` : '';
-};
+const getCoverSrc = (media: MediaItem) =>
+  media.coverUrl || media.coverThumbnailUrl || '';
 
 const getAspectRatio = (media: MediaItem): number => {
   if (media.aspectRatio) return media.aspectRatio;
   return DEFAULT_ASPECT_RATIOS[media.type] ?? 2 / 3;
+};
+
+const getIndefiniteArticle = (label: string): 'a' | 'an' => {
+  if (label.length === 0) return 'a';
+  const firstCharacter = label[0].toLowerCase();
+  return ['a', 'e', 'i', 'o', 'u'].includes(firstCharacter) ? 'an' : 'a';
 };
 
 const MAXIMUM_GRID_WIDTH = 1600;
@@ -104,20 +109,20 @@ const calculateRowLayouts = (
   return rows;
 };
 
-const Grid2x2: React.FC<Grid2x2Props> = ({
+const Grid: React.FC<GridProps> = ({
   items,
   onRemoveMedia,
   onPosterClick,
   columns,
   minRows,
   placeholderLabel,
-  isBuilderMode = true,
   onAspectRatioUpdate,
   layoutDimension = 'height',
 }) => {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(0);
   const [containerHeight, setContainerHeight] = useState(0);
+  const [containerGap, setContainerGap] = useState(16);
 
   const updateContainerDimensions = useCallback(() => {
     const element = wrapperRef.current;
@@ -128,15 +133,19 @@ const Grid2x2: React.FC<Grid2x2Props> = ({
     const paddingRight = Number.parseFloat(computedStyle.paddingRight);
     const paddingTop = Number.parseFloat(computedStyle.paddingTop);
     const paddingBottom = Number.parseFloat(computedStyle.paddingBottom);
+    const gapValue = Number.parseFloat(
+      computedStyle.getPropertyValue('--grid-gap'),
+    );
 
     const availableWidth = element.clientWidth - paddingLeft - paddingRight;
     const availableHeight = element.clientHeight - paddingTop - paddingBottom;
 
     setContainerWidth(Math.min(availableWidth, MAXIMUM_GRID_WIDTH));
     setContainerHeight(availableHeight);
+    setContainerGap(Number.isNaN(gapValue) ? 0 : gapValue);
   }, []);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     updateContainerDimensions();
     const observer = new ResizeObserver(updateContainerDimensions);
     const element = wrapperRef.current;
@@ -146,15 +155,14 @@ const Grid2x2: React.FC<Grid2x2Props> = ({
     return () => observer.disconnect();
   }, [updateContainerDimensions]);
 
-  const gap = 16;
-  const rowLayouts = React.useMemo(() => {
+  const rowLayouts = useMemo(() => {
     if (containerWidth === 0 || containerHeight === 0) return [];
     return calculateRowLayouts(
       items,
       columns,
       containerWidth,
       containerHeight,
-      gap,
+      containerGap,
       minRows,
       layoutDimension,
     );
@@ -163,6 +171,7 @@ const Grid2x2: React.FC<Grid2x2Props> = ({
     columns,
     containerWidth,
     containerHeight,
+    containerGap,
     minRows,
     layoutDimension,
   ]);
@@ -181,7 +190,7 @@ const Grid2x2: React.FC<Grid2x2Props> = ({
     logger.info(
       `GRID: Poster loaded - ${img.naturalWidth}x${img.naturalHeight} (${naturalAspectRatio.toFixed(2)})`,
       {
-        context: 'Grid2x2.posterLoad',
+        context: 'Grid.posterLoad',
         action: 'poster_dimensions',
         media: { id: media.id, title: media.title },
         naturalAspectRatio,
@@ -190,11 +199,14 @@ const Grid2x2: React.FC<Grid2x2Props> = ({
     );
   };
 
-  const renderPresentationMode = () => {
-    if (isBuilderMode && placeholderLabel && items.length === 0) {
+  const renderGrid = () => {
+    if (placeholderLabel && items.length === 0) {
+      const article = getIndefiniteArticle(placeholderLabel);
       return (
         <div className="grid-container grid-container-empty">
-          <div className="empty-state-hint">Add a {placeholderLabel}</div>
+          <div className="empty-state-hint">
+            Add {article} {placeholderLabel}
+          </div>
         </div>
       );
     }
@@ -211,7 +223,7 @@ const Grid2x2: React.FC<Grid2x2Props> = ({
               className="grid-row"
               style={{
                 height: layoutDimension === 'width' ? 'auto' : row.height,
-                gap,
+                gap: containerGap,
               }}
             >
               {row.items.map(({ media, width }) => (
@@ -259,17 +271,15 @@ const Grid2x2: React.FC<Grid2x2Props> = ({
     );
   };
 
-  const gridClassName = 'grid-presentation';
-
   return (
     <div
       ref={wrapperRef}
-      className={`grid-2x2 ${gridClassName}`}
+      className="grid"
       data-layout-dimension={layoutDimension}
     >
-      {renderPresentationMode()}
+      {renderGrid()}
     </div>
   );
 };
 
-export default Grid2x2;
+export default Grid;

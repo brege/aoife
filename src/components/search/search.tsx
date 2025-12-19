@@ -10,7 +10,7 @@ import { useSearchState } from '../../lib/state/search';
 import { useShareState } from '../../lib/state/share';
 import { DEFAULT_TITLE, TITLE_STORAGE_KEY } from '../../lib/state/storage';
 import type { MediaItem, MediaType } from '../../media/types';
-import Grid2x2 from '../grid/grid';
+import Grid from '../grid/grid';
 import AppHeader from '../ui/header';
 import { useSearchBridges } from './bridge';
 import { MediaForm } from './mediaform';
@@ -268,14 +268,14 @@ const MediaSearch: React.FC = () => {
       <div className={searchSectionClassName}>
         <div className="search-content">
           <div className={searchModuleClassName}>
-            <Grid2x2
+            <Grid
               items={gridItems}
               onRemoveMedia={handleRemoveMedia}
               onPosterClick={(item) => {
                 logger.info(
                   `GRID: Opening alternate poster grid for "${item.title}"`,
                   {
-                    context: 'MediaSearch.Grid2x2.onPosterClick',
+                    context: 'MediaSearch.Grid.onPosterClick',
                     action: 'poster_grid_open',
                     media: { id: item.id, title: item.title, type: item.type },
                     timestamp: Date.now(),
@@ -295,7 +295,6 @@ const MediaSearch: React.FC = () => {
               placeholderLabel={
                 gridItems.length === 0 ? provider.resultLabel : undefined
               }
-              isBuilderMode={isBuilderMode}
               onAspectRatioUpdate={handleAspectRatioUpdate}
               layoutDimension={layoutDimension}
             />
@@ -331,7 +330,7 @@ const MediaSearch: React.FC = () => {
               }}
               onSelectGridCover={(url, index) => {
                 logger.info(`POSTER: Selected alternate poster ${index + 1}`, {
-                  context: 'Grid2x2.onSelectAlternatePoster',
+                  context: 'Grid.onSelectAlternatePoster',
                   action: 'poster_change',
                   posterIndex: index + 1,
                   posterPath: url,
