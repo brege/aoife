@@ -83,10 +83,10 @@ export const useLayoutState = (
     'alwaysTop' | 'adaptive'
   >(() => {
     const stored = localStorage.getItem(BAND_PLACEMENT_STORAGE_KEY);
-    if (stored === 'adaptive') {
-      return 'adaptive';
+    if (stored === 'alwaysTop') {
+      return 'alwaysTop';
     }
-    return 'alwaysTop';
+    return 'adaptive';
   });
 
   useStorageSync(

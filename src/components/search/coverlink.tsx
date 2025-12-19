@@ -82,8 +82,8 @@ export const CoverLinkModal = ({
           <div className="cover-link-sources">
             <a
               href={`https://duckduckgo.com/?q=${encodeURIComponent(
-                query,
-              )}+${encodeURIComponent(coverTypeLabel)}+cover`}
+                `${query} ${coverTypeLabel} cover`,
+              )}&ia=images&iax=images`}
               target="_blank"
               rel="noopener noreferrer"
             >
