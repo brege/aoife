@@ -8,7 +8,7 @@ import {
   removeMediaDirectly,
   resetApplicationState,
   searchThroughApplication,
-  setBuilderModeState,
+  setShowSearchState,
   setLayoutDimension,
   setMediaType,
 } from '../support/actions';
@@ -42,7 +42,7 @@ function bootstrapApplication() {
   clearGridThroughApplication().then((items) => {
     state.gridItems = items;
   });
-  setBuilderModeState(true);
+  setShowSearchState(true);
   setMediaType('movies');
 }
 

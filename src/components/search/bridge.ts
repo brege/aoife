@@ -28,8 +28,8 @@ type TestApplicationApi = {
   clearGrid: () => void;
   getGridItems: () => MediaItem[];
   getStoredGridItems: () => MediaItem[];
-  setBuilderMode: (enabled: boolean) => void;
-  getBuilderMode: () => boolean;
+  setShowSearch: (enabled: boolean) => void;
+  getShowSearch: () => boolean;
   getSearchValues: () => MediaSearchValues;
   setLayoutDimension: (dimension: LayoutDimension) => void;
   getLayoutDimension: () => LayoutDimension;
@@ -44,7 +44,7 @@ type SearchBridgesOptions = {
   gridItems: MediaItem[];
   gridCapacity: number;
   columns: number;
-  isBuilderMode: boolean;
+  showSearch: boolean;
   searchValues: MediaSearchValues;
   provider: MediaProviderConfig;
   selectedMediaType: MediaType;
@@ -58,7 +58,7 @@ type SearchBridgesOptions = {
   handleAddMedia: (media: MediaItem, availableCovers?: MediaItem[]) => void;
   handleRemoveMedia: (mediaId: string | number) => void;
   clearGridAndPersist: (source: string) => void;
-  handleBuilderModeToggle: (enabled: boolean) => void;
+  handleShowSearchToggle: (enabled: boolean) => void;
   handleClearGrid: () => void;
 };
 
@@ -66,7 +66,7 @@ export const useSearchBridges = ({
   gridItems,
   gridCapacity,
   columns,
-  isBuilderMode,
+  showSearch,
   searchValues,
   provider,
   selectedMediaType,
@@ -77,7 +77,7 @@ export const useSearchBridges = ({
   handleAddMedia,
   handleRemoveMedia,
   clearGridAndPersist,
-  handleBuilderModeToggle,
+  handleShowSearchToggle,
   handleClearGrid,
 }: SearchBridgesOptions) => {
   const handleCliSearch = useCallback(
@@ -136,13 +136,10 @@ export const useSearchBridges = ({
           name: 'Mode',
           options: [
             {
-              name: isBuilderMode
-                ? 'Switch to presentation mode'
-                : 'Switch to builder mode',
+              name: showSearch ? 'Hide search' : 'Show search',
               type: 'action',
               enabled: true,
-              description:
-                'Presentation hides builder UI for screenshots or display',
+              description: 'Toggle the search form visibility',
             },
           ],
         },
@@ -181,7 +178,7 @@ export const useSearchBridges = ({
     });
 
     return menuState;
-  }, [gridCapacity, gridItems.length, isBuilderMode]);
+  }, [gridCapacity, gridItems.length, showSearch]);
 
   const handleMenuClearGrid = useCallback(() => {
     clearGridAndPersist('CLI-MENU-CLEAR: Grid cleared via CLI menu command');
@@ -310,8 +307,8 @@ export const useSearchBridges = ({
           return [];
         }
       },
-      setBuilderMode: handleBuilderModeToggle,
-      getBuilderMode: () => isBuilderMode,
+      setShowSearch: handleShowSearchToggle,
+      getShowSearch: () => showSearch,
       getSearchValues: () => searchValues,
       setLayoutDimension: (dimension) => setLayoutDimension(dimension),
       getLayoutDimension: () => layoutDimension,
@@ -324,10 +321,10 @@ export const useSearchBridges = ({
   }, [
     gridItems,
     handleAddMedia,
-    handleBuilderModeToggle,
+    handleShowSearchToggle,
     handleClearGrid,
     handleRemoveMedia,
-    isBuilderMode,
+    showSearch,
     layoutDimension,
     runSearch,
     searchValues,

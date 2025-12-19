@@ -15,7 +15,7 @@ const constrainAspectRatio = (aspectRatio: number): number => {
 };
 
 type UseSearchStateOptions = {
-  isBuilderMode: boolean;
+  showSearch: boolean;
 };
 
 export type UseSearchStateReturn = {
@@ -50,7 +50,7 @@ export type UseSearchStateReturn = {
 export const useSearchState = (
   options: UseSearchStateOptions,
 ): UseSearchStateReturn => {
-  const { isBuilderMode } = options;
+  const { showSearch } = options;
 
   const [selectedMediaType, setSelectedMediaType] =
     useState<MediaType>('movies');
@@ -205,10 +205,10 @@ export const useSearchState = (
   }, [provider]);
 
   useEffect(() => {
-    if (isBuilderMode) {
+    if (showSearch) {
       searchInputRef.current?.focus();
     }
-  }, [isBuilderMode]);
+  }, [showSearch]);
 
   return {
     selectedMediaType,

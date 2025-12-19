@@ -30,7 +30,7 @@ const MediaSearch: React.FC = () => {
     });
   }, []);
 
-  const [isBuilderMode, setIsBuilderMode] = useState(true);
+  const [showSearch, setShowSearch] = useState(true);
 
   const {
     selectedMediaType,
@@ -48,7 +48,7 @@ const MediaSearch: React.FC = () => {
     provider,
     setSearchResults,
     setSearchValues,
-  } = useSearchState({ isBuilderMode });
+  } = useSearchState({ showSearch });
 
   const [isIndexedDbHydrated, setIsIndexedDbHydrated] = useState(false);
 
@@ -182,14 +182,14 @@ const MediaSearch: React.FC = () => {
     setSelectedMediaType(type);
   };
 
-  const handleBuilderModeToggle = useCallback((enabled: boolean) => {
-    setIsBuilderMode(enabled);
+  const handleShowSearchToggle = useCallback((enabled: boolean) => {
+    setShowSearch(enabled);
     logger.info(
-      `MODE: Switched to ${enabled ? 'builder' : 'presentation'} mode`,
+      `SEARCH: ${enabled ? 'Showing' : 'Hiding'} search`,
       {
-        context: 'MediaSearch.handleBuilderModeToggle',
-        action: 'mode_toggle',
-        builderMode: enabled,
+        context: 'MediaSearch.handleShowSearchToggle',
+        action: 'search_toggle',
+        showSearch: enabled,
         timestamp: Date.now(),
       },
     );
@@ -205,7 +205,7 @@ const MediaSearch: React.FC = () => {
     gridItems,
     gridCapacity,
     columns,
-    isBuilderMode,
+    showSearch,
     searchValues,
     provider,
     selectedMediaType,
@@ -216,12 +216,12 @@ const MediaSearch: React.FC = () => {
     handleAddMedia,
     handleRemoveMedia,
     clearGridAndPersist,
-    handleBuilderModeToggle,
+    handleShowSearchToggle,
     handleClearGrid,
   });
 
-  const searchSectionClassName = `search-section ${isBuilderMode ? 'builder-mode' : 'presentation-mode'}`;
-  const searchModuleClassName = `search-module ${isBuilderMode ? 'builder-mode' : 'presentation-mode'}`;
+  const searchSectionClassName = `search-section ${showSearch ? 'show-search' : 'hide-search'}`;
+  const searchModuleClassName = `search-module ${showSearch ? 'show-search' : 'hide-search'}`;
 
   return (
     <div className="container">
@@ -233,8 +233,8 @@ const MediaSearch: React.FC = () => {
         onColumnsChange={setColumns}
         minRows={minRows}
         onMinRowsChange={setMinRows}
-        isBuilderMode={isBuilderMode}
-        onBuilderModeToggle={handleBuilderModeToggle}
+        showSearch={showSearch}
+        onShowSearchToggle={handleShowSearchToggle}
         layoutDimension={layoutDimension}
         onLayoutDimensionChange={setLayoutDimension}
         onShare={handleCreateShare}
@@ -246,7 +246,7 @@ const MediaSearch: React.FC = () => {
         onCoverViewModeChange={setCoverViewMode}
       />
 
-      {isBuilderMode && (
+      {showSearch && (
         <MediaForm
           mediaType={selectedMediaType}
           onMediaTypeChange={handleMediaTypeChange}
@@ -292,7 +292,7 @@ const MediaSearch: React.FC = () => {
               onAspectRatioUpdate={handleAspectRatioUpdate}
               layoutDimension={layoutDimension}
             />
-            {isBuilderMode && (
+            {showSearch && (
               <MediaForm
                 mediaType={selectedMediaType}
                 onMediaTypeChange={handleMediaTypeChange}

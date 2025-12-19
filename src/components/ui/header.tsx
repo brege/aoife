@@ -13,8 +13,8 @@ interface AppHeaderProps {
   onColumnsChange: (columns: number) => void;
   minRows: number;
   onMinRowsChange: (minRows: number) => void;
-  isBuilderMode: boolean;
-  onBuilderModeToggle: (enabled: boolean) => void;
+  showSearch: boolean;
+  onShowSearchToggle: (enabled: boolean) => void;
   layoutDimension: 'width' | 'height';
   onLayoutDimensionChange: (dimension: 'width' | 'height') => void;
   onShare: () => void;
@@ -34,8 +34,8 @@ const AppHeader: React.FC<AppHeaderProps> = ({
   onColumnsChange,
   minRows,
   onMinRowsChange,
-  isBuilderMode,
-  onBuilderModeToggle,
+  showSearch,
+  onShowSearchToggle,
   layoutDimension,
   onLayoutDimensionChange,
   onShare,
@@ -47,7 +47,7 @@ const AppHeader: React.FC<AppHeaderProps> = ({
   onCoverViewModeChange,
 }) => {
   const handleAddToggle = () => {
-    onBuilderModeToggle(!isBuilderMode);
+    onShowSearchToggle(!showSearch);
   };
 
   return (
@@ -59,10 +59,10 @@ const AppHeader: React.FC<AppHeaderProps> = ({
       <div className="header-right">
         <button
           type="button"
-          className={`header-add-button${isBuilderMode ? ' active' : ''}`}
+          className={`header-add-button${showSearch ? ' active' : ''}`}
           onClick={handleAddToggle}
-          aria-label={isBuilderMode ? 'Show grid' : 'Show editor'}
-          title={isBuilderMode ? 'Show grid' : 'Add item'}
+          aria-label={showSearch ? 'Hide search' : 'Show search'}
+          title={showSearch ? 'Hide search' : 'Show search'}
         >
           <GrAdd size={20} />
         </button>

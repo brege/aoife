@@ -101,16 +101,16 @@ export function getGridSnapshot() {
       return {
         items,
         stored,
-        builderMode: testApi.getBuilderMode(),
+        showSearch: testApi.getShowSearch(),
       };
     }),
   );
 }
 
-export function setBuilderModeState(enabled) {
+export function setShowSearchState(enabled) {
   return getApplicationTestApi().then((testApi) => {
-    testApi.setBuilderMode(enabled);
-    return testApi.getBuilderMode();
+    testApi.setShowSearch(enabled);
+    return testApi.getShowSearch();
   });
 }
 

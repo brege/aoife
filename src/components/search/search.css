@@ -8,7 +8,7 @@
   margin: 0 auto;
 }
 
-.search-section.presentation-mode {
+.search-section.hide-search {
   max-width: none;
   width: 100%;
   padding: 0;
@@ -16,7 +16,7 @@
   box-sizing: border-box;
 }
 
-.search-section.builder-mode {
+.search-section.show-search {
   max-width: none;
   width: 100%;
   padding: 0;
@@ -58,14 +58,14 @@
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
-.search-module.presentation-mode {
+.search-module.hide-search {
   background: transparent;
   padding: 0;
   box-shadow: none;
   max-width: none;
 }
 
-.search-module.builder-mode {
+.search-module.show-search {
   background: transparent;
   padding: 0;
   box-shadow: none;
