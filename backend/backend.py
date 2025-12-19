@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, request, jsonify, send_from_directory, redirect
 from flask_cors import CORS
 import json
 import os
@@ -319,16 +319,19 @@ def proxy_coverart_image():
         resp = requests.get(
             f"https://coverartarchive.org/release/{cover_id}/front-{size}",
             timeout=UPSTREAM_TIMEOUT_SECONDS,
+            allow_redirects=False,
         )
+        if 300 <= resp.status_code < 400 and resp.headers.get("Location"):
+            return redirect(resp.headers.get("Location"), code=resp.status_code)
         return (
             resp.content,
             resp.status_code,
             {"Content-Type": resp.headers.get("Content-Type", "image/jpeg")},
         )
     except requests.exceptions.Timeout:
-        return jsonify({"error": "Upstream request timed out"}), 504
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return ("Not found", 404)
+    except Exception:
+        return ("Not found", 404)
 
 
 # Logging endpoint (optional telemetry)

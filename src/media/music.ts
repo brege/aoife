@@ -69,19 +69,11 @@ class CoverArtArchiveSource implements CoverArtSource {
   priority = 1;
 
   async getCoverUrl(release: MusicBrainzRelease): Promise<string | null> {
-    const coverArchive = release['cover-art-archive'];
-    if (!coverArchive?.front) {
-      return null;
-    }
     return buildCoverArtArchiveProxyUrl('release', release.id, 500);
   }
 
   async getThumbnailUrl(release: MusicBrainzRelease): Promise<string | null> {
-    const coverArchive = release['cover-art-archive'];
-    if (!coverArchive?.front) {
-      return null;
-    }
-    return buildCoverArtArchiveProxyUrl('release', release.id, 250);
+    return buildCoverArtArchiveProxyUrl('release', release.id, 500);
   }
 }
 

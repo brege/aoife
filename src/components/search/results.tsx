@@ -124,6 +124,7 @@ type SearchResultsProps = {
   availableCovers: MediaItem[];
   mediaType: MediaType;
   searchSummary: string;
+  hiddenResultIds: Record<string | number, true>;
   aspectRatios: Record<string | number, number>;
   onClose: () => void;
   onAdd: (media: MediaItem, availableCovers: MediaItem[]) => void;
@@ -141,6 +142,7 @@ export const SearchResults = ({
   availableCovers,
   mediaType,
   searchSummary,
+  hiddenResultIds,
   aspectRatios,
   onClose,
   onAdd,
@@ -166,77 +168,79 @@ export const SearchResults = ({
       "
     </h3>
     <div className="search-results-grid">
-      {results.map((result) => {
-        const imdbId =
-          typeof result.metadata?.imdb_id === 'string'
-            ? result.metadata.imdb_id
-            : undefined;
-        const externalLinks = getExternalLinks(result, mediaType, imdbId);
+      {results
+        .filter((result) => !Object.hasOwn(hiddenResultIds, result.id))
+        .map((result) => {
+          const imdbId =
+            typeof result.metadata?.imdb_id === 'string'
+              ? result.metadata.imdb_id
+              : undefined;
+          const externalLinks = getExternalLinks(result, mediaType, imdbId);
 
-        return (
-          <button
-            key={result.id}
-            type="button"
-            className="search-result-card"
-            data-media-id={result.id}
-            data-media-title={result.title}
-            onClick={() => onAdd(result, availableCovers)}
-            aria-label={`Add ${result.title}`}
-          >
-            {result.coverThumbnailUrl || result.coverUrl ? (
-              <img
-                src={result.coverThumbnailUrl || result.coverUrl || ''}
-                alt={`${result.title} cover`}
-                className="search-result-poster-large"
-                onLoad={(event) => onPosterLoad(result.id, event)}
-                onError={() => onPosterError(result.id)}
-                style={
-                  aspectRatios[result.id]
-                    ? { aspectRatio: aspectRatios[result.id] }
-                    : undefined
-                }
-              />
-            ) : (
-              <div className="search-result-placeholder large">No cover</div>
-            )}
-            <div className="search-result-meta">
-              <div className="search-result-title">
-                <span className="search-result-name">{result.title}</span>
-                {result.subtitle && (
-                  <span className="search-result-subtitle">
-                    {result.subtitle}
-                  </span>
+          return (
+            <button
+              key={result.id}
+              type="button"
+              className="search-result-card"
+              data-media-id={result.id}
+              data-media-title={result.title}
+              onClick={() => onAdd(result, availableCovers)}
+              aria-label={`Add ${result.title}`}
+            >
+              {result.coverThumbnailUrl || result.coverUrl ? (
+                <img
+                  src={result.coverThumbnailUrl || result.coverUrl || ''}
+                  alt={`${result.title} cover`}
+                  className="search-result-poster-large"
+                  onLoad={(event) => onPosterLoad(result.id, event)}
+                  onError={() => onPosterError(result.id)}
+                  style={
+                    aspectRatios[result.id]
+                      ? { aspectRatio: aspectRatios[result.id] }
+                      : undefined
+                  }
+                />
+              ) : (
+                <div className="search-result-placeholder large">No cover</div>
+              )}
+              <div className="search-result-meta">
+                <div className="search-result-title">
+                  <span className="search-result-name">{result.title}</span>
+                  {result.subtitle && (
+                    <span className="search-result-subtitle">
+                      {result.subtitle}
+                    </span>
+                  )}
+                </div>
+                {result.year && (
+                  <span className="search-result-year">{result.year}</span>
                 )}
               </div>
-              {result.year && (
-                <span className="search-result-year">{result.year}</span>
+              {externalLinks.length > 0 && (
+                <div className="search-result-badges">
+                  {externalLinks.map((link) => (
+                    <a
+                      key={link.href}
+                      href={link.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="search-badge"
+                      aria-label={link.label}
+                      onClick={(event) => event.stopPropagation()}
+                    >
+                      <img
+                        src={`https://www.google.com/s2/favicons?sz=32&domain=${link.domain}`}
+                        alt=""
+                        aria-hidden="true"
+                      />
+                      <span>{link.label}</span>
+                    </a>
+                  ))}
+                </div>
               )}
-            </div>
-            {externalLinks.length > 0 && (
-              <div className="search-result-badges">
-                {externalLinks.map((link) => (
-                  <a
-                    key={link.href}
-                    href={link.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="search-badge"
-                    aria-label={link.label}
-                    onClick={(event) => event.stopPropagation()}
-                  >
-                    <img
-                      src={`https://www.google.com/s2/favicons?sz=32&domain=${link.domain}`}
-                      alt=""
-                      aria-hidden="true"
-                    />
-                    <span>{link.label}</span>
-                  </a>
-                ))}
-              </div>
-            )}
-          </button>
-        );
-      })}
+            </button>
+          );
+        })}
     </div>
     {showMoreCount > 0 && (
       <div className="search-results-footer">

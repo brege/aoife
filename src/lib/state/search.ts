@@ -22,6 +22,7 @@ export type UseSearchStateReturn = {
   selectedMediaType: MediaType;
   searchValues: MediaSearchValues;
   searchResults: MediaItem[];
+  hiddenSearchResultIds: Record<string | number, true>;
   searchResultAspectRatios: Record<string | number, number>;
   lastSearchSummary: string;
   isLoading: boolean;
@@ -63,6 +64,9 @@ export const useSearchState = (
     provider.defaultSearchValues,
   );
   const [searchResults, setSearchResults] = useState<MediaItem[]>([]);
+  const [hiddenSearchResultIds, setHiddenSearchResultIds] = useState<
+    Record<string | number, true>
+  >({});
   const [searchResultAspectRatios, setSearchResultAspectRatios] = useState<
     Record<string | number, number>
   >({});
@@ -113,6 +117,7 @@ export const useSearchState = (
       setIsLoading(true);
       setError('');
       setSearchResultAspectRatios({});
+      setHiddenSearchResultIds({});
 
       try {
         const service = getMediaService(activeMediaType);
@@ -193,15 +198,14 @@ export const useSearchState = (
 
   const handleSearchResultImageError = useCallback(
     (resultId: string | number) => {
-      setSearchResults((current) =>
-        current.filter((result) => result.id !== resultId),
-      );
-      setSearchResultAspectRatios((current) => {
-        if (!Object.hasOwn(current, resultId)) {
+      setHiddenSearchResultIds((current) => {
+        if (Object.hasOwn(current, resultId)) {
           return current;
         }
-        const { [resultId]: _removed, ...rest } = current;
-        return rest;
+        return {
+          ...current,
+          [resultId]: true,
+        };
       });
     },
     [],
@@ -231,6 +235,7 @@ export const useSearchState = (
     selectedMediaType,
     searchValues,
     searchResults,
+    hiddenSearchResultIds,
     searchResultAspectRatios,
     lastSearchSummary,
     isLoading,

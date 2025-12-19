@@ -39,6 +39,7 @@ const MediaSearch: React.FC = () => {
     selectedMediaType,
     searchValues,
     searchResults,
+    hiddenSearchResultIds,
     searchResultAspectRatios,
     lastSearchSummary,
     isLoading: searchIsLoading,
@@ -353,6 +354,7 @@ const MediaSearch: React.FC = () => {
                 availableCovers={searchResults}
                 mediaType={selectedMediaType}
                 searchSummary={searchSummary}
+                hiddenResultIds={hiddenSearchResultIds}
                 aspectRatios={searchResultAspectRatios}
                 onClose={closeSearchResults}
                 onAdd={handleAddMedia}

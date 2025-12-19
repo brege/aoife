@@ -198,14 +198,22 @@ export const createApiMiddleware = (env: Record<string, string>) => {
       const size = sizeValue === '250' ? '250' : '500';
       const targetUrl = `https://coverartarchive.org/release/${coverId}/front-${size}`;
       const coverReq = https.get(targetUrl, (coverRes) => {
-        res.writeHead(coverRes.statusCode || 502, {
+        const statusCode = coverRes.statusCode || 502;
+        const location = coverRes.headers.location;
+        if (statusCode >= 300 && statusCode < 400 && location) {
+          res.writeHead(statusCode, { Location: location });
+          res.end();
+          return;
+        }
+        res.writeHead(statusCode, {
           'Content-Type': coverRes.headers['content-type'] || 'image/jpeg',
         });
         coverRes.pipe(res);
       });
       coverReq.on('error', (error) => {
-        res.writeHead(502, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: String(error) }));
+        console.warn('[API] Cover art proxy failed', error);
+        res.writeHead(404, { 'Content-Type': 'text/plain' });
+        res.end('Not found');
       });
     } else if (path === '/add' && req.method === 'POST') {
       let body = '';
