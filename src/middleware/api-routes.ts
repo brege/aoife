@@ -231,7 +231,6 @@ export const createApiMiddleware = (env: Record<string, string>) => {
         coverRes.pipe(res);
       });
       coverReq.on('error', (error) => {
-        console.warn('[API] Cover art proxy failed', error);
         res.writeHead(404, { 'Content-Type': 'text/plain' });
         res.end('Not found');
       });
