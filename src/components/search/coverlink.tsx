@@ -4,8 +4,9 @@ import './coverlink.css';
 
 type CoverLinkModalProps = {
   isOpen: boolean;
-  title: string;
-  author: string;
+  primaryValue: string;
+  secondaryValue: string;
+  coverTypeLabel: string;
   coverUrl: string;
   onClose: () => void;
   onSave: (value: string) => void;
@@ -14,8 +15,9 @@ type CoverLinkModalProps = {
 
 export const CoverLinkModal = ({
   isOpen,
-  title,
-  author,
+  primaryValue,
+  secondaryValue,
+  coverTypeLabel,
   coverUrl,
   onClose,
   onSave,
@@ -30,8 +32,8 @@ export const CoverLinkModal = ({
   }, [isOpen, coverUrl]);
 
   const query = useMemo(() => {
-    return [title, author].filter(Boolean).join(' ').trim();
-  }, [title, author]);
+    return [primaryValue, secondaryValue].filter(Boolean).join(' ').trim();
+  }, [primaryValue, secondaryValue]);
 
   const handleSave = () => {
     onSave(value.trim());
@@ -54,7 +56,7 @@ export const CoverLinkModal = ({
         </button>
         <h3 className="cover-link-title">Cover URL</h3>
         <p className="cover-link-subtitle">
-          Paste a direct image URL for the book cover.
+          Paste a direct image URL for the {coverTypeLabel} cover.
         </p>
         <input
           type="url"
@@ -79,7 +81,9 @@ export const CoverLinkModal = ({
         {query && (
           <div className="cover-link-sources">
             <a
-              href={`https://duckduckgo.com/?q=${encodeURIComponent(query)}+book+cover`}
+              href={`https://duckduckgo.com/?q=${encodeURIComponent(
+                query,
+              )}+${encodeURIComponent(coverTypeLabel)}+cover`}
               target="_blank"
               rel="noopener noreferrer"
             >
@@ -88,7 +92,7 @@ export const CoverLinkModal = ({
             <a
               href={`https://www.google.com/search?tbm=isch&q=${encodeURIComponent(
                 query,
-              )}+book+cover`}
+              )}+${encodeURIComponent(coverTypeLabel)}+cover`}
               target="_blank"
               rel="noopener noreferrer"
             >

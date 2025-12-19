@@ -106,6 +106,7 @@ const musicProvider: MediaProviderConfig = {
   defaultSearchValues: {
     artist: '',
     album: '',
+    coverUrl: '',
   },
   supportsCustomEntries: true,
   supportsAlternateCovers: true,

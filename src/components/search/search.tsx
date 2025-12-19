@@ -77,6 +77,8 @@ const MediaSearch: React.FC = () => {
   const [alternateCoverUrls, setAlternateCoverUrls] = useState<string[]>([]);
   const [showPosterGrid, setShowPosterGrid] = useState(false);
   const [showCoverLinkModal, setShowCoverLinkModal] = useState(false);
+  const [coverLinkMediaType, setCoverLinkMediaType] =
+    useState<MediaType>('books');
   const [activePosterItemId, setActivePosterItemId] = useState<
     string | number | null
   >(null);
@@ -153,7 +155,13 @@ const MediaSearch: React.FC = () => {
     async (e: React.FormEvent) => {
       e.preventDefault();
       const results = await runSearch(searchValues);
-      if (selectedMediaType === 'custom' && results.length > 0) {
+      const hasDirectCover =
+        (selectedMediaType === 'books' || selectedMediaType === 'music') &&
+        Boolean(searchValues.coverUrl?.trim());
+      if (
+        (selectedMediaType === 'custom' || hasDirectCover) &&
+        results.length > 0
+      ) {
         handleAddMedia(results[0], results);
       }
     },
@@ -189,13 +197,13 @@ const MediaSearch: React.FC = () => {
 
   useEffect(() => {
     if (showCoverLinkModal) {
-      openModal('bookCoverLink');
+      openModal('coverLink');
     } else {
-      closeModal('bookCoverLink');
+      closeModal('coverLink');
     }
   }, [showCoverLinkModal, openModal, closeModal]);
 
-  useModalClosed('bookCoverLink', () => setShowCoverLinkModal(false));
+  useModalClosed('coverLink', () => setShowCoverLinkModal(false));
 
   const searchSummary = lastSearchSummary || provider.label;
 
@@ -224,9 +232,10 @@ const MediaSearch: React.FC = () => {
   }, [searchResults.length]);
 
   const handleCoverLinkOpen = useCallback(() => {
-    if (selectedMediaType !== 'books') {
+    if (selectedMediaType !== 'books' && selectedMediaType !== 'music') {
       return;
     }
+    setCoverLinkMediaType(selectedMediaType);
     setShowCoverLinkModal(true);
   }, [selectedMediaType]);
 
@@ -269,6 +278,15 @@ const MediaSearch: React.FC = () => {
     visibleResultsStep,
     Math.max(0, searchResults.length - visibleResultsCount),
   );
+  const coverLinkPrimaryValue =
+    coverLinkMediaType === 'books'
+      ? (searchValues.title ?? '')
+      : (searchValues.album ?? '');
+  const coverLinkSecondaryValue =
+    coverLinkMediaType === 'books'
+      ? (searchValues.author ?? '')
+      : (searchValues.artist ?? '');
+  const coverLinkTypeLabel = coverLinkMediaType === 'books' ? 'book' : 'album';
 
   useSearchBridges({
     gridItems,
@@ -419,8 +437,9 @@ const MediaSearch: React.FC = () => {
             )}
           <CoverLinkModal
             isOpen={showCoverLinkModal}
-            title={searchValues.title ?? ''}
-            author={searchValues.author ?? ''}
+            primaryValue={coverLinkPrimaryValue}
+            secondaryValue={coverLinkSecondaryValue}
+            coverTypeLabel={coverLinkTypeLabel}
             coverUrl={searchValues.coverUrl ?? ''}
             onClose={() => setShowCoverLinkModal(false)}
             onSave={handleCoverLinkSave}

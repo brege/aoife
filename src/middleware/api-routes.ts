@@ -33,7 +33,13 @@ export const createApiMiddleware = (env: Record<string, string>) => {
     if (path.startsWith('/api/')) {
       path = path.replace(/^\/api/, '');
     }
-    console.log(`[API] ${req.method} ${req.url}`);
+    const shouldLog =
+      !path.startsWith('/coverart/') &&
+      path !== '/log' &&
+      path !== '/openlibrary';
+    if (shouldLog) {
+      console.log(`[API] ${req.method} ${req.url}`);
+    }
 
     if (path === '/search' && req.method === 'GET') {
       const query = url.searchParams.get('q');
@@ -230,7 +236,7 @@ export const createApiMiddleware = (env: Record<string, string>) => {
         });
         coverRes.pipe(res);
       });
-      coverReq.on('error', (error) => {
+      coverReq.on('error', (_error) => {
         res.writeHead(404, { 'Content-Type': 'text/plain' });
         res.end('Not found');
       });

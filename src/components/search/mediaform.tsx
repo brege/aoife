@@ -122,6 +122,36 @@ export const MediaForm: React.FC<MediaFormProps> = ({
             );
           }
 
+          if (
+            field.id === 'album' &&
+            mediaType === 'music' &&
+            onOpenCoverLink
+          ) {
+            return (
+              <div key={field.id} className="input-with-button">
+                <input
+                  type="text"
+                  value={searchValues[field.id] ?? ''}
+                  onChange={(e) => onFieldChange(field.id, e.target.value)}
+                  placeholder={field.placeholder}
+                  aria-label={field.label}
+                  className="form-input"
+                  required={field.required}
+                  data-testid={`search-field-${field.id}`}
+                />
+                <button
+                  type="button"
+                  onClick={onOpenCoverLink}
+                  className="icon-button"
+                  aria-label="Add cover link"
+                  title="Add cover link"
+                >
+                  <FaLink size={18} />
+                </button>
+              </div>
+            );
+          }
+
           if (field.id === 'cover' && mediaType === 'custom') {
             return (
               <div key={field.id} className="input-with-button">

@@ -31,24 +31,6 @@
   width: 100%;
 }
 
-.media-search-form.band .form-fields {
-  flex: 1 1 auto;
-  gap: 12px;
-}
-
-.media-search-form.band .form-fields > .form-input,
-.media-search-form.band .form-fields > .input-with-button {
-  flex: 1 1 0;
-  min-width: 0;
-}
-
-.media-search-form.stack .form-fields {
-  flex-direction: column;
-  gap: 12px;
-  flex: none;
-  width: 100%;
-}
-
 .form-input {
   padding: 0 12px;
   border: none;
@@ -146,6 +128,24 @@
 .media-search-form.stack .input-with-button .form-input {
   flex: 1;
   width: auto;
+}
+
+.media-search-form.band .form-fields {
+  flex: 1 1 auto;
+  gap: 12px;
+}
+
+.media-search-form.band .form-fields > .form-input,
+.media-search-form.band .form-fields > .input-with-button {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.media-search-form.stack .form-fields {
+  flex-direction: column;
+  gap: 12px;
+  flex: none;
+  width: 100%;
 }
 
 .icon-button {

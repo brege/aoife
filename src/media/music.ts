@@ -180,6 +180,33 @@ export class MusicService extends MediaService {
     const query = values.query || '';
     const artist = values.artist || '';
     const album = values.album || values.title || '';
+    const coverUrlValue = values.coverUrl?.trim();
+
+    if (coverUrlValue) {
+      const url = new URL(coverUrlValue);
+      if (url.protocol !== 'https:') {
+        throw new Error('Cover URL must use https');
+      }
+      const title = album.trim() || query.trim();
+      if (!title) {
+        throw new Error('Album is required for a direct cover URL');
+      }
+      return [
+        {
+          id: `direct:${coverUrlValue}`,
+          type: 'music',
+          title,
+          subtitle: artist.trim() || undefined,
+          coverUrl: coverUrlValue,
+          coverThumbnailUrl: coverUrlValue,
+          source: 'Direct',
+          metadata: {
+            coverUrl: coverUrlValue,
+            isDirect: true,
+          },
+        },
+      ];
+    }
 
     if (!query && !artist && !album) {
       return [];
