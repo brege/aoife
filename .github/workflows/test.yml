@@ -28,6 +28,7 @@ jobs:
         run: npm test
         env:
           VITE_TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
+          VITE_DEV_SERVER_ORIGIN: http://localhost:5173
 
       - name: Upload benchmarks
         if: always()
