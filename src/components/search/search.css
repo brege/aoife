@@ -477,3 +477,59 @@
 .icon-button:hover {
   background-color: #34495e;
 }
+
+.search-loading {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 32px;
+  background: #1f2933;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  z-index: var(--z-dropdown);
+}
+
+.search-loading p {
+  margin: 0;
+  color: #cbd5e1;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.search-loading-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid rgba(255, 255, 255, 0.1);
+  border-top-color: #00d474;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.search-error {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  padding: 20px 24px;
+  background: #7f1d1d;
+  border: 1px solid #991b1b;
+  border-radius: 12px;
+  color: #fecaca;
+  font-size: 14px;
+  max-width: 400px;
+  text-align: center;
+  z-index: var(--z-dropdown);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}

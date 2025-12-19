@@ -198,7 +198,7 @@ const Grid: React.FC<GridProps> = ({
       return (
         <div className="grid-container grid-container-empty">
           <div className="empty-state-hint">
-            Add {article} {placeholderLabel}
+            add {article} {placeholderLabel}
           </div>
         </div>
       );

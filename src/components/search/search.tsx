@@ -372,8 +372,6 @@ const MediaSearch: React.FC = () => {
               />
             )}
           </div>
-          {searchIsLoading && <p>Loading...</p>}
-          {searchError && <p className="error">{searchError}</p>}
           {showPosterGrid && activePosterItem && (
             <PosterPicker
               coverViewMode={coverViewMode}
@@ -430,6 +428,13 @@ const MediaSearch: React.FC = () => {
           />
         </div>
       </div>
+      {searchIsLoading && (
+        <div className="search-loading">
+          <div className="search-loading-spinner" />
+          <p>Loading results...</p>
+        </div>
+      )}
+      {searchError && <div className="search-error">{searchError}</div>}
     </div>
   );
 };
