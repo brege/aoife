@@ -519,6 +519,25 @@
   white-space: normal;
 }
 
+.config-row.search-band-toggle-row {
+  grid-template-columns:
+    minmax(0, 1fr)
+    minmax(0, 140px)
+    48px
+    minmax(0, 1fr);
+}
+
+.search-band-label {
+  font-size: 12px;
+  color: var(--text-muted);
+  text-align: right;
+}
+
+.search-band-toggle-row .config-label {
+  text-transform: none;
+  white-space: normal;
+}
+
 .column-stepper {
   display: flex;
   align-items: center;
@@ -683,5 +702,11 @@
     top: 15px;
     right: 15px;
     padding: 10px;
+  }
+}
+
+@media (max-width: 600px) {
+  .search-band-toggle-row {
+    display: none;
   }
 }

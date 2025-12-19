@@ -10,6 +10,8 @@ interface MenuConfigProps {
   onMinRowsChange: (minRows: number) => void;
   layoutDimension: 'width' | 'height';
   onLayoutDimensionChange: (dimension: 'width' | 'height') => void;
+  bandPlacementMode: 'alwaysTop' | 'adaptive';
+  onBandPlacementModeChange: (mode: 'alwaysTop' | 'adaptive') => void;
   coverViewMode?: 'grid' | 'carousel';
   onCoverViewModeChange?: (mode: 'grid' | 'carousel') => void;
 }
@@ -26,6 +28,8 @@ const MenuConfig: React.FC<MenuConfigProps> = ({
   onMinRowsChange,
   layoutDimension,
   onLayoutDimensionChange,
+  bandPlacementMode,
+  onBandPlacementModeChange,
   coverViewMode = 'grid',
   onCoverViewModeChange,
 }) => {
@@ -148,6 +152,19 @@ const MenuConfig: React.FC<MenuConfigProps> = ({
           className="layout-dimension-toggle"
         />
         <span className="config-spacer" aria-hidden="true" />
+      </div>
+
+      <div className="config-row search-band-toggle-row">
+        <span className="config-label">Search</span>
+        <span className="search-band-label">Always on top</span>
+        <Switch
+          checked={bandPlacementMode === 'adaptive'}
+          onChange={(checked) =>
+            onBandPlacementModeChange(checked ? 'adaptive' : 'alwaysTop')
+          }
+          className="layout-dimension-toggle"
+        />
+        <span className="search-band-label">Auto</span>
       </div>
 
       <div className="config-row four-col cover-view-toggle-row">

@@ -8,6 +8,7 @@ export const MIN_ROWS_STORAGE_KEY = 'gridMinRows';
 export const LAYOUT_DIMENSION_STORAGE_KEY = 'layoutDimension';
 export const TITLE_STORAGE_KEY = 'gridTitle';
 export const COVER_VIEW_STORAGE_KEY = 'coverViewMode';
+export const BAND_PLACEMENT_STORAGE_KEY = 'searchBandPlacement';
 export const MEDIA_TYPE_STORAGE_KEY = 'selectedMediaType';
 export const INDEXEDDB_GRID_KEY = 'gridItems';
 export const INDEXEDDB_COLUMNS_KEY = 'gridColumns';

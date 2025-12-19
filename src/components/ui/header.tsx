@@ -17,6 +17,8 @@ interface AppHeaderProps {
   onShowSearchToggle: (enabled: boolean) => void;
   layoutDimension: 'width' | 'height';
   onLayoutDimensionChange: (dimension: 'width' | 'height') => void;
+  bandPlacementMode: 'alwaysTop' | 'adaptive';
+  onBandPlacementModeChange: (mode: 'alwaysTop' | 'adaptive') => void;
   onShare: () => void;
   isSharing: boolean;
   shareUrl: string;
@@ -38,6 +40,8 @@ const AppHeader: React.FC<AppHeaderProps> = ({
   onShowSearchToggle,
   layoutDimension,
   onLayoutDimensionChange,
+  bandPlacementMode,
+  onBandPlacementModeChange,
   onShare,
   isSharing,
   shareUrl,
@@ -76,6 +80,8 @@ const AppHeader: React.FC<AppHeaderProps> = ({
           onMinRowsChange={onMinRowsChange}
           layoutDimension={layoutDimension}
           onLayoutDimensionChange={onLayoutDimensionChange}
+          bandPlacementMode={bandPlacementMode}
+          onBandPlacementModeChange={onBandPlacementModeChange}
           onShare={onShare}
           isSharing={isSharing}
           shareUrl={shareUrl}

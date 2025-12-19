@@ -67,6 +67,8 @@ const MediaSearch: React.FC = () => {
     setLayoutDimension,
     coverViewMode,
     setCoverViewMode,
+    bandPlacementMode,
+    setBandPlacementMode,
   } = useLayoutState({ isHydrated: isIndexedDbHydrated });
 
   const [gridItems, setGridItems] = useState<MediaItem[]>([]);
@@ -207,6 +209,8 @@ const MediaSearch: React.FC = () => {
   useModalClosed('coverLink', () => setShowCoverLinkModal(false));
 
   const searchSummary = lastSearchSummary || provider.label;
+  const bandPlacement =
+    bandPlacementMode === 'adaptive' && gridItems.length > 0 ? 'bottom' : 'top';
 
   const handleMediaTypeChange = (type: MediaType) => {
     setSelectedMediaType(type);
@@ -321,6 +325,8 @@ const MediaSearch: React.FC = () => {
         onShowSearchToggle={handleShowSearchToggle}
         layoutDimension={layoutDimension}
         onLayoutDimensionChange={setLayoutDimension}
+        bandPlacementMode={bandPlacementMode}
+        onBandPlacementModeChange={setBandPlacementMode}
         onShare={handleCreateShare}
         isSharing={isSharing}
         shareUrl={shareUrl}
@@ -340,6 +346,7 @@ const MediaSearch: React.FC = () => {
           isLoading={searchIsLoading}
           provider={provider}
           layout="band"
+          bandPlacement={bandPlacement}
           onOpenCoverLink={handleCoverLinkOpen}
         />
       )}
@@ -387,6 +394,7 @@ const MediaSearch: React.FC = () => {
                 isLoading={searchIsLoading}
                 provider={provider}
                 layout="stack"
+                bandPlacement={bandPlacement}
                 onOpenCoverLink={handleCoverLinkOpen}
               />
             )}

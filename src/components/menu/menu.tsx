@@ -23,6 +23,8 @@ interface MenuProps {
   onMinRowsChange: (minRows: number) => void;
   layoutDimension: 'width' | 'height';
   onLayoutDimensionChange: (dimension: 'width' | 'height') => void;
+  bandPlacementMode: 'alwaysTop' | 'adaptive';
+  onBandPlacementModeChange: (mode: 'alwaysTop' | 'adaptive') => void;
   onShare: () => void;
   isSharing: boolean;
   shareUrl: string;
@@ -40,6 +42,8 @@ const Menu: React.FC<MenuProps> = ({
   onMinRowsChange,
   layoutDimension,
   onLayoutDimensionChange,
+  bandPlacementMode,
+  onBandPlacementModeChange,
   onShare,
   isSharing,
   shareUrl,
@@ -221,6 +225,8 @@ const Menu: React.FC<MenuProps> = ({
             onMinRowsChange={onMinRowsChange}
             layoutDimension={layoutDimension}
             onLayoutDimensionChange={onLayoutDimensionChange}
+            bandPlacementMode={bandPlacementMode}
+            onBandPlacementModeChange={onBandPlacementModeChange}
             coverViewMode={coverViewMode}
             onCoverViewModeChange={onCoverViewModeChange}
           />

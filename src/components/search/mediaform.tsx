@@ -25,6 +25,7 @@ interface MediaFormProps {
     }[];
   };
   layout: 'band' | 'stack';
+  bandPlacement?: 'top' | 'bottom';
   onOpenCoverLink?: () => void;
 }
 
@@ -37,6 +38,7 @@ export const MediaForm: React.FC<MediaFormProps> = ({
   isLoading,
   provider,
   layout,
+  bandPlacement = 'top',
   onOpenCoverLink,
 }) => {
   const coverInputRef = useRef<HTMLInputElement>(null);
@@ -63,10 +65,11 @@ export const MediaForm: React.FC<MediaFormProps> = ({
   };
 
   const layoutClass = layout === 'band' ? 'band' : 'stack';
+  const bandPlacementClass = layout === 'band' ? `band-${bandPlacement}` : '';
 
   return (
     <form
-      className={`media-search-form ${layoutClass}`}
+      className={`media-search-form ${layoutClass} ${bandPlacementClass}`}
       onSubmit={handleFormSubmit}
       data-testid={`media-search-form-${layout}`}
     >

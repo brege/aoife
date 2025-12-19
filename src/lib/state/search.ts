@@ -70,8 +70,9 @@ export const useSearchState = (
     return defaultMediaType;
   };
 
-  const [selectedMediaType, setSelectedMediaType] =
-    useState<MediaType>(resolveStoredMediaType);
+  const [selectedMediaType, setSelectedMediaType] = useState<MediaType>(
+    resolveStoredMediaType,
+  );
   const provider = useMemo(
     () => getMediaProvider(selectedMediaType),
     [selectedMediaType],

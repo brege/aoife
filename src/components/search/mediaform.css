@@ -222,4 +222,13 @@
     background-color: rgba(31, 41, 51, 0.92);
     box-shadow: var(--shadow-lg);
   }
+
+  .media-search-form.band.band-top {
+    bottom: auto;
+  }
+
+.media-search-form.band.band-bottom {
+  top: auto;
+  bottom: calc(var(--spacing-md) + 12px + env(safe-area-inset-bottom));
+}
 }

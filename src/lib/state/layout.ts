@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import {
+  BAND_PLACEMENT_STORAGE_KEY,
   COLUMNS_STORAGE_KEY,
   COVER_VIEW_STORAGE_KEY,
   INDEXEDDB_COLUMNS_KEY,
@@ -23,6 +24,8 @@ export type UseLayoutStateReturn = {
   setLayoutDimension: (value: 'width' | 'height') => void;
   coverViewMode: 'grid' | 'carousel';
   setCoverViewMode: (value: 'grid' | 'carousel') => void;
+  bandPlacementMode: 'alwaysTop' | 'adaptive';
+  setBandPlacementMode: (value: 'alwaysTop' | 'adaptive') => void;
 };
 
 export const useLayoutState = (
@@ -76,6 +79,16 @@ export const useLayoutState = (
     },
   );
 
+  const [bandPlacementMode, setBandPlacementMode] = useState<
+    'alwaysTop' | 'adaptive'
+  >(() => {
+    const stored = localStorage.getItem(BAND_PLACEMENT_STORAGE_KEY);
+    if (stored === 'adaptive') {
+      return 'adaptive';
+    }
+    return 'alwaysTop';
+  });
+
   useStorageSync(
     COLUMNS_STORAGE_KEY,
     INDEXEDDB_COLUMNS_KEY,
@@ -101,6 +114,10 @@ export const useLayoutState = (
     localStorage.setItem(COVER_VIEW_STORAGE_KEY, coverViewMode);
   }, [coverViewMode]);
 
+  useEffect(() => {
+    localStorage.setItem(BAND_PLACEMENT_STORAGE_KEY, bandPlacementMode);
+  }, [bandPlacementMode]);
+
   return {
     columns,
     setColumns,
@@ -110,5 +127,7 @@ export const useLayoutState = (
     setLayoutDimension,
     coverViewMode,
     setCoverViewMode,
+    bandPlacementMode,
+    setBandPlacementMode,
   };
 };
