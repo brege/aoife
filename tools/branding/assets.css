@@ -1,0 +1,27 @@
+.assets-page,
+:root {
+  color-scheme: light;
+  background-color: transparent;
+}
+
+html,
+body {
+  background-color: transparent;
+}
+
+.assets-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  box-sizing: border-box;
+}
+
+.assets-canvas {
+  width: 512px;
+  height: 512px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

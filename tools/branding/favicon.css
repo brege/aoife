@@ -1,0 +1,48 @@
+.favicon {
+  --favicon-music: #41ede7;
+  --favicon-books: #91fbcf;
+  --favicon-movies: #e5c489;
+  --favicon-add: #ed41eb;
+  --favicon-size: 512px;
+  position: relative;
+  width: var(--favicon-size);
+  height: var(--favicon-size);
+}
+
+.favicon-icon {
+  position: absolute;
+  display: block;
+}
+
+.favicon-icon-music {
+  top: calc(var(--favicon-size) * 45 / 512);
+  left: calc(var(--favicon-size) * 24 / 512);
+  width: calc(var(--favicon-size) * 200 / 512);
+  height: calc(var(--favicon-size) * 200 / 512);
+  color: var(--favicon-music);
+}
+
+.favicon-icon-books {
+  top: calc(var(--favicon-size) * 49 / 512);
+  left: calc(var(--favicon-size) * 280 / 512);
+  width: calc(var(--favicon-size) * 180 / 512);
+  height: calc(var(--favicon-size) * 180 / 512);
+  color: var(--favicon-books);
+}
+
+.favicon-icon-movies {
+  top: calc(var(--favicon-size) * 280 / 512);
+  left: calc(var(--favicon-size) * 40 / 512);
+  width: calc(var(--favicon-size) * 186 / 512);
+  height: calc(var(--favicon-size) * 186 / 512);
+  transform: scale(1.1);
+  color: var(--favicon-movies);
+}
+
+.favicon-icon-add {
+  top: calc(var(--favicon-size) * 300 / 512);
+  left: calc(var(--favicon-size) * 300 / 512);
+  width: calc(var(--favicon-size) * 140 / 512);
+  height: calc(var(--favicon-size) * 140 / 512);
+  color: var(--favicon-add);
+}
