@@ -32,10 +32,11 @@ export class TMDBService extends MediaService {
     this.mediaType = mediaType;
     const serverBase =
       typeof window === 'undefined'
-        ? process.env.AOIFE_API_BASE ||
-          process.env.VITE_DEV_SERVER_ORIGIN ||
-          'http://localhost:5173'
+        ? process.env.AOIFE_API_BASE || process.env.VITE_DEV_SERVER_ORIGIN
         : '';
+    if (typeof window === 'undefined' && !serverBase) {
+      throw new Error('Missing AOIFE_API_BASE or VITE_DEV_SERVER_ORIGIN');
+    }
     this.baseUrl = `${serverBase}/api/tmdb`;
   }
 
