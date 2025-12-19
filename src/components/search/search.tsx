@@ -175,6 +175,7 @@ const MediaSearch: React.FC = () => {
   const clearGridAndPersist = useCallback(
     (source: string) => {
       clearGrid();
+      setSelectedMediaType('movies');
       resetShareContext();
       logger.info(source, {
         context: 'MediaSearch.clearGridAndPersist',
@@ -182,7 +183,7 @@ const MediaSearch: React.FC = () => {
         timestamp: Date.now(),
       });
     },
-    [clearGrid, resetShareContext],
+    [clearGrid, resetShareContext, setSelectedMediaType],
   );
 
   useEffect(() => {

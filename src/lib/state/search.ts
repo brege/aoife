@@ -7,6 +7,7 @@ import type {
   MediaType,
 } from '../../media/types';
 import logger from '../logger';
+import { MEDIA_TYPE_STORAGE_KEY } from './storage';
 
 const constrainAspectRatio = (aspectRatio: number): number => {
   const minimumRatio = 0.5;
@@ -53,9 +54,24 @@ export const useSearchState = (
   options: UseSearchStateOptions,
 ): UseSearchStateReturn => {
   const { showSearch } = options;
+  const defaultMediaType: MediaType = 'movies';
+  const resolveStoredMediaType = (): MediaType => {
+    const stored = localStorage.getItem(MEDIA_TYPE_STORAGE_KEY);
+    if (
+      stored === 'movies' ||
+      stored === 'tv' ||
+      stored === 'books' ||
+      stored === 'music' ||
+      stored === 'games' ||
+      stored === 'custom'
+    ) {
+      return stored;
+    }
+    return defaultMediaType;
+  };
 
   const [selectedMediaType, setSelectedMediaType] =
-    useState<MediaType>('movies');
+    useState<MediaType>(resolveStoredMediaType);
   const provider = useMemo(
     () => getMediaProvider(selectedMediaType),
     [selectedMediaType],
@@ -224,6 +240,10 @@ export const useSearchState = (
     setSearchResults([]);
     setLastSearchSummary('');
   }, [provider]);
+
+  useEffect(() => {
+    localStorage.setItem(MEDIA_TYPE_STORAGE_KEY, selectedMediaType);
+  }, [selectedMediaType]);
 
   useEffect(() => {
     if (showSearch) {
