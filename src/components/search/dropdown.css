@@ -77,6 +77,10 @@
   background-color: #34495e;
 }
 
+.dropdown-option.highlighted {
+  background-color: #2c3e50;
+}
+
 .dropdown-option-icon {
   display: flex;
   align-items: center;

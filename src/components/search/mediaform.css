@@ -92,7 +92,7 @@
   line-height: 1;
   appearance: none;
   transition: all 0.3s ease;
-  background-color: #00d474;
+  background-color: #008000;
   color: #fff;
   font-weight: 600;
   flex-shrink: 0;
@@ -105,7 +105,7 @@
 }
 
 .form-submit-button:hover:not(:disabled) {
-  background-color: #008000;
+  background-color: #00d474;
 }
 
 .form-submit-button:disabled {

@@ -1,5 +1,5 @@
 import type React from 'react';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { GiFilmStrip } from 'react-icons/gi';
 import { MdDashboardCustomize } from 'react-icons/md';
 import {
@@ -8,7 +8,7 @@ import {
   PiMusicNotesFill,
   PiTelevisionSimpleBold,
 } from 'react-icons/pi';
-import { useOutside } from '../../lib/escape';
+import { useDropdownNavigation, useOutside } from '../../lib/escape';
 import type { MediaType } from '../../media/types';
 import './dropdown.css';
 
@@ -41,16 +41,81 @@ const MEDIA_TYPES: Array<{
 
 const Dropdown: React.FC<DropdownProps> = ({ value, onChange }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const optionRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
   useOutside(dropdownRef, () => setIsOpen(false), isOpen);
 
   const handleSelect = (type: MediaType) => {
     onChange(type);
     setIsOpen(false);
+    setHighlightedIndex(-1);
   };
 
   const currentMedia = MEDIA_TYPES.find((m) => m.type === value);
+  const currentIndex = MEDIA_TYPES.findIndex((media) => media.type === value);
+
+  const handleMoveDown = () => {
+    if (!isOpen) {
+      setIsOpen(true);
+      setHighlightedIndex(currentIndex);
+      return;
+    }
+    setHighlightedIndex((prev) => {
+      const nextIndex = prev < 0 ? 0 : prev + 1;
+      return nextIndex >= MEDIA_TYPES.length ? 0 : nextIndex;
+    });
+  };
+
+  const handleMoveUp = () => {
+    if (!isOpen) {
+      setIsOpen(true);
+      setHighlightedIndex(currentIndex);
+      return;
+    }
+    setHighlightedIndex((prev) => {
+      if (prev < 0) {
+        return MEDIA_TYPES.length - 1;
+      }
+      const nextIndex = prev - 1;
+      return nextIndex < 0 ? MEDIA_TYPES.length - 1 : nextIndex;
+    });
+  };
+
+  const handleSelectHighlighted = () => {
+    if (highlightedIndex < 0 || highlightedIndex >= MEDIA_TYPES.length) {
+      return;
+    }
+    handleSelect(MEDIA_TYPES[highlightedIndex].type);
+  };
+
+  const handleCloseDropdown = () => {
+    setIsOpen(false);
+    setHighlightedIndex(-1);
+  };
+
+  const handleKeyDown = useDropdownNavigation(isOpen, {
+    onMoveDown: handleMoveDown,
+    onMoveUp: handleMoveUp,
+    onSelect: handleSelectHighlighted,
+    onClose: handleCloseDropdown,
+  });
+
+  useEffect(() => {
+    if (isOpen) {
+      setHighlightedIndex(currentIndex);
+    } else {
+      setHighlightedIndex(-1);
+    }
+  }, [isOpen, currentIndex]);
+
+  useEffect(() => {
+    const highlightedElement = optionRefs.current[highlightedIndex];
+    if (highlightedElement) {
+      highlightedElement.scrollIntoView({ block: 'nearest' });
+    }
+  }, [highlightedIndex]);
 
   return (
     <div className="dropdown" ref={dropdownRef}>
@@ -58,6 +123,7 @@ const Dropdown: React.FC<DropdownProps> = ({ value, onChange }) => {
         type="button"
         className="dropdown-button"
         onClick={() => setIsOpen(!isOpen)}
+        onKeyDown={handleKeyDown}
         aria-label="Select media type"
         data-testid="media-type-toggle"
       >
@@ -67,11 +133,16 @@ const Dropdown: React.FC<DropdownProps> = ({ value, onChange }) => {
 
       {isOpen && (
         <div className="dropdown-menu">
-          {MEDIA_TYPES.map((media) => (
+          {MEDIA_TYPES.map((media, index) => (
             <button
               key={media.type}
               type="button"
-              className={`dropdown-option ${value === media.type ? 'active' : ''}`}
+              ref={(el) => {
+                optionRefs.current[index] = el;
+              }}
+              className={`dropdown-option ${value === media.type ? 'active' : ''} ${
+                index === highlightedIndex ? 'highlighted' : ''
+              }`}
               onClick={() => handleSelect(media.type)}
               data-testid={`media-type-option-${media.type}`}
             >

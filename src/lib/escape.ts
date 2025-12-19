@@ -48,7 +48,7 @@ const useDropdownNavigation = (
   isOpen: boolean,
   callbacks: DropdownNavigationCallbacks,
 ) => {
-  return (event: React.KeyboardEvent<HTMLInputElement>) => {
+  return (event: React.KeyboardEvent<HTMLElement>) => {
     if (!isOpen) {
       if (event.key === 'ArrowDown') {
         callbacks.onMoveDown();
