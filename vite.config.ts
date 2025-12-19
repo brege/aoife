@@ -4,6 +4,12 @@ import { createApiMiddleware } from './src/middleware/api-routes';
 import { setupWebSocket } from './src/middleware/websocket';
 
 const env = loadEnv('development', process.cwd(), '');
+if (env.VITE_DEV_SERVER_ORIGIN && !process.env.VITE_DEV_SERVER_ORIGIN) {
+  process.env.VITE_DEV_SERVER_ORIGIN = env.VITE_DEV_SERVER_ORIGIN;
+}
+if (env.AOIFE_API_BASE && !process.env.AOIFE_API_BASE) {
+  process.env.AOIFE_API_BASE = env.AOIFE_API_BASE;
+}
 
 export default defineConfig({
   plugins: [

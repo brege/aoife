@@ -111,6 +111,7 @@ export const useSearchState = (
 
       setIsLoading(true);
       setError('');
+      setSearchResultAspectRatios({});
 
       try {
         const service = getMediaService(activeMediaType);
@@ -201,10 +202,13 @@ export const useSearchState = (
     setSearchValues(provider.defaultSearchValues);
     setSearchResults([]);
     setLastSearchSummary('');
+  }, [provider]);
+
+  useEffect(() => {
     if (isBuilderMode) {
       searchInputRef.current?.focus();
     }
-  }, [provider, isBuilderMode]);
+  }, [isBuilderMode]);
 
   return {
     selectedMediaType,

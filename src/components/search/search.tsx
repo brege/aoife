@@ -17,8 +17,6 @@ import { MediaForm } from './mediaform';
 import { PosterPicker } from './picker';
 import { SearchResults } from './results';
 
-const GRID_CAPACITY = 4;
-
 const normalizeTitle = (value: string): string => {
   const trimmed = value.trim();
   return trimmed === '' ? DEFAULT_TITLE : trimmed;
@@ -48,7 +46,6 @@ const MediaSearch: React.FC = () => {
     handleSearchResultImageLoad,
     closeSearchResults,
     provider,
-    searchInputRef,
     setSearchResults,
     setSearchValues,
   } = useSearchState({ isBuilderMode });
@@ -185,12 +182,6 @@ const MediaSearch: React.FC = () => {
     setSelectedMediaType(type);
   };
 
-  useEffect(() => {
-    if (isBuilderMode) {
-      searchInputRef.current?.focus();
-    }
-  }, [isBuilderMode, searchInputRef]);
-
   const handleBuilderModeToggle = useCallback((enabled: boolean) => {
     setIsBuilderMode(enabled);
     logger.info(
@@ -208,9 +199,12 @@ const MediaSearch: React.FC = () => {
     clearGridAndPersist('CLEAR: Grid cleared via hamburger menu');
   }, [clearGridAndPersist]);
 
+  const gridCapacity = columns * minRows;
+
   useSearchBridges({
     gridItems,
-    gridCapacity: GRID_CAPACITY,
+    gridCapacity,
+    columns,
     isBuilderMode,
     searchValues,
     provider,

@@ -43,6 +43,7 @@ type WindowWithTestApi = Window & {
 type SearchBridgesOptions = {
   gridItems: MediaItem[];
   gridCapacity: number;
+  columns: number;
   isBuilderMode: boolean;
   searchValues: MediaSearchValues;
   provider: MediaProviderConfig;
@@ -64,6 +65,7 @@ type SearchBridgesOptions = {
 export const useSearchBridges = ({
   gridItems,
   gridCapacity,
+  columns,
   isBuilderMode,
   searchValues,
   provider,
@@ -233,7 +235,10 @@ export const useSearchBridges = ({
       maxCapacity: gridCapacity,
       positions: gridItems.map((item, index) => ({
         position: index,
-        matrixPosition: `(${Math.floor(index / 2)}, ${index % 2})`,
+        gridPosition:
+          columns > 0
+            ? `(${Math.floor(index / columns)}, ${index % columns})`
+            : null,
         media: {
           id: item.id,
           title: item.title,
@@ -244,7 +249,10 @@ export const useSearchBridges = ({
         { length: gridCapacity - gridItems.length },
         (_, index) => ({
           position: gridItems.length + index,
-          matrixPosition: `(${Math.floor((gridItems.length + index) / 2)}, ${(gridItems.length + index) % 2})`,
+          gridPosition:
+            columns > 0
+              ? `(${Math.floor((gridItems.length + index) / columns)}, ${(gridItems.length + index) % columns})`
+              : null,
         }),
       ),
     };
@@ -260,7 +268,7 @@ export const useSearchBridges = ({
     );
 
     return gridState;
-  }, [gridCapacity, gridItems]);
+  }, [columns, gridCapacity, gridItems]);
 
   useCliBridge({
     onSearch: handleCliSearch,

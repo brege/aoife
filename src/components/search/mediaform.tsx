@@ -1,5 +1,5 @@
 import type React from 'react';
-import { useCallback } from 'react';
+import { useCallback, useRef } from 'react';
 import { MdDriveFolderUpload } from 'react-icons/md';
 import { storeImage } from '../../lib/indexeddb';
 import type { MediaSearchValues, MediaType } from '../../media/types';
@@ -36,6 +36,8 @@ export const MediaForm: React.FC<MediaFormProps> = ({
   provider,
   layout,
 }) => {
+  const coverInputRef = useRef<HTMLInputElement>(null);
+
   const handleCoverImageUpload = useCallback(
     async (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
@@ -106,14 +108,13 @@ export const MediaForm: React.FC<MediaFormProps> = ({
                   onChange={handleCoverImageUpload}
                   style={{ display: 'none' }}
                   id="cover-file-input"
+                  ref={coverInputRef}
                   aria-label="Upload cover image"
                   data-testid="cover-file-input"
                 />
                 <button
                   type="button"
-                  onClick={() =>
-                    document.getElementById('cover-file-input')?.click()
-                  }
+                  onClick={() => coverInputRef.current?.click()}
                   className="icon-button"
                   aria-label="Upload image"
                   title="Upload image"
