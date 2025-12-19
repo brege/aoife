@@ -56,18 +56,18 @@ const booksProvider: MediaProviderConfig = {
   resultLabel: 'book',
   searchFields: [
     {
-      id: 'title',
-      label: 'Title',
-      placeholder: 'Title...',
-      type: 'text',
-      required: true,
-    },
-    {
       id: 'author',
       label: 'Author',
       placeholder: 'Author...',
       type: 'text',
       required: false,
+    },
+    {
+      id: 'title',
+      label: 'Title',
+      placeholder: 'Title...',
+      type: 'text',
+      required: true,
     },
   ],
   defaultSearchValues: {
