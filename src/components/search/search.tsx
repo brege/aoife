@@ -199,15 +199,10 @@ const MediaSearch: React.FC = () => {
     clearGridAndPersist('CLEAR: Grid cleared via hamburger menu');
   }, [clearGridAndPersist]);
 
-  const gridCapacity = columns * minRows;
-
   useSearchBridges({
     gridItems,
-    gridCapacity,
-    columns,
     showSearch,
     searchValues,
-    provider,
     selectedMediaType,
     layoutDimension,
     runSearch,
@@ -215,7 +210,6 @@ const MediaSearch: React.FC = () => {
     setLayoutDimension,
     handleAddMedia,
     handleRemoveMedia,
-    clearGridAndPersist,
     handleShowSearchToggle,
     handleClearGrid,
   });
