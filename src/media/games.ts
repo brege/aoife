@@ -70,104 +70,109 @@ export class GamesService extends MediaService {
       params[`filter[platform]`] = platform;
     }
 
-    const response = await axios.get(`${this.baseUrl}/Games/ByGameName`, {
-      params,
-    });
+    try {
+      const response = await axios.get(`${this.baseUrl}/Games/ByGameName`, {
+        params,
+      });
 
-    if (!response.data.data?.games) {
-      return [];
-    }
-
-    const gameList = response.data.data.games as Game[];
-
-    const buildImageUrl = (
-      baseUrl: ImageBaseUrl | undefined,
-      filename: string,
-      size: keyof ImageBaseUrl = 'original',
-    ): string => {
-      if (filename.startsWith('http://') || filename.startsWith('https://')) {
-        return filename;
+      if (!response.data.data?.games) {
+        return [];
       }
 
-      const base = baseUrl?.[size] ?? baseUrl?.original;
-      if (base) {
-        return `${base}/${filename}`;
-      }
+      const gameList = response.data.data.games as Game[];
 
-      return `${this.imageBaseUrl}/${filename}`;
-    };
-
-    const fetchImageUrl = async (
-      gameId: number,
-    ): Promise<{ full?: string; thumb?: string }> => {
-      try {
-        const imageResponse = await axios.get(`${this.baseUrl}/Games/Images`, {
-          params: { games_id: gameId },
-        });
-
-        const imageData = imageResponse.data.data as GameImagesResponse['data'];
-        const baseUrl = imageData?.base_url;
-        const imageList = imageData?.images?.[gameId.toString()];
-        if (!imageList) return {};
-
-        const boxart = imageList.find(
-          (image) => image.type === 'boxart' && image.side === 'front',
-        );
-        const firstBox =
-          boxart ?? imageList.find((img) => img.type === 'boxart');
-
-        if (firstBox) {
-          return {
-            full: buildImageUrl(baseUrl, firstBox.filename, 'original'),
-            thumb: buildImageUrl(baseUrl, firstBox.filename, 'medium'),
-          };
+      const buildImageUrl = (
+        baseUrl: ImageBaseUrl | undefined,
+        filename: string,
+        size: keyof ImageBaseUrl = 'original',
+      ): string => {
+        if (filename.startsWith('http://') || filename.startsWith('https://')) {
+          return filename;
         }
-      } catch {
-        return {};
-      }
-      return {};
-    };
 
-    const concurrencyLimit = 5;
-    const imagePromises = gameList.map((game) => fetchImageUrl(game.id));
-    const imageUrls = await this.promiseLimit(concurrencyLimit, imagePromises);
+        const base = baseUrl?.[size] ?? baseUrl?.original;
+        if (base) {
+          return `${base}/${filename}`;
+        }
 
-    const results = gameList.map((game, index) => {
-      const year = game.release_date
-        ? new Date(game.release_date).getFullYear()
-        : undefined;
-
-      const image = imageUrls[index] ?? {};
-
-      const mapped = {
-        id: game.id,
-        title: game.game_title,
-        subtitle: year ? year.toString() : undefined,
-        year,
-        type: 'games' as const,
-        coverUrl: image.full,
-        coverThumbnailUrl: image.thumb ?? image.full,
-        metadata: {
-          release_date: game.release_date,
-          isCustom: false,
-        },
+        return `${this.imageBaseUrl}/${filename}`;
       };
-      return mapped;
-    });
 
-    // Cache all results
-    this.searchCache = {
-      params: cacheKey,
-      results,
-      timestamp: Date.now(),
-    };
+      const fetchImageUrl = async (
+        gameId: number,
+      ): Promise<{ full?: string; thumb?: string }> => {
+        try {
+          const imageResponse = await axios.get(`${this.baseUrl}/Games/Images`, {
+            params: { games_id: gameId },
+          });
 
-    // Map each item ID to its search params for later lookup
-    results.forEach((item) => {
-      this.itemToSearchParams.set(item.id, cacheKey);
-    });
+          const imageData = imageResponse.data.data as GameImagesResponse['data'];
+          const baseUrl = imageData?.base_url;
+          const imageList = imageData?.images?.[gameId.toString()];
+          if (!imageList) return {};
 
-    return results.slice(0, 25);
+          const boxart = imageList.find(
+            (image) => image.type === 'boxart' && image.side === 'front',
+          );
+          const firstBox =
+            boxart ?? imageList.find((img) => img.type === 'boxart');
+
+          if (firstBox) {
+            return {
+              full: buildImageUrl(baseUrl, firstBox.filename, 'original'),
+              thumb: buildImageUrl(baseUrl, firstBox.filename, 'medium'),
+            };
+          }
+        } catch {
+          return {};
+        }
+        return {};
+      };
+
+      const concurrencyLimit = 5;
+      const imagePromises = gameList.map((game) => fetchImageUrl(game.id));
+      const imageUrls = await this.promiseLimit(concurrencyLimit, imagePromises);
+
+      const results = gameList.map((game, index) => {
+        const year = game.release_date
+          ? new Date(game.release_date).getFullYear()
+          : undefined;
+
+        const image = imageUrls[index] ?? {};
+
+        const mapped = {
+          id: game.id,
+          title: game.game_title,
+          subtitle: year ? year.toString() : undefined,
+          year,
+          type: 'games' as const,
+          coverUrl: image.full,
+          coverThumbnailUrl: image.thumb ?? image.full,
+          metadata: {
+            release_date: game.release_date,
+            isCustom: false,
+          },
+        };
+        return mapped;
+      });
+
+      // Cache all results
+      this.searchCache = {
+        params: cacheKey,
+        results,
+        timestamp: Date.now(),
+      };
+
+      // Map each item ID to its search params for later lookup
+      results.forEach((item) => {
+        this.itemToSearchParams.set(item.id, cacheKey);
+      });
+
+      return results.slice(0, 25);
+    } catch (error) {
+      console.error('Games search error:', error);
+      throw new Error('Failed to search games');
+    }
   }
 
   async getDetails(_id: string | number): Promise<MediaSearchResult | null> {

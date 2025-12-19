@@ -81,48 +81,50 @@ export class BooksService extends MediaService {
       return this.searchCache.results.slice(0, 10);
     }
 
-    try {
-      const results = await Promise.allSettled([
-        this.searchOpenLibrary(title, author, 10, 0),
-        this.searchOpenLibrary(title, author, 10, 10),
-        this.searchGoogleBooks(title, author, 10, 0),
-        this.searchGoogleBooks(title, author, 10, 10),
-      ]);
+    const results = await Promise.allSettled([
+      this.searchOpenLibrary(title, author, 10, 0),
+      this.searchOpenLibrary(title, author, 10, 10),
+      this.searchGoogleBooks(title, author, 10, 0),
+      this.searchGoogleBooks(title, author, 10, 10),
+    ]);
 
-      const openLibraryResults = [
-        ...(results[0].status === 'fulfilled' ? results[0].value : []),
-        ...(results[1].status === 'fulfilled' ? results[1].value : []),
-      ];
-      const googleBooksResults = [
-        ...(results[2].status === 'fulfilled' ? results[2].value : []),
-        ...(results[3].status === 'fulfilled' ? results[3].value : []),
-      ];
-
-      const allResults = [...openLibraryResults, ...googleBooksResults];
-
-      const sortedResults = allResults.sort((a, b) => {
-        if (a.coverUrl && !b.coverUrl) return -1;
-        if (!a.coverUrl && b.coverUrl) return 1;
-        return 0;
-      });
-
-      // Cache all results (not just top 10)
-      this.searchCache = {
-        params: cacheKey,
-        results: sortedResults,
-        timestamp: Date.now(),
-      };
-
-      // Map each item ID to its search params for later lookup
-      sortedResults.forEach((item) => {
-        this.itemToSearchParams.set(item.id, cacheKey);
-      });
-
-      return sortedResults.slice(0, 10);
-    } catch (error) {
-      console.error('Books search error:', error);
+    const failedRequests = results.filter(
+      (result) => result.status === 'rejected',
+    );
+    if (failedRequests.length === results.length) {
       throw new Error('Failed to search books');
     }
+
+    const openLibraryResults = [
+      ...(results[0].status === 'fulfilled' ? results[0].value : []),
+      ...(results[1].status === 'fulfilled' ? results[1].value : []),
+    ];
+    const googleBooksResults = [
+      ...(results[2].status === 'fulfilled' ? results[2].value : []),
+      ...(results[3].status === 'fulfilled' ? results[3].value : []),
+    ];
+
+    const allResults = [...openLibraryResults, ...googleBooksResults];
+
+    const sortedResults = allResults.sort((a, b) => {
+      if (a.coverUrl && !b.coverUrl) return -1;
+      if (!a.coverUrl && b.coverUrl) return 1;
+      return 0;
+    });
+
+    // Cache all results (not just top 10)
+    this.searchCache = {
+      params: cacheKey,
+      results: sortedResults,
+      timestamp: Date.now(),
+    };
+
+    // Map each item ID to its search params for later lookup
+    sortedResults.forEach((item) => {
+      this.itemToSearchParams.set(item.id, cacheKey);
+    });
+
+    return sortedResults.slice(0, 10);
   }
 
   async getDetails(id: string | number): Promise<MediaSearchResult | null> {
@@ -171,40 +173,35 @@ export class BooksService extends MediaService {
     limit: number = 10,
     offset: number = 0,
   ): Promise<MediaSearchResult[]> {
-    try {
-      const searchUrl = `https://openlibrary.org/search.json?title=${encodeURIComponent(title)}&author=${encodeURIComponent(author)}&limit=${limit}&offset=${offset}`;
-      const response = await axios.get<OpenLibrarySearchResponse>(searchUrl, {
-        timeout: 2000,
-      });
+    const searchUrl = `https://openlibrary.org/search.json?title=${encodeURIComponent(title)}&author=${encodeURIComponent(author)}&limit=${limit}&offset=${offset}`;
+    const response = await axios.get<OpenLibrarySearchResponse>(searchUrl, {
+      timeout: 2000,
+    });
 
-      return (response.data.docs || [])
-        .map((doc) => {
-          const coverId = doc.cover_i;
-          return {
-            id: coverId ? `ol:${coverId}` : `ol:${doc.key || doc.title}`,
-            type: 'books',
-            title: doc.title,
-            subtitle: doc.author_name ? doc.author_name.join(', ') : undefined,
-            year: doc.first_publish_year,
-            coverUrl: coverId
-              ? `https://covers.openlibrary.org/b/id/${coverId}-L.jpg`
-              : null,
-            coverThumbnailUrl: coverId
-              ? `https://covers.openlibrary.org/b/id/${coverId}-S.jpg`
-              : null,
-            source: 'OpenLibrary',
-            metadata: {
-              coverId: coverId || null,
-              openLibraryKey: doc.key,
-              editionCount: doc.edition_count,
-            },
-          };
-        })
-        .filter((item) => item.title);
-    } catch (error) {
-      console.error('OpenLibrary search error:', error);
-      return [];
-    }
+    return (response.data.docs || [])
+      .map((doc) => {
+        const coverId = doc.cover_i;
+        return {
+          id: coverId ? `ol:${coverId}` : `ol:${doc.key || doc.title}`,
+          type: 'books',
+          title: doc.title,
+          subtitle: doc.author_name ? doc.author_name.join(', ') : undefined,
+          year: doc.first_publish_year,
+          coverUrl: coverId
+            ? `https://covers.openlibrary.org/b/id/${coverId}-L.jpg`
+            : null,
+          coverThumbnailUrl: coverId
+            ? `https://covers.openlibrary.org/b/id/${coverId}-S.jpg`
+            : null,
+          source: 'OpenLibrary',
+          metadata: {
+            coverId: coverId || null,
+            openLibraryKey: doc.key,
+            editionCount: doc.edition_count,
+          },
+        };
+      })
+      .filter((item) => item.title);
   }
 
   private async searchGoogleBooks(
@@ -213,52 +210,47 @@ export class BooksService extends MediaService {
     limit: number = 10,
     offset: number = 0,
   ): Promise<MediaSearchResult[]> {
-    try {
-      const query = `intitle:"${title}" inauthor:"${author}"`;
-      const searchUrl = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=${limit}&startIndex=${offset}`;
-      const response = await axios.get<GoogleBooksSearchResponse>(searchUrl, {
-        timeout: 2000,
-      });
+    const query = `intitle:"${title}" inauthor:"${author}"`;
+    const searchUrl = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=${limit}&startIndex=${offset}`;
+    const response = await axios.get<GoogleBooksSearchResponse>(searchUrl, {
+      timeout: 2000,
+    });
 
-      return (response.data.items || [])
-        .map((item) => {
-          const volumeInfo = item.volumeInfo;
-          const publishedYear = volumeInfo.publishedDate
-            ? parseInt(volumeInfo.publishedDate.substring(0, 4), 10)
-            : undefined;
+    return (response.data.items || [])
+      .map((item) => {
+        const volumeInfo = item.volumeInfo;
+        const publishedYear = volumeInfo.publishedDate
+          ? parseInt(volumeInfo.publishedDate.substring(0, 4), 10)
+          : undefined;
 
-          const imageLinks = volumeInfo.imageLinks;
-          const coverUrl =
-            imageLinks?.large ||
-            imageLinks?.medium ||
-            imageLinks?.thumbnail ||
-            null;
+        const imageLinks = volumeInfo.imageLinks;
+        const coverUrl =
+          imageLinks?.large ||
+          imageLinks?.medium ||
+          imageLinks?.thumbnail ||
+          null;
 
-          return {
-            id: `gb:${item.id}`,
-            type: 'books',
-            title: volumeInfo.title || 'Unknown',
-            subtitle: volumeInfo.authors
-              ? volumeInfo.authors.join(', ')
-              : undefined,
-            year: publishedYear,
-            coverUrl: this.ensureHttps(coverUrl),
-            coverThumbnailUrl: this.ensureHttps(imageLinks?.thumbnail),
-            source: 'GoogleBooks',
-            metadata: {
-              volumeId: item.id,
-              publishedDate: volumeInfo.publishedDate,
-              description: volumeInfo.description,
-              pageCount: volumeInfo.pageCount,
-              language: volumeInfo.language,
-            },
-          };
-        })
-        .filter((item) => item.title);
-    } catch (error) {
-      console.error('GoogleBooks search error:', error);
-      return [];
-    }
+        return {
+          id: `gb:${item.id}`,
+          type: 'books',
+          title: volumeInfo.title || 'Unknown',
+          subtitle: volumeInfo.authors
+            ? volumeInfo.authors.join(', ')
+            : undefined,
+          year: publishedYear,
+          coverUrl: this.ensureHttps(coverUrl),
+          coverThumbnailUrl: this.ensureHttps(imageLinks?.thumbnail),
+          source: 'GoogleBooks',
+          metadata: {
+            volumeId: item.id,
+            publishedDate: volumeInfo.publishedDate,
+            description: volumeInfo.description,
+            pageCount: volumeInfo.pageCount,
+            language: volumeInfo.language,
+          },
+        };
+      })
+      .filter((item) => item.title);
   }
 
   private async fetchOpenLibraryWork(

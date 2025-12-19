@@ -7,6 +7,7 @@
 
 ### Next Features
 
+- **Show [10] more...**
 - **Captions and Overlays**
   - provide an editable caption for each title, overlay or underneath
 - **Music Albums**
