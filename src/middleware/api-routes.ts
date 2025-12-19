@@ -181,6 +181,32 @@ export const createApiMiddleware = (env: Record<string, string>) => {
         res.writeHead(502, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ error: String(error) }));
       });
+    } else if (path === '/coverart/image' && req.method === 'GET') {
+      const coverType = url.searchParams.get('type');
+      const coverId = url.searchParams.get('id');
+      const sizeValue = url.searchParams.get('size');
+      if (coverType !== 'release') {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Invalid cover type' }));
+        return;
+      }
+      if (!coverId) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Missing cover id' }));
+        return;
+      }
+      const size = sizeValue === '250' ? '250' : '500';
+      const targetUrl = `https://coverartarchive.org/release/${coverId}/front-${size}`;
+      const coverReq = https.get(targetUrl, (coverRes) => {
+        res.writeHead(coverRes.statusCode || 502, {
+          'Content-Type': coverRes.headers['content-type'] || 'image/jpeg',
+        });
+        coverRes.pipe(res);
+      });
+      coverReq.on('error', (error) => {
+        res.writeHead(502, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: String(error) }));
+      });
     } else if (path === '/add' && req.method === 'POST') {
       let body = '';
       req.setEncoding('utf8');

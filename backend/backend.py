@@ -106,6 +106,8 @@ def is_allowed_cover_url(value: str) -> bool:
 
     if value.startswith("/api/gamesdb/images/"):
         return True
+    if value.startswith("/api/coverart/image"):
+        return True
 
     parsed = urlparse(value)
     if parsed.scheme != "https":
@@ -294,6 +296,34 @@ def proxy_gamesdb_images(subpath):
             {
                 "Content-Type": resp.headers.get("Content-Type", "image/jpeg"),
             },
+        )
+    except requests.exceptions.Timeout:
+        return jsonify({"error": "Upstream request timed out"}), 504
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/coverart/image", methods=["GET"])
+def proxy_coverart_image():
+    cover_type = request.args.get("type")
+    cover_id = request.args.get("id")
+    size = request.args.get("size", "500")
+    if cover_type != "release":
+        return jsonify({"error": "Invalid cover type"}), 400
+    if not cover_id:
+        return jsonify({"error": "Missing cover id"}), 400
+    if size not in ("250", "500"):
+        size = "500"
+
+    try:
+        resp = requests.get(
+            f"https://coverartarchive.org/release/{cover_id}/front-{size}",
+            timeout=UPSTREAM_TIMEOUT_SECONDS,
+        )
+        return (
+            resp.content,
+            resp.status_code,
+            {"Content-Type": resp.headers.get("Content-Type", "image/jpeg")},
         )
     except requests.exceptions.Timeout:
         return jsonify({"error": "Upstream request timed out"}), 504

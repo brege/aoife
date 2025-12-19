@@ -131,6 +131,7 @@ type SearchResultsProps = {
     resultId: string | number,
     event: React.SyntheticEvent<HTMLImageElement>,
   ) => void;
+  onPosterError: (resultId: string | number) => void;
   showMoreCount: number;
   onShowMore: () => void;
 };
@@ -144,6 +145,7 @@ export const SearchResults = ({
   onClose,
   onAdd,
   onPosterLoad,
+  onPosterError,
   showMoreCount,
   onShowMore,
 }: SearchResultsProps) => (
@@ -187,6 +189,7 @@ export const SearchResults = ({
                 alt={`${result.title} cover`}
                 className="search-result-poster-large"
                 onLoad={(event) => onPosterLoad(result.id, event)}
+                onError={() => onPosterError(result.id)}
                 style={
                   aspectRatios[result.id]
                     ? { aspectRatio: aspectRatios[result.id] }

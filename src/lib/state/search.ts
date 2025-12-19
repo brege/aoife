@@ -36,6 +36,7 @@ export type UseSearchStateReturn = {
     resultId: string | number,
     event: React.SyntheticEvent<HTMLImageElement>,
   ) => void;
+  handleSearchResultImageError: (resultId: string | number) => void;
   closeSearchResults: () => void;
   provider: ReturnType<typeof getMediaProvider>;
   searchInputRef: React.RefObject<HTMLInputElement>;
@@ -190,6 +191,22 @@ export const useSearchState = (
     [],
   );
 
+  const handleSearchResultImageError = useCallback(
+    (resultId: string | number) => {
+      setSearchResults((current) =>
+        current.filter((result) => result.id !== resultId),
+      );
+      setSearchResultAspectRatios((current) => {
+        if (!Object.hasOwn(current, resultId)) {
+          return current;
+        }
+        const { [resultId]: _removed, ...rest } = current;
+        return rest;
+      });
+    },
+    [],
+  );
+
   const closeSearchResults = useCallback(() => {
     logger.debug('Closing search results', {
       context: 'useSearchState.closeSearchResults',
@@ -222,6 +239,7 @@ export const useSearchState = (
     runSearch,
     handleFieldChange,
     handleSearchResultImageLoad,
+    handleSearchResultImageError,
     closeSearchResults,
     provider,
     searchInputRef,

@@ -47,6 +47,7 @@ const MediaSearch: React.FC = () => {
     runSearch,
     handleFieldChange,
     handleSearchResultImageLoad,
+    handleSearchResultImageError,
     closeSearchResults,
     provider,
     setSearchResults,
@@ -356,6 +357,7 @@ const MediaSearch: React.FC = () => {
                 onClose={closeSearchResults}
                 onAdd={handleAddMedia}
                 onPosterLoad={handleSearchResultImageLoad}
+                onPosterError={handleSearchResultImageError}
                 showMoreCount={showMoreCount}
                 onShowMore={handleShowMoreResults}
               />

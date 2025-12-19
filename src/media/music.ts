@@ -18,6 +18,11 @@ interface MusicBrainzRelease {
     name: string;
     artist: { id: string; name: string };
   }>;
+  'cover-art-archive'?: {
+    front?: boolean;
+    artwork?: boolean;
+    count?: number;
+  };
   'release-group'?: {
     id: string;
     'primary-type'?: string;
@@ -35,7 +40,7 @@ interface MusicBrainzSearchResponse {
   releases: MusicBrainzRelease[];
 }
 
-const USER_AGENT = 'aoife/0.1.0 (https://github.com/user/aoife)';
+const USER_AGENT = 'aoife/0.4.2 (https://github.com/brege/aoife)';
 
 const normalizeSearchToken = (value: string): string =>
   value
@@ -46,43 +51,43 @@ const normalizeSearchToken = (value: string): string =>
     .trim()
     .replace(/\s+/g, ' ');
 
+const buildCoverArtArchiveProxyUrl = (
+  type: 'release',
+  id: string,
+  size: 250 | 500,
+): string => {
+  const params = new URLSearchParams({
+    type,
+    id,
+    size: String(size),
+  });
+  return `/api/coverart/image?${params.toString()}`;
+};
+
 class CoverArtArchiveSource implements CoverArtSource {
   name = 'CoverArtArchive';
   priority = 1;
 
   async getCoverUrl(release: MusicBrainzRelease): Promise<string | null> {
-    return `https://coverartarchive.org/release/${release.id}/front-500`;
+    const coverArchive = release['cover-art-archive'];
+    if (!coverArchive?.front) {
+      return null;
+    }
+    return buildCoverArtArchiveProxyUrl('release', release.id, 500);
   }
 
   async getThumbnailUrl(release: MusicBrainzRelease): Promise<string | null> {
-    return `https://coverartarchive.org/release/${release.id}/front-250`;
-  }
-}
-
-class ReleaseGroupCoverArtArchiveSource implements CoverArtSource {
-  name = 'CoverArtArchiveReleaseGroup';
-  priority = 2;
-
-  async getCoverUrl(release: MusicBrainzRelease): Promise<string | null> {
-    const releaseGroupId = release['release-group']?.id;
-    if (!releaseGroupId) {
+    const coverArchive = release['cover-art-archive'];
+    if (!coverArchive?.front) {
       return null;
     }
-    return `https://coverartarchive.org/release-group/${releaseGroupId}/front-500`;
-  }
-
-  async getThumbnailUrl(release: MusicBrainzRelease): Promise<string | null> {
-    const releaseGroupId = release['release-group']?.id;
-    if (!releaseGroupId) {
-      return null;
-    }
-    return `https://coverartarchive.org/release-group/${releaseGroupId}/front-250`;
+    return buildCoverArtArchiveProxyUrl('release', release.id, 250);
   }
 }
 
 class iTunesSource implements CoverArtSource {
   name = 'iTunes';
-  priority = 3;
+  priority = 2;
 
   private pickArtworkUrl(
     release: MusicBrainzRelease,
@@ -160,7 +165,6 @@ class iTunesSource implements CoverArtSource {
 
 const defaultSources: CoverArtSource[] = [
   new CoverArtArchiveSource(),
-  new ReleaseGroupCoverArtArchiveSource(),
   new iTunesSource(),
 ].sort((a, b) => a.priority - b.priority);
 
@@ -290,7 +294,8 @@ export class MusicService extends MediaService {
         params: {
           query: searchQuery,
           fmt: 'json',
-          limit: 20,
+          limit: 50,
+          inc: 'artist-credits+release-groups+cover-art-archive',
         },
         headers: { 'User-Agent': USER_AGENT },
         timeout: 5000,
@@ -349,7 +354,11 @@ export class MusicService extends MediaService {
       }),
     );
 
-    return results.sort((a, b) => {
+    const withCovers = results.filter((result): result is MediaSearchResult =>
+      Boolean(result?.coverUrl),
+    );
+
+    return withCovers.sort((a, b) => {
       if (a.coverUrl && !b.coverUrl) return -1;
       if (!a.coverUrl && b.coverUrl) return 1;
       return 0;
