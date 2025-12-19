@@ -29,26 +29,27 @@ export const useLayoutState = (
   options: UseLayoutStateOptions,
 ): UseLayoutStateReturn => {
   const { isHydrated } = options;
-  const [columns, setColumns] = useState(() => {
-    const stored = localStorage.getItem(COLUMNS_STORAGE_KEY);
-    if (stored) {
-      const parsed = parseInt(stored, 10);
-      if (!Number.isNaN(parsed) && parsed >= 1 && parsed <= 8) {
-        return parsed;
-      }
+  const parseStoredNumber = (
+    value: string | null,
+    minimum: number,
+    maximum: number,
+  ): number | null => {
+    if (!value) {
+      return null;
     }
-    return 4;
+    const parsed = parseInt(value, 10);
+    if (Number.isNaN(parsed) || parsed < minimum || parsed > maximum) {
+      return null;
+    }
+    return parsed;
+  };
+
+  const [columns, setColumns] = useState(() => {
+    return parseStoredNumber(localStorage.getItem(COLUMNS_STORAGE_KEY), 1, 8) ?? 4;
   });
 
   const [minRows, setMinRows] = useState(() => {
-    const stored = localStorage.getItem(MIN_ROWS_STORAGE_KEY);
-    if (stored) {
-      const parsed = parseInt(stored, 10);
-      if (!Number.isNaN(parsed) && parsed >= 1 && parsed <= 6) {
-        return parsed;
-      }
-    }
-    return 2;
+    return parseStoredNumber(localStorage.getItem(MIN_ROWS_STORAGE_KEY), 1, 6) ?? 2;
   });
 
   const [layoutDimension, setLayoutDimension] = useState<'width' | 'height'>(

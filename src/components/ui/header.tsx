@@ -62,6 +62,7 @@ const AppHeader: React.FC<AppHeaderProps> = ({
           className={`header-add-button${showSearch ? ' active' : ''}`}
           onClick={handleAddToggle}
           aria-label={showSearch ? 'Hide search' : 'Show search'}
+          aria-pressed={showSearch}
           title={showSearch ? 'Hide search' : 'Show search'}
         >
           <GrAdd size={20} />

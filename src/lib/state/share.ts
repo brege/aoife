@@ -133,31 +133,27 @@ export const useShareState = (
       return;
     }
 
-    const stored = localStorage.getItem(GRID_STORAGE_KEY);
-    if (!stored) return;
-    try {
-      const parsed = JSON.parse(stored) as MediaItem[];
-      if (Array.isArray(parsed)) {
-        setGridItems(parsed);
-      }
-    } catch (storageError) {
-      logger.error('Failed to parse stored grid items', {
-        context: 'useShareState.storageLoad',
-        error:
-          storageError instanceof Error
-            ? storageError.message
-            : String(storageError),
-      });
-    }
-  }, [initialShareSlug, setGridItems, setIsHydrated]);
-
-  useEffect(() => {
-    if (initialShareSlug) {
-      setIsHydrated(true);
-      return;
-    }
-
     void (async () => {
+      let hasLocalGrid = false;
+      const stored = localStorage.getItem(GRID_STORAGE_KEY);
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored) as MediaItem[];
+          if (Array.isArray(parsed)) {
+            setGridItems(parsed);
+            hasLocalGrid = true;
+          }
+        } catch (storageError) {
+          logger.error('Failed to parse stored grid items', {
+            context: 'useShareState.storageLoad',
+            error:
+              storageError instanceof Error
+                ? storageError.message
+                : String(storageError),
+          });
+        }
+      }
+
       const state = await hydrateAppState();
 
       if (state.columns) {
@@ -185,13 +181,20 @@ export const useShareState = (
         setTitle(state.title.trim() === '' ? DEFAULT_TITLE : state.title);
       }
 
-      if (state.gridItems) {
-        const storedLocalGrid = localStorage.getItem(GRID_STORAGE_KEY);
-        if (storedLocalGrid === null) {
+      if (state.gridItems && !hasLocalGrid) {
+        try {
           const parsedGrid = JSON.parse(state.gridItems) as MediaItem[];
           if (Array.isArray(parsedGrid)) {
             setGridItems(parsedGrid);
           }
+        } catch (storageError) {
+          logger.error('Failed to parse indexedDB grid items', {
+            context: 'useShareState.indexedDbLoad',
+            error:
+              storageError instanceof Error
+                ? storageError.message
+                : String(storageError),
+          });
         }
       }
     })().finally(() => {

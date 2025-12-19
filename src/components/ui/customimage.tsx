@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { createBlobURL, getImage, revokeBlobURL } from '../../lib/indexeddb';
+import logger from '../../lib/logger';
 
 interface CustomImageProps {
   src?: string;
@@ -25,23 +26,31 @@ export const CustomImage = ({
     }
 
     let blobUrl: string | null = null;
+    let isActive = true;
 
     const loadBlob = async () => {
       try {
         const blob = await getImage(src);
-        if (blob) {
+        if (blob && isActive) {
           blobUrl = createBlobURL(blob);
           setImageSrc(blobUrl);
         }
       } catch (error) {
-        console.error('Failed to load image from IndexedDB:', error);
-        setImageSrc(undefined);
+        logger.error('Failed to load image from IndexedDB', {
+          context: 'CustomImage.loadBlob',
+          error: error instanceof Error ? error.message : String(error),
+          imageId: src,
+        });
+        if (isActive) {
+          setImageSrc(undefined);
+        }
       }
     };
 
     loadBlob();
 
     return () => {
+      isActive = false;
       if (blobUrl) {
         revokeBlobURL(blobUrl);
       }
