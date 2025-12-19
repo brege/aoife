@@ -64,6 +64,10 @@ export class BooksService extends MediaService {
   private searchCache: SearchCache | null = null;
   private readonly CACHE_TTL = 5 * 60 * 1000; // 5 minutes
   private itemToSearchParams = new Map<string | number, string>();
+  private readonly openLibraryBaseUrl =
+    typeof window === 'undefined'
+      ? 'https://openlibrary.org'
+      : '/api/openlibrary';
 
   private buildGoogleBooksCoverUrl(volumeId: string, zoom: number): string {
     const url = new URL('https://books.google.com/books/content');
@@ -89,6 +93,32 @@ export class BooksService extends MediaService {
     const title = values.title || values.query || '';
     const author = values.author || '';
     const combinedQuery = [title, author].filter(Boolean).join(' ').trim();
+    const coverUrlValue = values.coverUrl?.trim();
+
+    if (coverUrlValue) {
+      const url = new URL(coverUrlValue);
+      if (url.protocol !== 'https:') {
+        throw new Error('Cover URL must use https');
+      }
+      if (!title.trim()) {
+        throw new Error('Title is required for a direct cover URL');
+      }
+      return [
+        {
+          id: `direct:${coverUrlValue}`,
+          type: 'books',
+          title: title.trim(),
+          subtitle: author.trim() || undefined,
+          coverUrl: coverUrlValue,
+          coverThumbnailUrl: coverUrlValue,
+          source: 'Direct',
+          metadata: {
+            coverUrl: coverUrlValue,
+            isDirect: true,
+          },
+        },
+      ];
+    }
 
     if (!combinedQuery) {
       return [];
@@ -204,7 +234,7 @@ export class BooksService extends MediaService {
     if (!title && !author) {
       return [];
     }
-    const searchUrl = `https://openlibrary.org/search.json?title=${encodeURIComponent(title)}&author=${encodeURIComponent(author)}&limit=${limit}&offset=${offset}`;
+    const searchUrl = `${this.openLibraryBaseUrl}/search.json?title=${encodeURIComponent(title)}&author=${encodeURIComponent(author)}&limit=${limit}&offset=${offset}`;
     const response = await axios.get<OpenLibrarySearchResponse>(searchUrl, {
       timeout: 2000,
     });
@@ -220,7 +250,7 @@ export class BooksService extends MediaService {
     if (!query) {
       return [];
     }
-    const searchUrl = `https://openlibrary.org/search.json?q=${encodeURIComponent(query)}&limit=${limit}&offset=${offset}`;
+    const searchUrl = `${this.openLibraryBaseUrl}/search.json?q=${encodeURIComponent(query)}&limit=${limit}&offset=${offset}`;
     const response = await axios.get<OpenLibrarySearchResponse>(searchUrl, {
       timeout: 2000,
     });
@@ -679,7 +709,7 @@ export class BooksService extends MediaService {
       const cleanWorkId = workId.startsWith('/works/')
         ? workId
         : `/works/${workId}`;
-      const workUrl = `https://openlibrary.org${cleanWorkId}.json`;
+      const workUrl = `${this.openLibraryBaseUrl}${cleanWorkId}.json`;
       const response = await axios.get<{
         title?: string;
         first_publish_date?: string;

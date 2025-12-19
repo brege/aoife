@@ -73,6 +73,7 @@ const booksProvider: MediaProviderConfig = {
   defaultSearchValues: {
     title: '',
     author: '',
+    coverUrl: '',
   },
   supportsCustomEntries: true,
   supportsAlternateCovers: true,

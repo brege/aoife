@@ -181,6 +181,26 @@ export const createApiMiddleware = (env: Record<string, string>) => {
         res.writeHead(502, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ error: String(error) }));
       });
+    } else if (path.startsWith('/openlibrary/') && req.method === 'GET') {
+      const targetPath = path.replace('/openlibrary', '');
+      const targetUrl = `https://openlibrary.org${targetPath}${url.search}`;
+      const openReq = https.get(targetUrl, (openRes) => {
+        let responseBody = '';
+        openRes.on('data', (chunk) => {
+          responseBody += chunk;
+        });
+        openRes.on('end', () => {
+          res.writeHead(openRes.statusCode || 500, {
+            'Content-Type': 'application/json',
+          });
+          res.end(responseBody);
+        });
+      });
+
+      openReq.on('error', (error) => {
+        res.writeHead(502, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: String(error) }));
+      });
     } else if (path === '/coverart/image' && req.method === 'GET') {
       const coverType = url.searchParams.get('type');
       const coverId = url.searchParams.get('id');

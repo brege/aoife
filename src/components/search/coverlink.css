@@ -1,0 +1,130 @@
+.cover-link-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 15, 20, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: var(--z-dropdown);
+}
+
+.cover-link-modal {
+  position: relative;
+  width: min(520px, calc(100% - 32px));
+  background: #1f2933;
+  border-radius: 14px;
+  padding: 24px;
+  box-shadow:
+    0 24px 40px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+.cover-link-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 32px;
+  height: 32px;
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.8);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cover-link-close:hover {
+  background: rgba(220, 38, 38, 0.9);
+  transform: scale(1.05);
+}
+
+.cover-link-close svg {
+  width: 16px;
+  height: 16px;
+  display: block;
+  color: white;
+}
+
+.cover-link-title {
+  margin: 0;
+  color: #ffffff;
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.cover-link-subtitle {
+  margin: 8px 0 16px;
+  color: #cbd5e1;
+  font-size: 0.9rem;
+}
+
+.cover-link-input {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid #334155;
+  background: #111827;
+  color: #f8fafc;
+  box-sizing: border-box;
+}
+
+.cover-link-actions {
+  margin-top: 16px;
+  display: flex;
+  gap: 12px;
+}
+
+.cover-link-save,
+.cover-link-clear {
+  border: none;
+  border-radius: 8px;
+  padding: 10px 16px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  line-height: 1;
+  appearance: none;
+  transition: all 0.3s ease;
+}
+
+.cover-link-save {
+  background-color: #008000;
+  color: #fff;
+}
+
+.cover-link-save:hover {
+  background-color: #00d474;
+}
+
+.cover-link-save:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.cover-link-clear {
+  background: #334155;
+  color: #f8fafc;
+}
+
+.cover-link-clear:hover {
+  background: #475569;
+}
+
+.cover-link-sources {
+  margin-top: 16px;
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.cover-link-sources a {
+  color: #93c5fd;
+  text-decoration: none;
+  font-size: 0.9rem;
+}

@@ -1,5 +1,6 @@
 import type React from 'react';
 import { useCallback, useRef } from 'react';
+import { FaLink } from 'react-icons/fa';
 import { MdDriveFolderUpload } from 'react-icons/md';
 import { storeImage } from '../../lib/indexeddb';
 import type { MediaSearchValues, MediaType } from '../../media/types';
@@ -24,6 +25,7 @@ interface MediaFormProps {
     }[];
   };
   layout: 'band' | 'stack';
+  onOpenCoverLink?: () => void;
 }
 
 export const MediaForm: React.FC<MediaFormProps> = ({
@@ -35,6 +37,7 @@ export const MediaForm: React.FC<MediaFormProps> = ({
   isLoading,
   provider,
   layout,
+  onOpenCoverLink,
 }) => {
   const coverInputRef = useRef<HTMLInputElement>(null);
 
@@ -86,6 +89,36 @@ export const MediaForm: React.FC<MediaFormProps> = ({
                 placeholder={field.placeholder}
                 ariaLabel={field.label}
               />
+            );
+          }
+
+          if (
+            field.id === 'title' &&
+            mediaType === 'books' &&
+            onOpenCoverLink
+          ) {
+            return (
+              <div key={field.id} className="input-with-button">
+                <input
+                  type="text"
+                  value={searchValues[field.id] ?? ''}
+                  onChange={(e) => onFieldChange(field.id, e.target.value)}
+                  placeholder={field.placeholder}
+                  aria-label={field.label}
+                  className="form-input"
+                  required={field.required}
+                  data-testid={`search-field-${field.id}`}
+                />
+                <button
+                  type="button"
+                  onClick={onOpenCoverLink}
+                  className="icon-button"
+                  aria-label="Add cover link"
+                  title="Add cover link"
+                >
+                  <FaLink size={18} />
+                </button>
+              </div>
             );
           }
 

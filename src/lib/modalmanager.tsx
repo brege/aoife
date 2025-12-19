@@ -7,7 +7,12 @@ import {
   useRef,
 } from 'react';
 
-type Modal = 'searchResults' | 'posterGrid' | 'hamburger' | 'platformDropdown';
+type Modal =
+  | 'searchResults'
+  | 'posterGrid'
+  | 'hamburger'
+  | 'platformDropdown'
+  | 'bookCoverLink';
 
 interface ModalContextType {
   openModal: (modal: Modal) => void;

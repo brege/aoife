@@ -7,7 +7,8 @@
 
 ### Next Features
 
-- **Show [10] more...**
+- **Move Posters"
+  - allow user to drag and reorder posters
 - **Captions and Overlays**
   - provide an editable caption for each title, overlay or underneath
 - **Music Albums**

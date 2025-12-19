@@ -122,6 +122,14 @@ def is_allowed_cover_url(value: str) -> bool:
         return True
     if host.endswith(".mzstatic.com") or host == "mzstatic.com":
         return True
+    if host in (
+        "images-na.ssl-images-amazon.com",
+        "m.media-amazon.com",
+        "images.amazon.com",
+        "i.gr-assets.com",
+        "images.gr-assets.com",
+    ):
+        return True
 
     return False
 
@@ -245,6 +253,22 @@ def proxy_tmdb(subpath):
         resp = requests.get(
             f"https://api.themoviedb.org/{subpath}",
             params=params,
+            timeout=UPSTREAM_TIMEOUT_SECONDS,
+        )
+        return jsonify(resp.json()), resp.status_code
+    except requests.exceptions.Timeout:
+        return jsonify({"error": "Upstream request timed out"}), 504
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# Proxy OpenLibrary requests
+@app.route("/api/openlibrary/<path:subpath>", methods=["GET"])
+def proxy_openlibrary(subpath):
+    try:
+        resp = requests.get(
+            f"https://openlibrary.org/{subpath}",
+            params=dict(request.args),
             timeout=UPSTREAM_TIMEOUT_SECONDS,
         )
         return jsonify(resp.json()), resp.status_code

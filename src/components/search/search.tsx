@@ -13,6 +13,7 @@ import type { MediaItem, MediaType } from '../../media/types';
 import Grid from '../grid/grid';
 import AppHeader from '../ui/header';
 import { useSearchBridges } from './bridge';
+import { CoverLinkModal } from './coverlink';
 import { MediaForm } from './mediaform';
 import { PosterPicker } from './picker';
 import { SearchResults } from './results';
@@ -75,6 +76,7 @@ const MediaSearch: React.FC = () => {
   });
   const [alternateCoverUrls, setAlternateCoverUrls] = useState<string[]>([]);
   const [showPosterGrid, setShowPosterGrid] = useState(false);
+  const [showCoverLinkModal, setShowCoverLinkModal] = useState(false);
   const [activePosterItemId, setActivePosterItemId] = useState<
     string | number | null
   >(null);
@@ -185,6 +187,16 @@ const MediaSearch: React.FC = () => {
 
   useModalClosed('posterGrid', handleClosePosterGrid);
 
+  useEffect(() => {
+    if (showCoverLinkModal) {
+      openModal('bookCoverLink');
+    } else {
+      closeModal('bookCoverLink');
+    }
+  }, [showCoverLinkModal, openModal, closeModal]);
+
+  useModalClosed('bookCoverLink', () => setShowCoverLinkModal(false));
+
   const searchSummary = lastSearchSummary || provider.label;
 
   const handleMediaTypeChange = (type: MediaType) => {
@@ -210,6 +222,47 @@ const MediaSearch: React.FC = () => {
       Math.min(searchResults.length, current + visibleResultsStep),
     );
   }, [searchResults.length]);
+
+  const handleCoverLinkOpen = useCallback(() => {
+    if (selectedMediaType !== 'books') {
+      return;
+    }
+    setShowCoverLinkModal(true);
+  }, [selectedMediaType]);
+
+  const handleCoverLinkSave = useCallback(
+    async (value: string) => {
+      const trimmed = value.trim();
+      setSearchValues((current) => ({
+        ...current,
+        coverUrl: trimmed,
+      }));
+      setShowCoverLinkModal(false);
+      if (!trimmed) {
+        return;
+      }
+      const results = await runSearch({
+        ...searchValues,
+        coverUrl: trimmed,
+      });
+      if (results.length > 0) {
+        handleAddMedia(results[0], results);
+      }
+    },
+    [setSearchValues, runSearch, searchValues, handleAddMedia],
+  );
+
+  const handleCoverLinkClear = useCallback(() => {
+    setSearchValues((current) => {
+      if (!current.coverUrl) {
+        return current;
+      }
+      const next = { ...current };
+      delete next.coverUrl;
+      return next;
+    });
+    setShowCoverLinkModal(false);
+  }, [setSearchValues]);
 
   const visibleResults = searchResults.slice(0, visibleResultsCount);
   const showMoreCount = Math.min(
@@ -268,6 +321,7 @@ const MediaSearch: React.FC = () => {
           isLoading={searchIsLoading}
           provider={provider}
           layout="band"
+          onOpenCoverLink={handleCoverLinkOpen}
         />
       )}
 
@@ -314,6 +368,7 @@ const MediaSearch: React.FC = () => {
                 isLoading={searchIsLoading}
                 provider={provider}
                 layout="stack"
+                onOpenCoverLink={handleCoverLinkOpen}
               />
             )}
           </div>
@@ -364,6 +419,15 @@ const MediaSearch: React.FC = () => {
                 onShowMore={handleShowMoreResults}
               />
             )}
+          <CoverLinkModal
+            isOpen={showCoverLinkModal}
+            title={searchValues.title ?? ''}
+            author={searchValues.author ?? ''}
+            coverUrl={searchValues.coverUrl ?? ''}
+            onClose={() => setShowCoverLinkModal(false)}
+            onSave={handleCoverLinkSave}
+            onClear={handleCoverLinkClear}
+          />
         </div>
       </div>
     </div>

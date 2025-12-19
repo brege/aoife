@@ -33,6 +33,13 @@
 
 .media-search-form.band .form-fields {
   flex: 1 1 auto;
+  gap: 12px;
+}
+
+.media-search-form.band .form-fields > .form-input,
+.media-search-form.band .form-fields > .input-with-button {
+  flex: 1 1 0;
+  min-width: 0;
 }
 
 .media-search-form.stack .form-fields {
