@@ -19,6 +19,8 @@ interface AppHeaderProps {
   onLayoutDimensionChange: (dimension: 'width' | 'height') => void;
   bandPlacementMode: 'alwaysTop' | 'adaptive';
   onBandPlacementModeChange: (mode: 'alwaysTop' | 'adaptive') => void;
+  captionMode: 'hidden' | 'overlay';
+  onCaptionModeChange: (mode: 'hidden' | 'overlay') => void;
   onShare: () => void;
   isSharing: boolean;
   shareUrl: string;
@@ -42,6 +44,8 @@ const AppHeader: React.FC<AppHeaderProps> = ({
   onLayoutDimensionChange,
   bandPlacementMode,
   onBandPlacementModeChange,
+  captionMode,
+  onCaptionModeChange,
   onShare,
   isSharing,
   shareUrl,
@@ -82,6 +86,8 @@ const AppHeader: React.FC<AppHeaderProps> = ({
           onLayoutDimensionChange={onLayoutDimensionChange}
           bandPlacementMode={bandPlacementMode}
           onBandPlacementModeChange={onBandPlacementModeChange}
+          captionMode={captionMode}
+          onCaptionModeChange={onCaptionModeChange}
           onShare={onShare}
           isSharing={isSharing}
           shareUrl={shareUrl}

@@ -25,6 +25,8 @@ interface MenuProps {
   onLayoutDimensionChange: (dimension: 'width' | 'height') => void;
   bandPlacementMode: 'alwaysTop' | 'adaptive';
   onBandPlacementModeChange: (mode: 'alwaysTop' | 'adaptive') => void;
+  captionMode: 'hidden' | 'overlay';
+  onCaptionModeChange: (mode: 'hidden' | 'overlay') => void;
   onShare: () => void;
   isSharing: boolean;
   shareUrl: string;
@@ -44,6 +46,8 @@ const Menu: React.FC<MenuProps> = ({
   onLayoutDimensionChange,
   bandPlacementMode,
   onBandPlacementModeChange,
+  captionMode,
+  onCaptionModeChange,
   onShare,
   isSharing,
   shareUrl,
@@ -227,6 +231,8 @@ const Menu: React.FC<MenuProps> = ({
             onLayoutDimensionChange={onLayoutDimensionChange}
             bandPlacementMode={bandPlacementMode}
             onBandPlacementModeChange={onBandPlacementModeChange}
+            captionMode={captionMode}
+            onCaptionModeChange={onCaptionModeChange}
             coverViewMode={coverViewMode}
             onCoverViewModeChange={onCoverViewModeChange}
           />

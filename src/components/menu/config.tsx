@@ -12,6 +12,8 @@ interface MenuConfigProps {
   onLayoutDimensionChange: (dimension: 'width' | 'height') => void;
   bandPlacementMode: 'alwaysTop' | 'adaptive';
   onBandPlacementModeChange: (mode: 'alwaysTop' | 'adaptive') => void;
+  captionMode: 'hidden' | 'overlay';
+  onCaptionModeChange: (mode: 'hidden' | 'overlay') => void;
   coverViewMode?: 'grid' | 'carousel';
   onCoverViewModeChange?: (mode: 'grid' | 'carousel') => void;
 }
@@ -30,6 +32,8 @@ const MenuConfig: React.FC<MenuConfigProps> = ({
   onLayoutDimensionChange,
   bandPlacementMode,
   onBandPlacementModeChange,
+  captionMode,
+  onCaptionModeChange,
   coverViewMode = 'grid',
   onCoverViewModeChange,
 }) => {
@@ -148,6 +152,19 @@ const MenuConfig: React.FC<MenuConfigProps> = ({
           checked={layoutDimension === 'width'}
           onChange={(checked) =>
             onLayoutDimensionChange(checked ? 'width' : 'height')
+          }
+          className="layout-dimension-toggle"
+        />
+        <span className="config-spacer" aria-hidden="true" />
+      </div>
+
+      <div className="config-row four-col">
+        <span className="config-label">captions</span>
+        <span className="config-spacer" aria-hidden="true" />
+        <Switch
+          checked={captionMode === 'overlay'}
+          onChange={(checked) =>
+            onCaptionModeChange(checked ? 'overlay' : 'hidden')
           }
           className="layout-dimension-toggle"
         />

@@ -69,6 +69,8 @@ const MediaSearch: React.FC = () => {
     setCoverViewMode,
     bandPlacementMode,
     setBandPlacementMode,
+    captionMode,
+    setCaptionMode,
   } = useLayoutState({ isHydrated: isIndexedDbHydrated });
 
   const [gridItems, setGridItems] = useState<MediaItem[]>([]);
@@ -337,6 +339,8 @@ const MediaSearch: React.FC = () => {
         onLayoutDimensionChange={setLayoutDimension}
         bandPlacementMode={bandPlacementMode}
         onBandPlacementModeChange={setBandPlacementMode}
+        captionMode={captionMode}
+        onCaptionModeChange={setCaptionMode}
         onShare={handleCreateShare}
         isSharing={isSharing}
         shareUrl={shareUrl}
@@ -392,6 +396,7 @@ const MediaSearch: React.FC = () => {
               placeholderLabel={
                 gridItems.length === 0 ? provider.resultLabel : undefined
               }
+              captionMode={captionMode}
               onAspectRatioUpdate={handleAspectRatioUpdate}
               layoutDimension={layoutDimension}
             />

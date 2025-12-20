@@ -16,6 +16,7 @@ interface GridProps {
   placeholderLabel?: string;
   onAspectRatioUpdate?: (mediaId: string | number, aspectRatio: number) => void;
   layoutDimension?: 'width' | 'height';
+  captionMode?: 'hidden' | 'overlay';
 }
 
 const DEFAULT_ASPECT_RATIOS: Record<string, number> = {
@@ -30,6 +31,20 @@ const getCoverSrc = (media: MediaItem) =>
 const getAspectRatio = (media: MediaItem): number => {
   if (media.aspectRatio) return media.aspectRatio;
   return DEFAULT_ASPECT_RATIOS[media.type] ?? 2 / 3;
+};
+
+const getCaptionSubtitle = (media: MediaItem): string => {
+  const yearText = media.year ? String(media.year) : '';
+  if (media.subtitle && yearText && media.subtitle !== yearText) {
+    return `${media.subtitle} - ${yearText}`;
+  }
+  if (media.subtitle) {
+    return media.subtitle;
+  }
+  if (yearText) {
+    return yearText;
+  }
+  return '';
 };
 
 const getIndefiniteArticle = (label: string): 'a' | 'an' => {
@@ -111,6 +126,7 @@ const Grid: React.FC<GridProps> = ({
   placeholderLabel,
   onAspectRatioUpdate,
   layoutDimension = 'height',
+  captionMode = 'hidden',
 }) => {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(0);
@@ -243,6 +259,18 @@ const Grid: React.FC<GridProps> = ({
                         onLoad={(e) => handleImageLoad(media, e)}
                       />
                     </button>
+                    {captionMode === 'overlay' && (
+                      <div className="grid-caption">
+                        <div className="grid-caption-title">
+                          {media.title}
+                        </div>
+                        {getCaptionSubtitle(media) && (
+                          <div className="grid-caption-subtitle">
+                            {getCaptionSubtitle(media)}
+                          </div>
+                        )}
+                      </div>
+                    )}
                     <button
                       type="button"
                       className="grid-close-button"

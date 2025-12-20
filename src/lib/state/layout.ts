@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
 import {
   BAND_PLACEMENT_STORAGE_KEY,
+  CAPTION_MODE_STORAGE_KEY,
   COLUMNS_STORAGE_KEY,
   COVER_VIEW_STORAGE_KEY,
+  INDEXEDDB_CAPTION_MODE_KEY,
   INDEXEDDB_COLUMNS_KEY,
   INDEXEDDB_LAYOUT_DIMENSION_KEY,
   INDEXEDDB_MIN_ROWS_KEY,
@@ -26,6 +28,8 @@ export type UseLayoutStateReturn = {
   setCoverViewMode: (value: 'grid' | 'carousel') => void;
   bandPlacementMode: 'alwaysTop' | 'adaptive';
   setBandPlacementMode: (value: 'alwaysTop' | 'adaptive') => void;
+  captionMode: 'hidden' | 'overlay';
+  setCaptionMode: (value: 'hidden' | 'overlay') => void;
 };
 
 export const useLayoutState = (
@@ -89,6 +93,14 @@ export const useLayoutState = (
     return 'adaptive';
   });
 
+  const [captionMode, setCaptionMode] = useState<'hidden' | 'overlay'>(() => {
+    const stored = localStorage.getItem(CAPTION_MODE_STORAGE_KEY);
+    if (stored === 'hidden' || stored === 'overlay') {
+      return stored;
+    }
+    return 'hidden';
+  });
+
   useStorageSync(
     COLUMNS_STORAGE_KEY,
     INDEXEDDB_COLUMNS_KEY,
@@ -118,6 +130,13 @@ export const useLayoutState = (
     localStorage.setItem(BAND_PLACEMENT_STORAGE_KEY, bandPlacementMode);
   }, [bandPlacementMode]);
 
+  useStorageSync(
+    CAPTION_MODE_STORAGE_KEY,
+    INDEXEDDB_CAPTION_MODE_KEY,
+    captionMode,
+    isHydrated,
+  );
+
   return {
     columns,
     setColumns,
@@ -129,5 +148,7 @@ export const useLayoutState = (
     setCoverViewMode,
     bandPlacementMode,
     setBandPlacementMode,
+    captionMode,
+    setCaptionMode,
   };
 };
