@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { MdClose } from 'react-icons/md';
-import './caption.css';
+import '../search/coverlink.css';
 
 type CaptionModalProps = {
   isOpen: boolean;
@@ -36,35 +36,35 @@ export const CaptionModal = ({
   const displayTitle = subtitle ? `${title} - ${subtitle}` : title;
 
   return (
-    <div className="caption-overlay" role="presentation">
-      <div className="caption-modal" role="dialog" aria-modal="true">
+    <div className="cover-link-overlay" role="presentation">
+      <div className="cover-link-modal" role="dialog" aria-modal="true">
         <button
           type="button"
-          className="caption-close"
+          className="cover-link-close"
           onClick={onClose}
           aria-label="Close caption editor"
         >
           <MdClose aria-hidden="true" focusable="false" />
         </button>
-        <span className="caption-label">Caption</span>
-        <h3 className="caption-title">{displayTitle}</h3>
+        <h3 className="cover-link-title">Caption</h3>
+        <p className="cover-link-subtitle">{displayTitle}</p>
         <textarea
           value={value}
           onChange={(event) => setValue(event.target.value)}
           placeholder="Add a caption"
-          className="caption-input"
+          className="cover-link-input"
           aria-label="Caption text"
           rows={3}
         />
-        <div className="caption-actions">
+        <div className="cover-link-actions">
           <button
             type="button"
-            className="caption-save"
+            className="cover-link-save"
             onClick={() => onSave(value.trim())}
           >
             Save
           </button>
-          <button type="button" className="caption-clear" onClick={onClear}>
+          <button type="button" className="cover-link-clear" onClick={onClear}>
             Clear
           </button>
         </div>
