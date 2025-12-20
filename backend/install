@@ -21,6 +21,9 @@ echo "[install] Installing nginx config..."
 sudo cp nginx/aoife /etc/nginx/sites-available/aoife
 sudo ln -sf /etc/nginx/sites-available/aoife /etc/nginx/sites-enabled/aoife
 
+echo "[install] Ensuring nginx cache directory exists..."
+sudo install --directory --mode=0755 --owner=www-data --group=www-data /var/cache/nginx/aoife/gamesdb
+
 # test and reload nginx
 echo "[install] Testing nginx config..."
 sudo nginx -t

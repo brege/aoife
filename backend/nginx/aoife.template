@@ -1,3 +1,5 @@
+proxy_cache_path /var/cache/nginx/aoife/gamesdb levels=1:2 keys_zone=gamesdb_cache:10m max_size=200m inactive=10m use_temp_path=off;
+
 # HTTP to HTTPS redirect
 server {
     listen 80;
@@ -27,6 +29,43 @@ server {
     ssl_session_timeout 1d;
     ssl_session_cache shared:SSL:10m;
     ssl_session_tickets off;
+
+    location ^~ /api/gamesdb/images/ {
+        client_max_body_size 10m;
+        proxy_pass http://127.0.0.1:5001;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_connect_timeout 10s;
+        proxy_read_timeout 30s;
+        proxy_cache off;
+    }
+
+    location ^~ /api/gamesdb/ {
+        client_max_body_size 10m;
+        proxy_pass http://127.0.0.1:5001;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_connect_timeout 10s;
+        proxy_read_timeout 30s;
+        proxy_cache gamesdb_cache;
+        proxy_cache_key "$scheme$proxy_host$request_uri";
+        proxy_cache_lock on;
+        proxy_cache_lock_timeout 5s;
+        proxy_cache_methods GET HEAD;
+        proxy_cache_revalidate on;
+        proxy_cache_use_stale error timeout invalid_header updating http_500 http_502 http_503 http_504;
+        proxy_cache_valid 200 2m;
+    }
 
     location / {
         client_max_body_size 10m;
