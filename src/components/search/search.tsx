@@ -421,6 +421,10 @@ const MediaSearch: React.FC = () => {
               urls={visibleAlternateCoverUrls}
               mediaTitle={activePosterItem.title}
               mediaSubtitle={activePosterItem.subtitle}
+              mediaType={activePosterItem.type}
+              selectedCoverUrl={
+                activePosterItem.coverUrl || activePosterItem.coverThumbnailUrl
+              }
               alternateItems={activePosterItem.alternateCoverItems}
               onCoverError={(url) => {
                 setBrokenAlternateCoverUrls((current) => {

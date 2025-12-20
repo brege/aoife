@@ -1,5 +1,6 @@
+import { FaStar } from 'react-icons/fa';
 import { MdClose } from 'react-icons/md';
-import type { MediaItem } from '../../media/types';
+import type { MediaItem, MediaType } from '../../media/types';
 import Carousel from './carousel';
 
 type PosterPickerProps = {
@@ -7,6 +8,8 @@ type PosterPickerProps = {
   urls: string[];
   mediaTitle: string;
   mediaSubtitle?: string;
+  mediaType: MediaType | string;
+  selectedCoverUrl?: string | null;
   alternateItems?: MediaItem[];
   onCoverError: (url: string) => void;
   onClose: () => void;
@@ -19,6 +22,8 @@ export const PosterPicker = ({
   urls,
   mediaTitle,
   mediaSubtitle,
+  mediaType,
+  selectedCoverUrl,
   alternateItems,
   onCoverError,
   onClose,
@@ -41,6 +46,7 @@ export const PosterPicker = ({
   const headerLabel = mediaSubtitle
     ? `${mediaTitle} - ${mediaSubtitle}`
     : mediaTitle;
+  const isTmdb = mediaType === 'movies' || mediaType === 'tv';
 
   return (
     <div className="search-results poster-picker">
@@ -67,6 +73,9 @@ export const PosterPicker = ({
             );
             const key =
               matchedItem?.id != null ? `${url}-${matchedItem.id}` : url;
+            const isSelected = Boolean(
+              selectedCoverUrl && url === selectedCoverUrl,
+            );
 
             return (
               <button
@@ -82,7 +91,12 @@ export const PosterPicker = ({
                   className="poster-picker-image"
                   onError={() => onCoverError(url)}
                 />
-                {matchedItem && (
+                {isTmdb && isSelected && (
+                  <div className="poster-picker-badge" aria-hidden="true">
+                    <FaStar />
+                  </div>
+                )}
+                {!isTmdb && matchedItem && (
                   <div className="poster-picker-meta">
                     <div className="poster-picker-title">
                       {matchedItem.title}
