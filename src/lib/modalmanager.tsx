@@ -12,7 +12,8 @@ type Modal =
   | 'posterGrid'
   | 'hamburger'
   | 'platformDropdown'
-  | 'coverLink';
+  | 'coverLink'
+  | 'caption';
 
 interface ModalContextType {
   openModal: (modal: Modal) => void;

@@ -57,6 +57,9 @@ export const isAllowedCoverUrl = (value: string): boolean => {
   if (value.startsWith('/api/gamesdb/images/')) {
     return true;
   }
+  if (value.startsWith('/api/coverart/image')) {
+    return true;
+  }
 
   let parsed: URL;
   try {
@@ -71,6 +74,7 @@ export const isAllowedCoverUrl = (value: string): boolean => {
 
   const host = parsed.hostname;
   if (host === 'image.tmdb.org') return true;
+  if (host === 'cdn.thegamesdb.net') return true;
   if (host === 'covers.openlibrary.org') return true;
   if (host === 'coverartarchive.org') return true;
   if (host === 'mzstatic.com' || host.endsWith('.mzstatic.com')) return true;
@@ -151,6 +155,9 @@ export const validateAndCanonicalizeSharePayload = (
     const coverUrl = rawItem.coverUrl;
     if (coverUrl != null) {
       if (typeof coverUrl !== 'string' || !isAllowedCoverUrl(coverUrl)) {
+        console.error('Share payload coverUrl rejected', {
+          coverUrl,
+        });
         throw new Error('Share payload item coverUrl is not allowed');
       }
     }
@@ -161,6 +168,9 @@ export const validateAndCanonicalizeSharePayload = (
         typeof coverThumbnailUrl !== 'string' ||
         !isAllowedCoverUrl(coverThumbnailUrl)
       ) {
+        console.error('Share payload coverThumbnailUrl rejected', {
+          coverThumbnailUrl,
+        });
         throw new Error('Share payload item coverThumbnailUrl is not allowed');
       }
     }
@@ -175,6 +185,9 @@ export const validateAndCanonicalizeSharePayload = (
       }
       for (const url of alternateCoverUrls) {
         if (typeof url !== 'string' || !isAllowedCoverUrl(url)) {
+          console.error('Share payload alternate coverUrl rejected', {
+            coverUrl: url,
+          });
           throw new Error(
             'Share payload item alternateCoverUrls contains a disallowed URL',
           );
