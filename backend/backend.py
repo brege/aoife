@@ -1,8 +1,13 @@
 from flask import Flask, request, jsonify, send_from_directory, redirect
 from flask_cors import CORS
+from flask_limiter import Limiter
+import fcntl
+from typing import IO
+import ipaddress
 import json
 import os
 import random
+import tempfile
 import time
 from urllib.parse import urlparse
 from dotenv import load_dotenv
@@ -30,7 +35,9 @@ app = Flask(__name__, static_folder=DIST_PATH, static_url_path="")
 CORS(app)
 
 SHARE_STORE_PATH = os.path.join(DATA_DIRECTORY_PATH, "share.json")
+SHARE_STORE_LOCK_PATH = os.path.join(DATA_DIRECTORY_PATH, "share.lock")
 SLUG_WORDS_PATH = os.path.join(DATA_DIRECTORY_PATH, "slugs.json")
+RATE_LIMIT_EXEMPT_ADDRESSES_PATH = os.path.join(DATA_DIRECTORY_PATH, "whitelist.txt")
 
 
 def load_share_store() -> dict:
@@ -59,9 +66,16 @@ def load_slug_words() -> list[str]:
 def persist_share_store(store: dict) -> None:
     if not os.path.isdir(DATA_DIRECTORY_PATH):
         raise FileNotFoundError(f"Missing data directory at {DATA_DIRECTORY_PATH}")
-    temporary_path = f"{SHARE_STORE_PATH}.tmp"
-    with open(temporary_path, "w", encoding="utf-8") as handle:
+    with tempfile.NamedTemporaryFile(
+        mode="w",
+        encoding="utf-8",
+        dir=DATA_DIRECTORY_PATH,
+        prefix="share-",
+        suffix=".tmp",
+        delete=False,
+    ) as handle:
         json.dump(store, handle)
+        temporary_path = handle.name
     os.replace(temporary_path, SHARE_STORE_PATH)
 
 
@@ -84,6 +98,29 @@ def generate_slug(existing: set[str]) -> str:
     raise RuntimeError("Unable to generate unique share slug")
 
 
+def acquire_share_store_lock(exclusive: bool) -> IO[str]:
+    if not os.path.isdir(DATA_DIRECTORY_PATH):
+        raise FileNotFoundError(f"Missing data directory at {DATA_DIRECTORY_PATH}")
+    lock_handle = open(SHARE_STORE_LOCK_PATH, "a", encoding="utf-8")
+    lock_type = fcntl.LOCK_EX if exclusive else fcntl.LOCK_SH
+    fcntl.flock(lock_handle.fileno(), lock_type)
+    return lock_handle
+
+
+def get_rate_limit_exempt_addresses() -> set[str]:
+    if not os.path.exists(RATE_LIMIT_EXEMPT_ADDRESSES_PATH):
+        return set()
+    with open(RATE_LIMIT_EXEMPT_ADDRESSES_PATH, "r", encoding="utf-8") as handle:
+        addresses: set[str] = set()
+        for line in handle:
+            address = line.strip()
+            if not address:
+                raise ValueError("Rate limit address list contains a blank line")
+            ipaddress.ip_address(address)
+            addresses.add(address)
+        return addresses
+
+
 def get_client_address() -> str | None:
     forwarded_for = request.headers.get("X-Forwarded-For")
     if forwarded_for:
@@ -94,11 +131,41 @@ def get_client_address() -> str | None:
     return request.remote_addr
 
 
+def get_rate_limit_address() -> str:
+    address = get_client_address()
+    if not address:
+        raise ValueError("Client address is required for rate limiting")
+    return address
+
+
+def is_rate_limit_exempt() -> bool:
+    exempt_addresses = get_rate_limit_exempt_addresses()
+    if not exempt_addresses:
+        return False
+    return get_rate_limit_address() in exempt_addresses
+
+
+def resolve_rate_limit_key() -> str:
+    return get_rate_limit_address()
+
+
 def get_user_agent() -> str | None:
     user_agent = request.headers.get("User-Agent")
     if user_agent:
         return user_agent.strip() or None
     return None
+
+
+limiter = Limiter(
+    key_func=resolve_rate_limit_key,
+    app=app,
+    default_limits=[],
+)
+
+
+@limiter.request_filter
+def rate_limit_exempt_request() -> bool:
+    return is_rate_limit_exempt()
 
 
 @app.after_request
@@ -115,6 +182,10 @@ UPSTREAM_TIMEOUT_SECONDS = 10
 MAX_SHARE_PAYLOAD_BYTES = 200_000
 MAX_SHARE_ITEMS = 24
 MAX_ALTERNATE_COVERS = 32
+RATE_LIMIT_UPSTREAM = "120 per minute"
+RATE_LIMIT_SHARE_CREATE = "20 per minute"
+RATE_LIMIT_SHARE_READ = "240 per hour"
+RATE_LIMIT_LOG_EVENT = "60 per minute"
 
 
 def is_allowed_cover_url(value: str) -> bool:
@@ -263,6 +334,7 @@ def validate_and_canonicalize_share_payload(payload: str) -> str:
 
 # Proxy TMDB requests
 @app.route("/api/tmdb/<path:subpath>", methods=["GET"])
+@limiter.limit(RATE_LIMIT_UPSTREAM)
 def proxy_tmdb(subpath):
     params = dict(request.args)
     params["api_key"] = TMDB_KEY
@@ -281,6 +353,7 @@ def proxy_tmdb(subpath):
 
 # Proxy OpenLibrary requests
 @app.route("/api/openlibrary/<path:subpath>", methods=["GET"])
+@limiter.limit(RATE_LIMIT_UPSTREAM)
 def proxy_openlibrary(subpath):
     try:
         resp = requests.get(
@@ -297,6 +370,7 @@ def proxy_openlibrary(subpath):
 
 # Proxy GamesDB requests
 @app.route("/api/gamesdb/<path:subpath>", methods=["GET", "POST"])
+@limiter.limit(RATE_LIMIT_UPSTREAM)
 def proxy_gamesdb(subpath):
     try:
         if request.method == "POST":
@@ -325,6 +399,7 @@ def proxy_gamesdb(subpath):
 
 # Proxy GamesDB CDN images
 @app.route("/api/gamesdb/images/<path:subpath>", methods=["GET"])
+@limiter.limit(RATE_LIMIT_UPSTREAM)
 def proxy_gamesdb_images(subpath):
     try:
         resp = requests.get(
@@ -345,6 +420,7 @@ def proxy_gamesdb_images(subpath):
 
 
 @app.route("/api/coverart/image", methods=["GET"])
+@limiter.limit(RATE_LIMIT_UPSTREAM)
 def proxy_coverart_image():
     cover_type = request.args.get("type")
     cover_id = request.args.get("id")
@@ -377,11 +453,13 @@ def proxy_coverart_image():
 
 # Logging endpoint (optional telemetry)
 @app.route("/api/log", methods=["POST"])
+@limiter.limit(RATE_LIMIT_LOG_EVENT)
 def log_event():
     return jsonify({"status": "ok"}), 200
 
 
 @app.route("/api/share", methods=["POST"])
+@limiter.limit(RATE_LIMIT_SHARE_CREATE)
 def create_share():
     body = request.get_json(silent=False)
     payload = body.get("payload") if isinstance(body, dict) else None
@@ -401,27 +479,32 @@ def create_share():
     except ValueError as exc:
         return jsonify({"error": str(exc)}), 400
 
-    store = load_share_store()
-    slug = generate_slug(set(store.keys()))
-    store[slug] = {
-        "payload": canonical_payload,
-        "createdAt": int(time.time()),
-        "title": title,
-        "clientAddress": get_client_address(),
-        "userAgent": get_user_agent(),
-    }
-
+    lock_handle = acquire_share_store_lock(exclusive=True)
     try:
+        store = load_share_store()
+        slug = generate_slug(set(store.keys()))
+        store[slug] = {
+            "payload": canonical_payload,
+            "createdAt": int(time.time()),
+            "title": title,
+            "clientAddress": get_client_address(),
+            "userAgent": get_user_agent(),
+        }
         persist_share_store(store)
-    except Exception as exc:
-        return jsonify({"error": f"Failed to persist share: {exc}"}), 500
+    finally:
+        lock_handle.close()
 
     return jsonify({"slug": slug, "id": slug})
 
 
 @app.route("/api/share/<slug>", methods=["GET"])
+@limiter.limit(RATE_LIMIT_SHARE_READ)
 def get_share(slug: str):
-    store = load_share_store()
+    lock_handle = acquire_share_store_lock(exclusive=False)
+    try:
+        store = load_share_store()
+    finally:
+        lock_handle.close()
     record = store.get(slug)
     if not record:
         return jsonify({"error": "Share not found"}), 404

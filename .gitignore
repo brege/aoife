@@ -1,5 +1,6 @@
 # databases
 data/share.json
+data/whitelist.txt
 
 # dependencies
 node_modules/
