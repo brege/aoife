@@ -84,6 +84,23 @@ def generate_slug(existing: set[str]) -> str:
     raise RuntimeError("Unable to generate unique share slug")
 
 
+def get_client_address() -> str | None:
+    forwarded_for = request.headers.get("X-Forwarded-For")
+    if forwarded_for:
+        return forwarded_for.split(",")[0].strip() or None
+    real_ip = request.headers.get("X-Real-IP")
+    if real_ip:
+        return real_ip.strip() or None
+    return request.remote_addr
+
+
+def get_user_agent() -> str | None:
+    user_agent = request.headers.get("User-Agent")
+    if user_agent:
+        return user_agent.strip() or None
+    return None
+
+
 @app.after_request
 def set_csp_header(response):
     response.headers["Content-Security-Policy"] = (
@@ -390,6 +407,8 @@ def create_share():
         "payload": canonical_payload,
         "createdAt": int(time.time()),
         "title": title,
+        "clientAddress": get_client_address(),
+        "userAgent": get_user_agent(),
     }
 
     try:

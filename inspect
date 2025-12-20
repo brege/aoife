@@ -163,6 +163,8 @@ recordFilter='
         createdAt: .value.createdAt,
         createdAtIso: (created_at_seconds(.value.createdAt) | todateiso8601),
         title: (.value.title // null),
+        clientAddress: (.value.clientAddress // null),
+        userAgent: (.value.userAgent // null),
         link: share_link($baseUrl; .key),
         gridItemCount: ($payload.gridItems | length),
         payload: $payload
