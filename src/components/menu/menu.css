@@ -527,6 +527,51 @@
     minmax(0, 1fr);
 }
 
+.config-row.caption-mode-row {
+  grid-template-columns:
+    minmax(0, 1fr)
+    40px
+    48px
+    40px;
+  align-items: center;
+}
+
+.caption-mode-select {
+  width: max-content;
+  height: 36px;
+  border: none;
+  border-radius: 0;
+  background-color: transparent;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 0 20px 0 0;
+  text-transform: lowercase;
+  cursor: pointer;
+  appearance: none;
+  line-height: 36px;
+  white-space: nowrap;
+}
+
+.caption-mode-select-wrap {
+  grid-column: 2 / 5;
+  width: max-content;
+  justify-self: start;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.caption-mode-icon {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  font-size: 16px;
+  pointer-events: none;
+}
+
 .search-band-label {
   font-size: 12px;
   color: var(--text-muted);

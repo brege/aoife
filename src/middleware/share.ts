@@ -19,6 +19,7 @@ export type SharedStateItem = {
   coverUrl?: string | null;
   coverThumbnailUrl?: string | null;
   source?: string;
+  caption?: string;
   aspectRatio?: number;
 };
 
@@ -186,6 +187,11 @@ export const validateAndCanonicalizeSharePayload = (
       throw new Error('Share payload item subtitle is invalid');
     }
 
+    const caption = rawItem.caption;
+    if (caption != null && typeof caption !== 'string') {
+      throw new Error('Share payload item caption is invalid');
+    }
+
     const year = rawItem.year;
     if (year != null && (typeof year !== 'number' || !Number.isInteger(year))) {
       throw new Error('Share payload item year is invalid');
@@ -210,6 +216,7 @@ export const validateAndCanonicalizeSharePayload = (
       coverUrl: coverUrl as string | null | undefined,
       coverThumbnailUrl: coverThumbnailUrl as string | null | undefined,
       source: source as string | undefined,
+      caption: caption as string | undefined,
       aspectRatio: aspectRatio as number | undefined,
     });
   }

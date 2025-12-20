@@ -1,5 +1,6 @@
 import { Switch } from '@headlessui/react';
 import type React from 'react';
+import { MdKeyboardArrowDown } from 'react-icons/md';
 import logger from '../../lib/logger';
 
 interface MenuConfigProps {
@@ -12,8 +13,8 @@ interface MenuConfigProps {
   onLayoutDimensionChange: (dimension: 'width' | 'height') => void;
   bandPlacementMode: 'alwaysTop' | 'adaptive';
   onBandPlacementModeChange: (mode: 'alwaysTop' | 'adaptive') => void;
-  captionMode: 'hidden' | 'overlay';
-  onCaptionModeChange: (mode: 'hidden' | 'overlay') => void;
+  captionMode: 'hidden' | 'top' | 'bottom';
+  onCaptionModeChange: (mode: 'hidden' | 'top' | 'bottom') => void;
   coverViewMode?: 'grid' | 'carousel';
   onCoverViewModeChange?: (mode: 'grid' | 'carousel') => void;
 }
@@ -158,19 +159,6 @@ const MenuConfig: React.FC<MenuConfigProps> = ({
         <span className="config-spacer" aria-hidden="true" />
       </div>
 
-      <div className="config-row four-col">
-        <span className="config-label">captions</span>
-        <span className="config-spacer" aria-hidden="true" />
-        <Switch
-          checked={captionMode === 'overlay'}
-          onChange={(checked) =>
-            onCaptionModeChange(checked ? 'overlay' : 'hidden')
-          }
-          className="layout-dimension-toggle"
-        />
-        <span className="config-spacer" aria-hidden="true" />
-      </div>
-
       <div className="config-row search-band-toggle-row">
         <span className="config-label">Search</span>
         <span className="search-band-label">Always on top</span>
@@ -202,6 +190,31 @@ const MenuConfig: React.FC<MenuConfigProps> = ({
           className="cover-view-toggle"
         />
         <span className="config-spacer" aria-hidden="true" />
+      </div>
+
+      <div className="config-row caption-mode-row">
+        <span className="config-label">captions</span>
+        <div className="caption-mode-select-wrap">
+          <select
+            className="caption-mode-select"
+            value={captionMode}
+            onChange={(event) =>
+              onCaptionModeChange(
+                event.target.value as 'hidden' | 'top' | 'bottom',
+              )
+            }
+            aria-label="Caption position"
+          >
+            <option value="hidden">off</option>
+            <option value="top">top</option>
+            <option value="bottom">bottom</option>
+          </select>
+          <MdKeyboardArrowDown
+            className="caption-mode-icon"
+            aria-hidden="true"
+            focusable="false"
+          />
+        </div>
       </div>
     </div>
   );

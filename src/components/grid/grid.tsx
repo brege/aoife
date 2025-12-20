@@ -11,12 +11,13 @@ interface GridProps {
   items: MediaItem[];
   onRemoveMedia: (mediaId: string | number) => void;
   onPosterClick: (media: MediaItem) => void;
+  onCaptionEdit: (media: MediaItem) => void;
   columns: number;
   minRows: number;
   placeholderLabel?: string;
   onAspectRatioUpdate?: (mediaId: string | number, aspectRatio: number) => void;
   layoutDimension?: 'width' | 'height';
-  captionMode?: 'hidden' | 'overlay';
+  captionMode?: 'hidden' | 'top' | 'bottom';
 }
 
 const DEFAULT_ASPECT_RATIOS: Record<string, number> = {
@@ -45,6 +46,13 @@ const getCaptionSubtitle = (media: MediaItem): string => {
     return yearText;
   }
   return '';
+};
+
+const getCaptionTitle = (media: MediaItem): string => {
+  if (typeof media.caption === 'string' && media.caption.trim() !== '') {
+    return media.caption.trim();
+  }
+  return media.title;
 };
 
 const getIndefiniteArticle = (label: string): 'a' | 'an' => {
@@ -121,6 +129,7 @@ const Grid: React.FC<GridProps> = ({
   items,
   onRemoveMedia,
   onPosterClick,
+  onCaptionEdit,
   columns,
   minRows,
   placeholderLabel,
@@ -235,56 +244,69 @@ const Grid: React.FC<GridProps> = ({
                 gap: containerGap,
               }}
             >
-              {row.items.map(({ media, width }) => (
-                <div
-                  key={media.id}
-                  className="grid-item filled"
-                  data-type={media.type}
-                  style={{
-                    width,
-                    height: layoutDimension === 'width' ? 'auto' : row.height,
-                  }}
-                >
-                  <div className="poster-wrapper">
-                    <button
-                      type="button"
-                      className="poster-button"
-                      onClick={() => onPosterClick(media)}
-                      aria-label={`View poster for ${media.title}`}
-                    >
-                      <CustomImage
-                        src={getCoverSrc(media) || ''}
-                        alt={`${media.title} cover`}
-                        className="grid-poster"
-                        onLoad={(e) => handleImageLoad(media, e)}
-                      />
-                    </button>
-                    {captionMode === 'overlay' && (
-                      <div className="grid-caption">
-                        <div className="grid-caption-title">
-                          {media.title}
-                        </div>
-                        {getCaptionSubtitle(media) && (
-                          <div className="grid-caption-subtitle">
-                            {getCaptionSubtitle(media)}
+              {row.items.map(({ media, width }) => {
+                const captionTitle = getCaptionTitle(media);
+                const captionSubtitle = getCaptionSubtitle(media);
+                const showCaption =
+                  captionMode !== 'hidden' &&
+                  (captionTitle.trim() !== '' || captionSubtitle !== '');
+                const captionClassName = `grid-caption grid-caption-${captionMode}`;
+                return (
+                  <div
+                    key={media.id}
+                    className="grid-item filled"
+                    data-type={media.type}
+                    style={{
+                      width,
+                      height: layoutDimension === 'width' ? 'auto' : row.height,
+                    }}
+                  >
+                    <div className="poster-wrapper">
+                      <button
+                        type="button"
+                        className="poster-button"
+                        onClick={() => onPosterClick(media)}
+                        aria-label={`View poster for ${media.title}`}
+                      >
+                        <CustomImage
+                          src={getCoverSrc(media) || ''}
+                          alt={`${media.title} cover`}
+                          className="grid-poster"
+                          onLoad={(e) => handleImageLoad(media, e)}
+                        />
+                      </button>
+                      {showCaption && (
+                        <div className={captionClassName}>
+                          <div className="grid-caption-title">
+                            {captionTitle}
                           </div>
-                        )}
-                      </div>
-                    )}
-                    <button
-                      type="button"
-                      className="grid-close-button"
-                      onClick={() => onRemoveMedia(media.id)}
-                      aria-label={`Remove ${media.title}`}
-                    >
-                      <MdClose aria-hidden="true" focusable="false" />
-                    </button>
-                    <div className="media-type-badge">
-                      {MEDIA_TYPE_ICONS[media.type as MediaType]}
+                          {captionSubtitle && (
+                            <div className="grid-caption-subtitle">
+                              {captionSubtitle}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      <button
+                        type="button"
+                        className="grid-close-button"
+                        onClick={() => onRemoveMedia(media.id)}
+                        aria-label={`Remove ${media.title}`}
+                      >
+                        <MdClose aria-hidden="true" focusable="false" />
+                      </button>
+                      <button
+                        type="button"
+                        className="media-type-badge"
+                        aria-label={`Edit caption for ${media.title}`}
+                        onClick={() => onCaptionEdit(media)}
+                      >
+                        {MEDIA_TYPE_ICONS[media.type as MediaType]}
+                      </button>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           );
         })}

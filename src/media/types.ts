@@ -31,6 +31,7 @@ export interface MediaItem {
   alternateCoverItems?: MediaItem[];
   source?: string;
   customEntry?: boolean;
+  caption?: string;
   metadata?: Record<string, unknown>;
   aspectRatio?: number;
 }

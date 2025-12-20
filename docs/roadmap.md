@@ -9,10 +9,7 @@
 
 #### UI
 
-- **Move Posters"
-  - allow user to drag and reorder posters
-- **Captions and Overlays**
-  - provide an editable caption for each title, overlay or underneath
+**Move Posters** - allow user to drag and reorder posters
 
 #### Providers
 

@@ -25,8 +25,8 @@ interface MenuProps {
   onLayoutDimensionChange: (dimension: 'width' | 'height') => void;
   bandPlacementMode: 'alwaysTop' | 'adaptive';
   onBandPlacementModeChange: (mode: 'alwaysTop' | 'adaptive') => void;
-  captionMode: 'hidden' | 'overlay';
-  onCaptionModeChange: (mode: 'hidden' | 'overlay') => void;
+  captionMode: 'hidden' | 'top' | 'bottom';
+  onCaptionModeChange: (mode: 'hidden' | 'top' | 'bottom') => void;
   onShare: () => void;
   isSharing: boolean;
   shareUrl: string;

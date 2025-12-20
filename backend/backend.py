@@ -300,6 +300,10 @@ def validate_and_canonicalize_share_payload(payload: str) -> str:
         if subtitle is not None and not isinstance(subtitle, str):
             raise ValueError("Share payload item subtitle is invalid")
 
+        caption = item.get("caption")
+        if caption is not None and not isinstance(caption, str):
+            raise ValueError("Share payload item caption is invalid")
+
         source = item.get("source")
         if source is not None and not isinstance(source, str):
             raise ValueError("Share payload item source is invalid")
@@ -314,6 +318,7 @@ def validate_and_canonicalize_share_payload(payload: str) -> str:
                 "type": media_type,
                 "title": title,
                 "subtitle": subtitle,
+                "caption": caption,
                 "year": year,
                 "coverUrl": cover_url,
                 "coverThumbnailUrl": cover_thumbnail_url,

@@ -11,6 +11,7 @@ import { useShareState } from '../../lib/state/share';
 import { DEFAULT_TITLE, TITLE_STORAGE_KEY } from '../../lib/state/storage';
 import type { MediaItem, MediaType } from '../../media/types';
 import Grid from '../grid/grid';
+import { CaptionModal } from '../grid/caption';
 import AppHeader from '../ui/header';
 import { useSearchBridges } from './bridge';
 import { CoverLinkModal } from './coverlink';
@@ -84,14 +85,22 @@ const MediaSearch: React.FC = () => {
   >({});
   const [showPosterGrid, setShowPosterGrid] = useState(false);
   const [showCoverLinkModal, setShowCoverLinkModal] = useState(false);
+  const [showCaptionModal, setShowCaptionModal] = useState(false);
   const [coverLinkMediaType, setCoverLinkMediaType] =
     useState<MediaType>('books');
   const [activePosterItemId, setActivePosterItemId] = useState<
     string | number | null
   >(null);
+  const [activeCaptionItemId, setActiveCaptionItemId] = useState<
+    string | number | null
+  >(null);
   const activePosterItem = useMemo(
     () => gridItems.find((item) => item.id === activePosterItemId) ?? null,
     [gridItems, activePosterItemId],
+  );
+  const activeCaptionItem = useMemo(
+    () => gridItems.find((item) => item.id === activeCaptionItemId) ?? null,
+    [gridItems, activeCaptionItemId],
   );
   const visibleAlternateCoverUrls = useMemo(
     () =>
@@ -219,6 +228,21 @@ const MediaSearch: React.FC = () => {
   }, [showCoverLinkModal, openModal, closeModal]);
 
   useModalClosed('coverLink', () => setShowCoverLinkModal(false));
+
+  useEffect(() => {
+    if (showCaptionModal) {
+      openModal('caption');
+    } else {
+      closeModal('caption');
+    }
+  }, [showCaptionModal, openModal, closeModal]);
+
+  const closeCaptionModal = useCallback(() => {
+    setShowCaptionModal(false);
+    setActiveCaptionItemId(null);
+  }, []);
+
+  useModalClosed('caption', closeCaptionModal);
 
   const searchSummary = lastSearchSummary || provider.label;
   const bandPlacement =
@@ -391,6 +415,10 @@ const MediaSearch: React.FC = () => {
                 );
                 setShowPosterGrid(true);
               }}
+              onCaptionEdit={(item) => {
+                setActiveCaptionItemId(item.id);
+                setShowCaptionModal(true);
+              }}
               columns={columns}
               minRows={minRows}
               placeholderLabel={
@@ -484,6 +512,35 @@ const MediaSearch: React.FC = () => {
             onSave={handleCoverLinkSave}
             onClear={handleCoverLinkClear}
           />
+          {activeCaptionItem && (
+            <CaptionModal
+              isOpen={showCaptionModal}
+              title={activeCaptionItem.title}
+              subtitle={activeCaptionItem.subtitle}
+              caption={activeCaptionItem.caption ?? ''}
+              onClose={closeCaptionModal}
+              onSave={(value) => {
+                setGridItems((current) =>
+                  current.map((item) =>
+                    item.id === activeCaptionItem.id
+                      ? { ...item, caption: value }
+                      : item,
+                  ),
+                );
+                closeCaptionModal();
+              }}
+              onClear={() => {
+                setGridItems((current) =>
+                  current.map((item) =>
+                    item.id === activeCaptionItem.id
+                      ? { ...item, caption: '' }
+                      : item,
+                  ),
+                );
+                closeCaptionModal();
+              }}
+            />
+          )}
         </div>
       </div>
       {searchIsLoading && (
