@@ -19,8 +19,10 @@ interface AppHeaderProps {
   onLayoutDimensionChange: (dimension: 'width' | 'height') => void;
   bandPlacementMode: 'alwaysTop' | 'adaptive';
   onBandPlacementModeChange: (mode: 'alwaysTop' | 'adaptive') => void;
-  captionMode: 'hidden' | 'top' | 'bottom' | 'edits';
-  onCaptionModeChange: (mode: 'hidden' | 'top' | 'bottom' | 'edits') => void;
+  captionMode: 'hidden' | 'top' | 'bottom';
+  onCaptionModeChange: (mode: 'hidden' | 'top' | 'bottom') => void;
+  captionEditsOnly: boolean;
+  onCaptionEditsOnlyChange: (value: boolean) => void;
   onShare: () => void;
   isSharing: boolean;
   shareUrl: string;
@@ -46,6 +48,8 @@ const AppHeader: React.FC<AppHeaderProps> = ({
   onBandPlacementModeChange,
   captionMode,
   onCaptionModeChange,
+  captionEditsOnly,
+  onCaptionEditsOnlyChange,
   onShare,
   isSharing,
   shareUrl,
@@ -88,6 +92,8 @@ const AppHeader: React.FC<AppHeaderProps> = ({
           onBandPlacementModeChange={onBandPlacementModeChange}
           captionMode={captionMode}
           onCaptionModeChange={onCaptionModeChange}
+          captionEditsOnly={captionEditsOnly}
+          onCaptionEditsOnlyChange={onCaptionEditsOnlyChange}
           onShare={onShare}
           isSharing={isSharing}
           shareUrl={shareUrl}

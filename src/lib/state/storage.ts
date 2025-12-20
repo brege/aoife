@@ -11,12 +11,14 @@ export const COVER_VIEW_STORAGE_KEY = 'coverViewMode';
 export const BAND_PLACEMENT_STORAGE_KEY = 'searchBandPlacement';
 export const MEDIA_TYPE_STORAGE_KEY = 'selectedMediaType';
 export const CAPTION_MODE_STORAGE_KEY = 'gridCaptionMode';
+export const CAPTION_EDITS_ONLY_STORAGE_KEY = 'gridCaptionEditsOnly';
 export const INDEXEDDB_GRID_KEY = 'gridItems';
 export const INDEXEDDB_COLUMNS_KEY = 'gridColumns';
 export const INDEXEDDB_MIN_ROWS_KEY = 'gridMinRows';
 export const INDEXEDDB_LAYOUT_DIMENSION_KEY = 'layoutDimension';
 export const INDEXEDDB_TITLE_KEY = 'gridTitle';
 export const INDEXEDDB_CAPTION_MODE_KEY = 'gridCaptionMode';
+export const INDEXEDDB_CAPTION_EDITS_ONLY_KEY = 'gridCaptionEditsOnly';
 export const DEFAULT_TITLE = 'aoife';
 
 export const useStorageSync = (

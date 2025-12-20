@@ -1,6 +1,5 @@
 import { Switch } from '@headlessui/react';
 import type React from 'react';
-import { MdKeyboardArrowDown } from 'react-icons/md';
 import logger from '../../lib/logger';
 
 interface MenuConfigProps {
@@ -13,8 +12,10 @@ interface MenuConfigProps {
   onLayoutDimensionChange: (dimension: 'width' | 'height') => void;
   bandPlacementMode: 'alwaysTop' | 'adaptive';
   onBandPlacementModeChange: (mode: 'alwaysTop' | 'adaptive') => void;
-  captionMode: 'hidden' | 'top' | 'bottom' | 'edits';
-  onCaptionModeChange: (mode: 'hidden' | 'top' | 'bottom' | 'edits') => void;
+  captionMode: 'hidden' | 'top' | 'bottom';
+  onCaptionModeChange: (mode: 'hidden' | 'top' | 'bottom') => void;
+  captionEditsOnly: boolean;
+  onCaptionEditsOnlyChange: (value: boolean) => void;
   coverViewMode?: 'grid' | 'carousel';
   onCoverViewModeChange?: (mode: 'grid' | 'carousel') => void;
 }
@@ -35,6 +36,8 @@ const MenuConfig: React.FC<MenuConfigProps> = ({
   onBandPlacementModeChange,
   captionMode,
   onCaptionModeChange,
+  captionEditsOnly,
+  onCaptionEditsOnlyChange,
   coverViewMode = 'grid',
   onCoverViewModeChange,
 }) => {
@@ -96,125 +99,170 @@ const MenuConfig: React.FC<MenuConfigProps> = ({
         <h3>Layout</h3>
       </div>
 
-      <div className="config-row four-col">
-        <span className="config-label">titles per row</span>
-        <div className="column-stepper">
-          <button
-            type="button"
-            className="stepper-button"
-            onClick={handleColumnsDecrement}
-            disabled={columns <= MIN_COLUMNS}
-            aria-label="Decrease columns"
-          >
-            -
-          </button>
-          <span className="stepper-value">{columns}</span>
-          <button
-            type="button"
-            className="stepper-button"
-            onClick={handleColumnsIncrement}
-            disabled={columns >= MAX_COLUMNS}
-            aria-label="Increase columns"
-          >
-            +
-          </button>
+      <div className="config-group">
+        <div className="config-group-title">Grid</div>
+        <div className="config-row">
+          <span className="config-label">titles per row</span>
+          <div className="column-stepper">
+            <button
+              type="button"
+              className="stepper-button"
+              onClick={handleColumnsDecrement}
+              disabled={columns <= MIN_COLUMNS}
+              aria-label="Decrease columns"
+            >
+              -
+            </button>
+            <span className="stepper-value">{columns}</span>
+            <button
+              type="button"
+              className="stepper-button"
+              onClick={handleColumnsIncrement}
+              disabled={columns >= MAX_COLUMNS}
+              aria-label="Increase columns"
+            >
+              +
+            </button>
+          </div>
+        </div>
+
+        <div className="config-row">
+          <span className="config-label">minimum rows</span>
+          <div className="column-stepper">
+            <button
+              type="button"
+              className="stepper-button"
+              onClick={handleRowsDecrement}
+              disabled={minRows <= MIN_ROWS_VALUE}
+              aria-label="Decrease minimum rows"
+            >
+              -
+            </button>
+            <span className="stepper-value">{minRows}</span>
+            <button
+              type="button"
+              className="stepper-button"
+              onClick={handleRowsIncrement}
+              disabled={minRows >= MAX_ROWS_VALUE}
+              aria-label="Increase minimum rows"
+            >
+              +
+            </button>
+          </div>
         </div>
       </div>
 
-      <div className="config-row four-col">
-        <span className="config-label">minimum rows</span>
-        <div className="column-stepper">
-          <button
-            type="button"
-            className="stepper-button"
-            onClick={handleRowsDecrement}
-            disabled={minRows <= MIN_ROWS_VALUE}
-            aria-label="Decrease minimum rows"
-          >
-            -
-          </button>
-          <span className="stepper-value">{minRows}</span>
-          <button
-            type="button"
-            className="stepper-button"
-            onClick={handleRowsIncrement}
-            disabled={minRows >= MAX_ROWS_VALUE}
-            aria-label="Increase minimum rows"
-          >
-            +
-          </button>
-        </div>
-      </div>
-
-      <div className="config-row four-col">
-        <span className="config-label">fixed width</span>
-        <span className="config-spacer" aria-hidden="true" />
-        <Switch
-          checked={layoutDimension === 'width'}
-          onChange={(checked) =>
-            onLayoutDimensionChange(checked ? 'width' : 'height')
-          }
-          className="layout-dimension-toggle"
-        />
-        <span className="config-spacer" aria-hidden="true" />
-      </div>
-
-      <div className="config-row search-band-toggle-row">
-        <span className="config-label">Search</span>
-        <span className="search-band-label">Always on top</span>
-        <Switch
-          checked={bandPlacementMode === 'adaptive'}
-          onChange={(checked) =>
-            onBandPlacementModeChange(checked ? 'adaptive' : 'alwaysTop')
-          }
-          className="layout-dimension-toggle"
-        />
-        <span className="search-band-label">Auto</span>
-      </div>
-
-      <div className="config-row four-col cover-view-toggle-row">
-        <span className="config-label">swipe mode</span>
-        <span className="config-spacer" aria-hidden="true" />
-        <Switch
-          checked={coverViewMode === 'carousel'}
-          onChange={(checked) => {
-            const newMode = checked ? 'carousel' : 'grid';
-            onCoverViewModeChange?.(newMode);
-            logger.info(`MENU: Swipe mode changed to ${newMode}`, {
-              context: 'MenuConfig.swipeMode',
-              action: 'swipe_mode_change',
-              newMode,
-              timestamp: Date.now(),
-            });
-          }}
-          className="cover-view-toggle"
-        />
-        <span className="config-spacer" aria-hidden="true" />
-      </div>
-
-      <div className="config-row caption-mode-row">
-        <span className="config-label">captions</span>
-        <div className="caption-mode-select-wrap">
-          <select
-            className="caption-mode-select"
-            value={captionMode}
-            onChange={(event) =>
-              onCaptionModeChange(
-              event.target.value as 'hidden' | 'top' | 'bottom' | 'edits',
-            )
-          }
-          aria-label="Caption position"
-        >
-          <option value="hidden">off</option>
-          <option value="edits">edits</option>
-          <option value="top">top</option>
-          <option value="bottom">bottom</option>
-        </select>
-          <MdKeyboardArrowDown
-            className="caption-mode-icon"
-            aria-hidden="true"
-            focusable="false"
+      <div className="config-group">
+        <div className="config-group-title">Behavior</div>
+        <div className="config-row">
+          <span className="config-label">fixed width</span>
+          <Switch
+            checked={layoutDimension === 'width'}
+            onChange={(checked) =>
+              onLayoutDimensionChange(checked ? 'width' : 'height')
+            }
+            className="layout-dimension-toggle"
           />
+        </div>
+
+        <div className="config-row">
+          <span className="config-label">swipe mode</span>
+          <Switch
+            checked={coverViewMode === 'carousel'}
+            onChange={(checked) => {
+              const newMode = checked ? 'carousel' : 'grid';
+              onCoverViewModeChange?.(newMode);
+              logger.info(`MENU: Swipe mode changed to ${newMode}`, {
+                context: 'MenuConfig.swipeMode',
+                action: 'swipe_mode_change',
+                newMode,
+                timestamp: Date.now(),
+              });
+            }}
+            className="cover-view-toggle"
+          />
+        </div>
+
+        <div className="config-row">
+          <span className="config-label">captions</span>
+          <fieldset className="segmented-control" aria-label="Caption position">
+            <label className="segmented-option">
+              <input
+                type="radio"
+                name="caption-position"
+                value="hidden"
+                checked={captionMode === 'hidden'}
+                onChange={() => onCaptionModeChange('hidden')}
+                className="segmented-input"
+              />
+              <span className="segmented-button">off</span>
+            </label>
+            <label className="segmented-option">
+              <input
+                type="radio"
+                name="caption-position"
+                value="top"
+                checked={captionMode === 'top'}
+                onChange={() => onCaptionModeChange('top')}
+                className="segmented-input"
+              />
+              <span className="segmented-button">top</span>
+            </label>
+            <label className="segmented-option">
+              <input
+                type="radio"
+                name="caption-position"
+                value="bottom"
+                checked={captionMode === 'bottom'}
+                onChange={() => onCaptionModeChange('bottom')}
+                className="segmented-input"
+              />
+              <span className="segmented-button">bottom</span>
+            </label>
+          </fieldset>
+        </div>
+
+        <div className="config-row">
+          <span className="config-label">edits only</span>
+          <Switch
+            checked={captionEditsOnly}
+            onChange={onCaptionEditsOnlyChange}
+            className="caption-edits-toggle"
+          />
+        </div>
+      </div>
+
+      <div className="config-group">
+        <div className="config-group-title">Search band</div>
+        <div className="config-row">
+          <span className="config-label">placement</span>
+          <fieldset
+            className="segmented-control"
+            aria-label="Search band placement"
+          >
+            <label className="segmented-option">
+              <input
+                type="radio"
+                name="search-band-placement"
+                value="alwaysTop"
+                checked={bandPlacementMode === 'alwaysTop'}
+                onChange={() => onBandPlacementModeChange('alwaysTop')}
+                className="segmented-input"
+              />
+              <span className="segmented-button">always on top</span>
+            </label>
+            <label className="segmented-option">
+              <input
+                type="radio"
+                name="search-band-placement"
+                value="adaptive"
+                checked={bandPlacementMode === 'adaptive'}
+                onChange={() => onBandPlacementModeChange('adaptive')}
+                className="segmented-input"
+              />
+              <span className="segmented-button">auto</span>
+            </label>
+          </fieldset>
         </div>
       </div>
     </div>

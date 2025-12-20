@@ -10,7 +10,7 @@
   position: fixed;
   top: 0;
   left: 0;
-  z-index: var(--z-header);
+  z-index: var(--z-overlay);
   background-color: var(--bg-secondary);
   height: 56px; /* Fixed header height for consistent positioning */
 }

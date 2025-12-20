@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
 import {
   BAND_PLACEMENT_STORAGE_KEY,
+  CAPTION_EDITS_ONLY_STORAGE_KEY,
   CAPTION_MODE_STORAGE_KEY,
   COLUMNS_STORAGE_KEY,
   COVER_VIEW_STORAGE_KEY,
+  INDEXEDDB_CAPTION_EDITS_ONLY_KEY,
   INDEXEDDB_CAPTION_MODE_KEY,
   INDEXEDDB_COLUMNS_KEY,
   INDEXEDDB_LAYOUT_DIMENSION_KEY,
@@ -28,8 +30,10 @@ export type UseLayoutStateReturn = {
   setCoverViewMode: (value: 'grid' | 'carousel') => void;
   bandPlacementMode: 'alwaysTop' | 'adaptive';
   setBandPlacementMode: (value: 'alwaysTop' | 'adaptive') => void;
-  captionMode: 'hidden' | 'top' | 'bottom' | 'edits';
-  setCaptionMode: (value: 'hidden' | 'top' | 'bottom' | 'edits') => void;
+  captionMode: 'hidden' | 'top' | 'bottom';
+  setCaptionMode: (value: 'hidden' | 'top' | 'bottom') => void;
+  captionEditsOnly: boolean;
+  setCaptionEditsOnly: (value: boolean) => void;
 };
 
 export const useLayoutState = (
@@ -93,19 +97,30 @@ export const useLayoutState = (
     return 'adaptive';
   });
 
-  const [captionMode, setCaptionMode] = useState<
-    'hidden' | 'top' | 'bottom' | 'edits'
-  >(() => {
-    const stored = localStorage.getItem(CAPTION_MODE_STORAGE_KEY);
-    if (
-      stored === 'hidden' ||
-      stored === 'top' ||
-      stored === 'bottom' ||
-      stored === 'edits'
-    ) {
-      return stored;
+  const storedCaptionMode = localStorage.getItem(CAPTION_MODE_STORAGE_KEY);
+
+  const [captionMode, setCaptionMode] = useState<'hidden' | 'top' | 'bottom'>(
+    () => {
+      const stored = localStorage.getItem(CAPTION_MODE_STORAGE_KEY);
+      if (stored === 'hidden' || stored === 'top' || stored === 'bottom') {
+        return stored;
+      }
+      if (stored === 'edits') {
+        return 'bottom';
+      }
+      return 'top';
+    },
+  );
+
+  const [captionEditsOnly, setCaptionEditsOnly] = useState<boolean>(() => {
+    const stored = localStorage.getItem(CAPTION_EDITS_ONLY_STORAGE_KEY);
+    if (stored === 'true') {
+      return true;
     }
-    return 'top';
+    if (stored === 'false') {
+      return false;
+    }
+    return storedCaptionMode === 'edits';
   });
 
   useStorageSync(
@@ -144,6 +159,13 @@ export const useLayoutState = (
     isHydrated,
   );
 
+  useStorageSync(
+    CAPTION_EDITS_ONLY_STORAGE_KEY,
+    INDEXEDDB_CAPTION_EDITS_ONLY_KEY,
+    String(captionEditsOnly),
+    isHydrated,
+  );
+
   return {
     columns,
     setColumns,
@@ -157,5 +179,7 @@ export const useLayoutState = (
     setBandPlacementMode,
     captionMode,
     setCaptionMode,
+    captionEditsOnly,
+    setCaptionEditsOnly,
   };
 };
