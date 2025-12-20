@@ -126,7 +126,7 @@ const Menu: React.FC<MenuProps> = ({
 
   const handleCopyShare = async () => {
     if (!shareUrl) {
-      setCopyError('Create a share link before copying.');
+      setCopyError('Create a public link before copying.');
       setCopySuccess(false);
       return;
     }
@@ -187,7 +187,7 @@ const Menu: React.FC<MenuProps> = ({
                 placeholder={
                   isLoadingShare
                     ? 'Loading shared grid...'
-                    : 'Create a share link'
+                    : 'Get permalink...'
                 }
                 className="menu-permalink-input"
                 aria-label="Share URL"

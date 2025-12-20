@@ -69,3 +69,19 @@
     border-radius: 0;
   }
 }
+
+.media-search-form.band.band-bottom .platform-dropdown {
+  top: auto;
+  bottom: 100%;
+  border-top: 1px solid #3a4656;
+  border-bottom: none;
+  border-radius: 4px 4px 0 0;
+}
+
+.media-search-form.band.band-bottom .platform-option:first-child {
+  border-radius: 4px 4px 0 0;
+}
+
+.media-search-form.band.band-bottom .platform-option:last-child {
+  border-radius: 0;
+}

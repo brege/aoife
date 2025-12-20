@@ -109,6 +109,12 @@
   min-width: 140px;
 }
 
+.media-search-form.band.band-bottom .dropdown-menu {
+  top: auto;
+  bottom: calc(100% + 8px);
+  border-radius: 8px 8px 0 0;
+}
+
 .media-search-form.stack .dropdown {
   width: 100%;
 }
