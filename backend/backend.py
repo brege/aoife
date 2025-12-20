@@ -192,34 +192,11 @@ def is_allowed_cover_url(value: str) -> bool:
     if value.startswith("data:") or value.startswith("blob:"):
         return False
 
-    if value.startswith("/api/gamesdb/images/"):
-        return True
-    if value.startswith("/api/coverart/image"):
+    if value.startswith("/api/"):
         return True
 
     parsed = urlparse(value)
-    if parsed.scheme != "https":
-        return False
-
-    host = parsed.netloc
-    if host == "image.tmdb.org":
-        return True
-    if host == "covers.openlibrary.org":
-        return True
-    if host == "coverartarchive.org":
-        return True
-    if host.endswith(".mzstatic.com") or host == "mzstatic.com":
-        return True
-    if host in (
-        "images-na.ssl-images-amazon.com",
-        "m.media-amazon.com",
-        "images.amazon.com",
-        "i.gr-assets.com",
-        "images.gr-assets.com",
-    ):
-        return True
-
-    return False
+    return parsed.scheme in ("https", "http")
 
 
 def validate_and_canonicalize_share_payload(payload: str) -> str:

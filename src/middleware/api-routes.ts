@@ -561,6 +561,26 @@ export const createApiMiddleware = (env: Record<string, string>) => {
           res.writeHead(500, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ error: 'Failed to fetch game images' }));
         });
+    } else if (path.startsWith('/gamesdb/images/') && req.method === 'GET') {
+      const subpath = path.replace('/gamesdb/images/', '');
+      if (!subpath) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Missing image path' }));
+        return;
+      }
+
+      const targetUrl = `https://cdn.thegamesdb.net/images/large/${subpath}`;
+      const imageReq = https.get(targetUrl, (imageRes) => {
+        res.writeHead(imageRes.statusCode || 502, {
+          'Content-Type': imageRes.headers['content-type'] || 'image/jpeg',
+        });
+        imageRes.pipe(res);
+      });
+
+      imageReq.on('error', (error) => {
+        res.writeHead(502, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: String(error) }));
+      });
     } else if (path.startsWith('/gamesdb')) {
       const gamesdbPrefix = '/gamesdb';
       const subpath = path.slice(gamesdbPrefix.length) || '/';

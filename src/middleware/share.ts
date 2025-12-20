@@ -54,10 +54,7 @@ export const isAllowedCoverUrl = (value: string): boolean => {
     return false;
   }
 
-  if (value.startsWith('/api/gamesdb/images/')) {
-    return true;
-  }
-  if (value.startsWith('/api/coverart/image')) {
+  if (value.startsWith('/api/')) {
     return true;
   }
 
@@ -68,18 +65,7 @@ export const isAllowedCoverUrl = (value: string): boolean => {
     return false;
   }
 
-  if (parsed.protocol !== 'https:') {
-    return false;
-  }
-
-  const host = parsed.hostname;
-  if (host === 'image.tmdb.org') return true;
-  if (host === 'cdn.thegamesdb.net') return true;
-  if (host === 'covers.openlibrary.org') return true;
-  if (host === 'coverartarchive.org') return true;
-  if (host === 'mzstatic.com' || host.endsWith('.mzstatic.com')) return true;
-
-  return false;
+  return parsed.protocol === 'https:' || parsed.protocol === 'http:';
 };
 
 export const validateAndCanonicalizeSharePayload = (
