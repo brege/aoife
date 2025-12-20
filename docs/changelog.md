@@ -6,6 +6,10 @@
 - UI: add a star badge to highlight currently indexed poster
 - UX: introduce captions that are positionable and editable by clicking a media-type badge
 - UX: dropdowns in band-on-bottom now drop 'up'
+- UX: ensure menu doesn't display behin search stack on mobile
+- UI: use common steppers and subgroups in Layout
+- Backend: generate permalinks for ANY custom URL 
+
 
 ### 2025-12-19
 
