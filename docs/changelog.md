@@ -1,5 +1,18 @@
 ## Changelog
 
+### 2025-12-19
+
+- Books: added ranking logic and rewrote the entire book cover finder
+- Books: added direct cover‑URL entry with external search engine links
+- Music: "" 
+- Music: stricter cover filtering and support for manual cover URLs
+- UX: made media type dropdown persistent on refresh
+- UI: added loading spinner and moving grid-aware search form placement
+- Backend: quieter 404 handling
+- Backend: permalinks metadata capture, rate limiting, and Flock protections
+- Backend: nginx caching for GamesDB JSON responses
+- Backend: added app-level rate limiting by IP and user agent
+
 ### 2025-12-18
 
 - Updated screenshots, README, and favicon to cover new features
@@ -7,7 +20,13 @@
 - Null header titles (accidents) are reset to 'aoife'
 - Made dropdowns drop 'up' on mobile layouts
 - Further timeout refinements in tests for GamesDB API calls
-- Trash/clear now nips the URL slug and resets the title
+- Clears now zaps the URL slug and resets the title
+- Cleaned up the search UI and grid behavior replacing old modes with simpler math
+- Media dropdown now has keybinds
+- Made search and media state behavior more consistent across modes
+- Removed the legacy CLI bridge and related hooks
+- Made book/game error handling deterministic and tightened movie/tv fallback behavior
+- Added branding: favicon and social preview generator
 
 ### 2025-12-17
 
