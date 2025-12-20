@@ -1,7 +1,6 @@
-import { useGesture } from '@use-gesture/react';
-import { AnimatePresence, motion } from 'framer-motion';
+import useEmblaCarousel from 'embla-carousel-react';
 import type React from 'react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { MdClose } from 'react-icons/md';
 import './carousel.css';
 
@@ -22,49 +21,75 @@ const Carousel: React.FC<CarouselProps> = ({
   onSelectCover,
   onClose,
 }) => {
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [slideDirection, setSlideDirection] = useState<'left' | 'right'>(
-    'left',
-  );
-
-  useEffect(() => {
-    if (urls.length === 0) {
-      return;
-    }
-    if (currentIndex > urls.length - 1) {
-      setCurrentIndex(urls.length - 1);
-    }
-  }, [currentIndex, urls.length]);
-
-  const handleNavigate = (direction: 'left' | 'right') => {
-    if (direction === 'left' && currentIndex < urls.length - 1) {
-      setSlideDirection('left');
-      setCurrentIndex((value) => value + 1);
-    } else if (direction === 'right' && currentIndex > 0) {
-      setSlideDirection('right');
-      setCurrentIndex((value) => value - 1);
-    }
-  };
-
-  const bind = useGesture({
-    onDragEnd: ({ movement: [movementX], velocity: [velocityX] }) => {
-      const threshold = 25;
-      const minVelocity = 0.25;
-      const shouldMove =
-        Math.abs(movementX) > threshold || Math.abs(velocityX) > minVelocity;
-      if (!shouldMove) {
-        return;
-      }
-      if (movementX > 0) {
-        handleNavigate('right');
-      } else if (movementX < 0) {
-        handleNavigate('left');
-      }
-    },
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const [loadedUrls, setLoadedUrls] = useState<Record<string, boolean>>({});
+  const [emblaRef, emblaApi] = useEmblaCarousel({
+    align: 'center',
+    containScroll: 'trimSnaps',
+    loop: false,
+    dragFree: false,
   });
 
+  const preloadUrls = useMemo(() => {
+    if (urls.length === 0) {
+      return [];
+    }
+    const start = Math.max(0, selectedIndex - 2);
+    const end = Math.min(urls.length - 1, selectedIndex + 2);
+    return urls.slice(start, end + 1);
+  }, [selectedIndex, urls]);
+
+  const urlsKey = useMemo(() => urls.join('|'), [urls]);
+
+  const handleImageLoad = useCallback((url: string) => {
+    setLoadedUrls((current) => {
+      if (current[url]) {
+        return current;
+      }
+      return { ...current, [url]: true };
+    });
+  }, []);
+
+  const handleImageError = useCallback(
+    (url: string) => {
+      setLoadedUrls((current) => ({ ...current, [url]: true }));
+      onCoverError(url);
+    },
+    [onCoverError],
+  );
+
+  const handleSelect = useCallback(() => {
+    if (!emblaApi) {
+      return;
+    }
+    setSelectedIndex(emblaApi.selectedScrollSnap());
+  }, [emblaApi]);
+
+  useEffect(() => {
+    if (!emblaApi) {
+      return;
+    }
+    handleSelect();
+    emblaApi.on('select', handleSelect);
+    emblaApi.on('reInit', handleSelect);
+    return () => {
+      emblaApi.off('select', handleSelect);
+      emblaApi.off('reInit', handleSelect);
+    };
+  }, [emblaApi, handleSelect]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+    preloadUrls.forEach((url) => {
+      const image = new Image();
+      image.src = url;
+    });
+  }, [preloadUrls]);
+
   const handleSelectCurrent = () => {
-    onSelectCover(urls[currentIndex]);
+    onSelectCover(urls[selectedIndex]);
     onClose();
   };
 
@@ -72,11 +97,10 @@ const Carousel: React.FC<CarouselProps> = ({
     return null;
   }
 
-  const currentUrl = urls[currentIndex];
-  const progress = ((currentIndex + 1) / urls.length) * 100;
+  const progress = ((selectedIndex + 1) / urls.length) * 100;
 
   return (
-    <div className="carousel-overlay" {...bind()}>
+    <div className="carousel-overlay">
       <div className="carousel-container">
         <button
           type="button"
@@ -96,35 +120,48 @@ const Carousel: React.FC<CarouselProps> = ({
             )}
           </div>
           <span className="carousel-counter">
-            {currentIndex + 1} / {urls.length}
+            {selectedIndex + 1} / {urls.length}
           </span>
         </div>
 
         <div className="carousel-stage">
-          <AnimatePresence mode="wait">
-            <motion.img
-              key={currentUrl}
-              src={currentUrl}
-              alt={`${mediaTitle} cover ${currentIndex + 1}`}
-              className="carousel-image"
-              onError={() => onCoverError(currentUrl)}
-              initial={{
-                x: slideDirection === 'left' ? 70 : -70,
-                opacity: 0.85,
-                scale: 0.98,
-              }}
-              animate={{ x: 0, opacity: 1, scale: 1 }}
-              exit={{
-                x: slideDirection === 'left' ? -70 : 70,
-                opacity: 0.85,
-                scale: 0.98,
-              }}
-              transition={{
-                duration: 0.18,
-                ease: [0.32, 0.72, 0, 1],
-              }}
-            />
-          </AnimatePresence>
+          <div className="embla">
+            <div className="embla__viewport" ref={emblaRef} key={urlsKey}>
+              <div className="embla__container">
+                {urls.map((url, index) => (
+                  <div className="embla__slide" key={url}>
+                    <div className="embla__slide__inner">
+                      <button
+                        type="button"
+                        className="embla__slide__button"
+                        onClick={handleSelectCurrent}
+                        aria-label={`Select ${mediaTitle} cover ${index + 1}`}
+                      >
+                        <img
+                          src={url}
+                          alt={`${mediaTitle} cover ${index + 1}`}
+                          className="embla__slide__img"
+                          onLoad={() => handleImageLoad(url)}
+                          onError={() => handleImageError(url)}
+                          loading={
+                            Math.abs(index - selectedIndex) <= 2
+                              ? 'eager'
+                              : 'lazy'
+                          }
+                        />
+                      </button>
+                      {!loadedUrls[url] && (
+                        <div
+                          className="embla__slide__loading"
+                          aria-hidden="true"
+                        />
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
 
         <div className="carousel-footer">
@@ -134,35 +171,6 @@ const Carousel: React.FC<CarouselProps> = ({
               style={{ width: `${progress}%` }}
             />
           </div>
-
-          <button
-            type="button"
-            className="carousel-select-button"
-            onClick={handleSelectCurrent}
-          >
-            Select this cover
-          </button>
-        </div>
-
-        <div className="carousel-nav">
-          <button
-            type="button"
-            className="carousel-nav-button"
-            onClick={() => handleNavigate('right')}
-            disabled={currentIndex === 0}
-            aria-label="Previous cover"
-          >
-            ←
-          </button>
-          <button
-            type="button"
-            className="carousel-nav-button"
-            onClick={() => handleNavigate('left')}
-            disabled={currentIndex === urls.length - 1}
-            aria-label="Next cover"
-          >
-            →
-          </button>
         </div>
       </div>
     </div>

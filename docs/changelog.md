@@ -9,7 +9,7 @@
 - UX: ensure menu doesn't display behin search stack on mobile
 - UI: use common steppers and subgroups in Layout
 - Backend: generate permalinks for ANY custom URL 
-
+- UX: replaced crude carousel with SwiperJS for smoother transitions and loading
 
 ### 2025-12-19
 

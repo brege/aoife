@@ -98,7 +98,7 @@
   overflow-y: auto;
   scrollbar-gutter: stable;
   box-shadow: var(--shadow-lg);
-  z-index: var(--z-dropdown);
+  z-index: var(--z-overlay);
   animation: dropdownIn var(--transition-medium);
   margin-top: var(--spacing-sm);
 }
