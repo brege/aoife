@@ -44,6 +44,24 @@ type UseShareStateReturn = {
   resetShareContext: () => void;
 };
 
+type ShareSnapshotInput = {
+  gridItems: MediaItem[];
+  columns: number;
+  minRows: number;
+  layoutDimension: LayoutDimension;
+  title: string;
+};
+
+const buildShareSnapshot = (input: ShareSnapshotInput): string => {
+  return JSON.stringify({
+    gridItems: input.gridItems,
+    columns: input.columns,
+    minRows: input.minRows,
+    layoutDimension: input.layoutDimension,
+    title: input.title,
+  });
+};
+
 export const useShareState = (
   options: UseShareStateOptions,
 ): UseShareStateReturn => {
@@ -66,6 +84,7 @@ export const useShareState = (
   const [shareError, setShareError] = useState('');
   const [isSharing, setIsSharing] = useState(false);
   const [isLoadingShare, setIsLoadingShare] = useState(false);
+  const shareSnapshotRef = useRef<string | null>(null);
 
   const initialShareSlugRef = useRef<string | null>(null);
   if (initialShareSlugRef.current === null) {
@@ -93,6 +112,13 @@ export const useShareState = (
       url.searchParams.set(SHARE_QUERY_PARAM, slug);
       window.history.replaceState(null, '', url.toString());
       setShareUrl(url.toString());
+      shareSnapshotRef.current = buildShareSnapshot({
+        gridItems: state.gridItems,
+        columns: state.columns,
+        minRows: state.minRows,
+        layoutDimension: state.layoutDimension,
+        title: nextTitle,
+      });
     },
     [setColumns, setGridItems, setLayoutDimension, setMinRows, setTitle],
   );
@@ -230,6 +256,28 @@ export const useShareState = (
     );
   }, [columns, gridItems, isHydrated, layoutDimension, minRows, title]);
 
+  useEffect(() => {
+    if (!isHydrated || !shareUrl || !shareSnapshotRef.current) {
+      return;
+    }
+    const currentSnapshot = buildShareSnapshot({
+      gridItems,
+      columns,
+      minRows,
+      layoutDimension,
+      title,
+    });
+    if (currentSnapshot === shareSnapshotRef.current) {
+      return;
+    }
+    shareSnapshotRef.current = null;
+    setShareError('');
+    setShareUrl('');
+    const url = new URL(window.location.href);
+    url.searchParams.delete(SHARE_QUERY_PARAM);
+    window.history.replaceState(null, '', url.toString());
+  }, [columns, gridItems, isHydrated, layoutDimension, minRows, shareUrl, title]);
+
   const handleCreateShare = useCallback(async () => {
     if (gridItems.length === 0) {
       setShareError('Add at least one item before sharing.');
@@ -252,6 +300,13 @@ export const useShareState = (
         `${INDEXEDDB_SHARE_PREFIX}${response.slug}`,
         JSON.stringify({ payload, title }),
       );
+      shareSnapshotRef.current = buildShareSnapshot({
+        gridItems,
+        columns,
+        minRows,
+        layoutDimension,
+        title,
+      });
       const url = new URL(window.location.href);
       url.searchParams.set(SHARE_QUERY_PARAM, response.slug);
       window.history.replaceState(null, '', url.toString());
@@ -284,6 +339,7 @@ export const useShareState = (
     setShareError('');
     setShareUrl('');
     setTitle(DEFAULT_TITLE);
+    shareSnapshotRef.current = null;
 
     const url = new URL(window.location.href);
     url.searchParams.delete(SHARE_QUERY_PARAM);

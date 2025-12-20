@@ -124,7 +124,7 @@ type SearchResultsProps = {
   availableCovers: MediaItem[];
   mediaType: MediaType;
   searchSummary: string;
-  hiddenResultIds: Record<string | number, true>;
+  brokenResultIds: Record<string | number, true>;
   aspectRatios: Record<string | number, number>;
   onClose: () => void;
   onAdd: (media: MediaItem, availableCovers: MediaItem[]) => void;
@@ -142,7 +142,7 @@ export const SearchResults = ({
   availableCovers,
   mediaType,
   searchSummary,
-  hiddenResultIds,
+  brokenResultIds,
   aspectRatios,
   onClose,
   onAdd,
@@ -160,16 +160,17 @@ export const SearchResults = ({
     >
       <MdClose aria-hidden="true" focusable="false" />
     </button>
-    <h3 className="search-results-subtitle">
-      Results for: "
-      {searchSummary.length > 40
-        ? `${searchSummary.substring(0, 40)}...`
-        : searchSummary}
-      "
-    </h3>
+    <div className="search-results-header">
+      <span className="search-results-label">Results for</span>
+      <h3 className="search-results-subtitle">
+        {searchSummary.length > 40
+          ? `${searchSummary.substring(0, 40)}...`
+          : searchSummary}
+      </h3>
+    </div>
     <div className="search-results-grid">
       {results
-        .filter((result) => !Object.hasOwn(hiddenResultIds, result.id))
+        .filter((result) => !Object.hasOwn(brokenResultIds, result.id))
         .map((result) => {
           const imdbId =
             typeof result.metadata?.imdb_id === 'string'

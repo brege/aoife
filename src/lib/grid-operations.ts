@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 import { getMediaService } from '../media/factory';
 import type { getMediaProvider } from '../media/providers';
 import type { MediaItem, MediaSearchValues, MediaType } from '../media/types';
+import { TMDB_IMAGE_BASE } from '../media/types';
 import logger from './logger';
 
 type GridOperationDeps = {
@@ -45,6 +46,35 @@ type GridOperations = {
   clearGrid: () => void;
 };
 
+const resolveCoverUrl = (item: MediaItem): string | null => {
+  return item.coverUrl || item.coverThumbnailUrl || null;
+};
+
+const findCoverItem = (
+  items: MediaItem[] | undefined,
+  url: string,
+): MediaItem | null => {
+  if (!items) {
+    return null;
+  }
+  const match = items.find(
+    (item) => item.coverUrl === url || item.coverThumbnailUrl === url,
+  );
+  return match || null;
+};
+
+const getTmdbPosterPath = (url: string): string | null => {
+  if (!url.startsWith(TMDB_IMAGE_BASE)) {
+    return null;
+  }
+  const trimmed = url.replace(TMDB_IMAGE_BASE, '');
+  const segments = trimmed.split('/').filter(Boolean);
+  if (segments.length < 2) {
+    return null;
+  }
+  return `/${segments.slice(1).join('/')}`;
+};
+
 export const useGridOperations = (
   deps: GridOperationDeps,
   setters: GridOperationSetters,
@@ -80,10 +110,25 @@ export const useGridOperations = (
 
       const coversSource = availableCovers ?? searchResults;
       if (coversSource.length > 0) {
-        const coverUrls = coversSource
-          .map((result) => result.coverUrl || result.coverThumbnailUrl)
-          .filter((url): url is string => Boolean(url));
-        mediaWithCovers.alternateCoverUrls = coverUrls;
+        const coverItems: MediaItem[] = [];
+        for (const result of coversSource) {
+          const coverUrl = resolveCoverUrl(result);
+          if (!coverUrl) {
+            continue;
+          }
+          coverItems.push({
+            ...result,
+            coverUrl: coverUrl,
+            coverThumbnailUrl: result.coverThumbnailUrl || coverUrl,
+          });
+        }
+
+        if (coverItems.length > 0) {
+          mediaWithCovers.alternateCoverUrls = coverItems.map(
+            (result) => result.coverUrl as string,
+          );
+          mediaWithCovers.alternateCoverItems = coverItems;
+        }
       }
 
       setGridItems((current) => {
@@ -165,11 +210,37 @@ export const useGridOperations = (
     (url: string) => {
       if (!activePosterItemId) return;
 
-      const updatedGrid = gridItems.map((item) =>
-        item.id === activePosterItemId
-          ? { ...item, coverUrl: url, coverThumbnailUrl: url }
-          : item,
-      );
+      const updatedGrid = gridItems.map((item) => {
+        if (item.id !== activePosterItemId) {
+          return item;
+        }
+
+        const alternateItem = findCoverItem(item.alternateCoverItems, url);
+        const nextMetadata = {
+          ...(alternateItem?.metadata ?? item.metadata),
+        } as Record<string, unknown>;
+        const posterPath = getTmdbPosterPath(url);
+        if (posterPath && (item.type === 'movies' || item.type === 'tv')) {
+          nextMetadata.poster_path = posterPath;
+        }
+
+        return {
+          ...item,
+          ...alternateItem,
+          id: alternateItem?.id ?? item.id,
+          type: alternateItem?.type ?? item.type,
+          title: alternateItem?.title ?? item.title,
+          subtitle: alternateItem?.subtitle ?? item.subtitle,
+          year: alternateItem?.year ?? item.year,
+          source: alternateItem?.source ?? item.source,
+          coverUrl: alternateItem?.coverUrl ?? url,
+          coverThumbnailUrl: alternateItem?.coverThumbnailUrl ?? url,
+          alternateCoverItems: item.alternateCoverItems,
+          alternateCoverUrls: item.alternateCoverUrls,
+          metadata:
+            Object.keys(nextMetadata).length > 0 ? nextMetadata : item.metadata,
+        };
+      });
 
       const updatedItem = updatedGrid.find(
         (item) => item.id === activePosterItemId,

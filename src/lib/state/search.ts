@@ -23,7 +23,7 @@ export type UseSearchStateReturn = {
   selectedMediaType: MediaType;
   searchValues: MediaSearchValues;
   searchResults: MediaItem[];
-  hiddenSearchResultIds: Record<string | number, true>;
+  brokenSearchResultIds: Record<string | number, true>;
   searchResultAspectRatios: Record<string | number, number>;
   lastSearchSummary: string;
   isLoading: boolean;
@@ -81,7 +81,7 @@ export const useSearchState = (
     provider.defaultSearchValues,
   );
   const [searchResults, setSearchResults] = useState<MediaItem[]>([]);
-  const [hiddenSearchResultIds, setHiddenSearchResultIds] = useState<
+  const [brokenSearchResultIds, setBrokenSearchResultIds] = useState<
     Record<string | number, true>
   >({});
   const [searchResultAspectRatios, setSearchResultAspectRatios] = useState<
@@ -134,7 +134,7 @@ export const useSearchState = (
       setIsLoading(true);
       setError('');
       setSearchResultAspectRatios({});
-      setHiddenSearchResultIds({});
+      setBrokenSearchResultIds({});
 
       try {
         const service = getMediaService(activeMediaType);
@@ -215,7 +215,7 @@ export const useSearchState = (
 
   const handleSearchResultImageError = useCallback(
     (resultId: string | number) => {
-      setHiddenSearchResultIds((current) => {
+      setBrokenSearchResultIds((current) => {
         if (Object.hasOwn(current, resultId)) {
           return current;
         }
@@ -255,7 +255,7 @@ export const useSearchState = (
     selectedMediaType,
     searchValues,
     searchResults,
-    hiddenSearchResultIds,
+    brokenSearchResultIds,
     searchResultAspectRatios,
     lastSearchSummary,
     isLoading,

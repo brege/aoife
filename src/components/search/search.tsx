@@ -40,7 +40,7 @@ const MediaSearch: React.FC = () => {
     selectedMediaType,
     searchValues,
     searchResults,
-    hiddenSearchResultIds,
+    brokenSearchResultIds,
     searchResultAspectRatios,
     lastSearchSummary,
     isLoading: searchIsLoading,
@@ -77,6 +77,9 @@ const MediaSearch: React.FC = () => {
     return stored ? normalizeTitle(stored) : DEFAULT_TITLE;
   });
   const [alternateCoverUrls, setAlternateCoverUrls] = useState<string[]>([]);
+  const [brokenAlternateCoverUrls, setBrokenAlternateCoverUrls] = useState<
+    Record<string, true>
+  >({});
   const [showPosterGrid, setShowPosterGrid] = useState(false);
   const [showCoverLinkModal, setShowCoverLinkModal] = useState(false);
   const [coverLinkMediaType, setCoverLinkMediaType] =
@@ -87,6 +90,13 @@ const MediaSearch: React.FC = () => {
   const activePosterItem = useMemo(
     () => gridItems.find((item) => item.id === activePosterItemId) ?? null,
     [gridItems, activePosterItemId],
+  );
+  const visibleAlternateCoverUrls = useMemo(
+    () =>
+      alternateCoverUrls.filter(
+        (url) => !Object.hasOwn(brokenAlternateCoverUrls, url),
+      ),
+    [alternateCoverUrls, brokenAlternateCoverUrls],
   );
   const {
     shareUrl,
@@ -368,6 +378,7 @@ const MediaSearch: React.FC = () => {
                   },
                 );
                 setActivePosterItemId(item.id);
+                setBrokenAlternateCoverUrls({});
 
                 fetchAlternateCovers(
                   item.id,
@@ -402,8 +413,18 @@ const MediaSearch: React.FC = () => {
           {showPosterGrid && activePosterItem && (
             <PosterPicker
               coverViewMode={coverViewMode}
-              urls={alternateCoverUrls}
+              urls={visibleAlternateCoverUrls}
               mediaTitle={activePosterItem.title}
+              mediaSubtitle={activePosterItem.subtitle}
+              alternateItems={activePosterItem.alternateCoverItems}
+              onCoverError={(url) => {
+                setBrokenAlternateCoverUrls((current) => {
+                  if (Object.hasOwn(current, url)) {
+                    return current;
+                  }
+                  return { ...current, [url]: true };
+                });
+              }}
               onClose={handleClosePosterGrid}
               onSelectCarouselCover={(url) => {
                 logger.info(`POSTER: Selected alternate poster from carousel`, {
@@ -434,7 +455,7 @@ const MediaSearch: React.FC = () => {
                 availableCovers={searchResults}
                 mediaType={selectedMediaType}
                 searchSummary={searchSummary}
-                hiddenResultIds={hiddenSearchResultIds}
+                brokenResultIds={brokenSearchResultIds}
                 aspectRatios={searchResultAspectRatios}
                 onClose={closeSearchResults}
                 onAdd={handleAddMedia}

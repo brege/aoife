@@ -90,7 +90,10 @@ export const fetchShare = async (slug: string): Promise<ShareFetchResponse> => {
 };
 
 export const buildSharePayload = (state: SharedState): string => {
-  return JSON.stringify(state);
+  const gridItems = state.gridItems.map(({ alternateCoverItems, ...item }) => ({
+    ...item,
+  }));
+  return JSON.stringify({ ...state, gridItems });
 };
 
 export const validateSharedState = (state: unknown): state is SharedState => {

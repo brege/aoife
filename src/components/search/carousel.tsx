@@ -1,13 +1,15 @@
 import { useGesture } from '@use-gesture/react';
 import { AnimatePresence, motion } from 'framer-motion';
 import type React from 'react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { MdClose } from 'react-icons/md';
 import './carousel.css';
 
 interface CarouselProps {
   urls: string[];
   mediaTitle: string;
+  mediaSubtitle?: string;
+  onCoverError: (url: string) => void;
   onSelectCover: (url: string) => void;
   onClose: () => void;
 }
@@ -15,6 +17,8 @@ interface CarouselProps {
 const Carousel: React.FC<CarouselProps> = ({
   urls,
   mediaTitle,
+  mediaSubtitle,
+  onCoverError,
   onSelectCover,
   onClose,
 }) => {
@@ -22,6 +26,15 @@ const Carousel: React.FC<CarouselProps> = ({
   const [slideDirection, setSlideDirection] = useState<'left' | 'right'>(
     'left',
   );
+
+  useEffect(() => {
+    if (urls.length === 0) {
+      return;
+    }
+    if (currentIndex > urls.length - 1) {
+      setCurrentIndex(urls.length - 1);
+    }
+  }, [currentIndex, urls.length]);
 
   const handleNavigate = (direction: 'left' | 'right') => {
     if (direction === 'left' && currentIndex < urls.length - 1) {
@@ -55,6 +68,10 @@ const Carousel: React.FC<CarouselProps> = ({
     onClose();
   };
 
+  if (urls.length === 0) {
+    return null;
+  }
+
   const currentUrl = urls[currentIndex];
   const progress = ((currentIndex + 1) / urls.length) * 100;
 
@@ -71,7 +88,13 @@ const Carousel: React.FC<CarouselProps> = ({
         </button>
 
         <div className="carousel-header">
-          <h3>{mediaTitle}</h3>
+          <div className="carousel-title">
+            <span className="carousel-label">Alternates for</span>
+            <h3>{mediaTitle}</h3>
+            {mediaSubtitle && (
+              <span className="carousel-subtitle">{mediaSubtitle}</span>
+            )}
+          </div>
           <span className="carousel-counter">
             {currentIndex + 1} / {urls.length}
           </span>
@@ -84,6 +107,7 @@ const Carousel: React.FC<CarouselProps> = ({
               src={currentUrl}
               alt={`${mediaTitle} cover ${currentIndex + 1}`}
               className="carousel-image"
+              onError={() => onCoverError(currentUrl)}
               initial={{
                 x: slideDirection === 'left' ? 70 : -70,
                 opacity: 0.85,

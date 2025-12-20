@@ -28,6 +28,7 @@ export interface MediaItem {
   coverUrl?: string | null;
   coverThumbnailUrl?: string | null;
   alternateCoverUrls?: string[];
+  alternateCoverItems?: MediaItem[];
   source?: string;
   customEntry?: boolean;
   metadata?: Record<string, unknown>;
