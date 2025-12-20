@@ -10,14 +10,13 @@ Play with [the prototype](https://aoife.brege.org)!
 - Simple search and poster picker
 - Responsive and configurable grid layout
 - Alternate poster selection with swipe gestures or grid selection 
-- Editable titles and shareable URLs
+- Editable titles, captions, and shareable URLs
 - Input hiding for poster-maxxing screenshots
 
 ## Examples
 
-Ever wanted to share a screenshot of your favorite things you read, saw or watched?
+Ever wanted to share a collage of your favorite albums and shows in one unified screenshot?
 **aoife** fetches poster and cover art into a minimalist grid to share with your friends.
-
 
 ### Mobile
 
@@ -67,7 +66,9 @@ VITE_TMDB_API_KEY=abcdefghijklmnopqrstuvwxyz
 VITE_GAMESDB_PUBLIC_KEY=zyxwvutsrqponmlkjihgfedcba
 ```
 
-> aoife has no plans to store pictures. Any photos uploaded via the **Custom** option are stored in localStorage in your browser. Share URLs are therefore limited to grids containing **only** canonically sourced images from the cover picker's API sources. You can still make nice screenshots to send to your friends. If you want to save custom-art arrangements, the development server will provide the same reproducible, custom three-slug URLs at your localhost.
+> [!NOTE]
+> aoife has no plans to store pictures. Any images uploaded via the **Custom** option are stored in localStorage in your browser. **Permalinking is limited to only URL-based images.**
+Use a service like [catbox](https://catbox.moe/) or [pixelfed](https://pixelfed.org/) to host ephemeral or long-lived images, respectively.
 
 ## Development
 

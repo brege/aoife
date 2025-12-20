@@ -7,9 +7,17 @@
 
 ### Next Features
 
-#### UI
+#### UX
 
-**Move Posters** - allow user to drag and reorder posters
+**Posters** 
+- ability to drag and reorder posters (research)
+- poor swipe interface. make smoother (research)
+
+#### Internals
+
+**Consolidations** 
+- extract reusable, generic card structure from the search result/picker elements
+- unify the caption and custom url modals into a central edit modal
 
 #### Providers
 

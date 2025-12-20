@@ -1,10 +1,17 @@
 ## Changelog
 
+### 2025-12-20
+
+- UI: better picker/search results styles
+- UI: add a star badge to highlight currently indexed poster
+- UX: introduce captions that are positionable and editable by clicking a media-type badge
+- UX: dropdowns in band-on-bottom now drop 'up'
+
 ### 2025-12-19
 
 - Books: added ranking logic and rewrote the entire book cover finder
 - Books: added direct cover‑URL entry with external search engine links
-- Music: "" 
+- Music: ibid. 
 - Music: stricter cover filtering and support for manual cover URLs
 - UX: made media type dropdown persistent on refresh
 - UI: added loading spinner and moving grid-aware search form placement
