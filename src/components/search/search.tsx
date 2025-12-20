@@ -24,6 +24,24 @@ const normalizeTitle = (value: string): string => {
   return trimmed === '' ? DEFAULT_TITLE : trimmed;
 };
 
+const getEmptyStateLabel = (mediaType: MediaType): string => {
+  switch (mediaType) {
+    case 'music':
+      return 'add an album cover';
+    case 'movies':
+    case 'tv':
+      return 'add a poster';
+    case 'books':
+      return 'add a book cover';
+    case 'games':
+      return 'add box art';
+    case 'custom':
+      return 'add an image';
+    default:
+      return 'add a cover';
+  }
+};
+
 const MediaSearch: React.FC = () => {
   useEffect(() => {
     logger.setDebugMode(true);
@@ -426,7 +444,9 @@ const MediaSearch: React.FC = () => {
               columns={columns}
               minRows={minRows}
               placeholderLabel={
-                gridItems.length === 0 ? provider.resultLabel : undefined
+                gridItems.length === 0
+                  ? getEmptyStateLabel(selectedMediaType)
+                  : undefined
               }
               captionMode={captionMode}
               captionEditsOnly={captionEditsOnly}

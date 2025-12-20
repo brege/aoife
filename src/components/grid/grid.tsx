@@ -56,12 +56,6 @@ const getCaptionTitle = (media: MediaItem): string => {
   return media.title;
 };
 
-const getIndefiniteArticle = (label: string): 'a' | 'an' => {
-  if (label.length === 0) return 'a';
-  const firstCharacter = label[0].toLowerCase();
-  return ['a', 'e', 'i', 'o', 'u'].includes(firstCharacter) ? 'an' : 'a';
-};
-
 const MAXIMUM_GRID_WIDTH = 1600;
 
 interface RowLayout {
@@ -221,12 +215,9 @@ const Grid: React.FC<GridProps> = ({
 
   const renderGrid = () => {
     if (placeholderLabel && items.length === 0) {
-      const article = getIndefiniteArticle(placeholderLabel);
       return (
         <div className="grid-container grid-container-empty">
-          <div className="empty-state-hint">
-            add {article} {placeholderLabel}
-          </div>
+          <div className="empty-state-hint">{placeholderLabel}</div>
         </div>
       );
     }
