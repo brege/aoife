@@ -19,8 +19,8 @@ interface AppHeaderProps {
   onLayoutDimensionChange: (dimension: 'width' | 'height') => void;
   bandPlacementMode: 'alwaysTop' | 'adaptive';
   onBandPlacementModeChange: (mode: 'alwaysTop' | 'adaptive') => void;
-  captionMode: 'hidden' | 'top' | 'bottom';
-  onCaptionModeChange: (mode: 'hidden' | 'top' | 'bottom') => void;
+  captionMode: 'hidden' | 'top' | 'bottom' | 'edits';
+  onCaptionModeChange: (mode: 'hidden' | 'top' | 'bottom' | 'edits') => void;
   onShare: () => void;
   isSharing: boolean;
   shareUrl: string;

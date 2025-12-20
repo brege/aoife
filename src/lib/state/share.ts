@@ -276,7 +276,15 @@ export const useShareState = (
     const url = new URL(window.location.href);
     url.searchParams.delete(SHARE_QUERY_PARAM);
     window.history.replaceState(null, '', url.toString());
-  }, [columns, gridItems, isHydrated, layoutDimension, minRows, shareUrl, title]);
+  }, [
+    columns,
+    gridItems,
+    isHydrated,
+    layoutDimension,
+    minRows,
+    shareUrl,
+    title,
+  ]);
 
   const handleCreateShare = useCallback(async () => {
     if (gridItems.length === 0) {

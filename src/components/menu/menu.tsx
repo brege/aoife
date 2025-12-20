@@ -25,8 +25,8 @@ interface MenuProps {
   onLayoutDimensionChange: (dimension: 'width' | 'height') => void;
   bandPlacementMode: 'alwaysTop' | 'adaptive';
   onBandPlacementModeChange: (mode: 'alwaysTop' | 'adaptive') => void;
-  captionMode: 'hidden' | 'top' | 'bottom';
-  onCaptionModeChange: (mode: 'hidden' | 'top' | 'bottom') => void;
+  captionMode: 'hidden' | 'top' | 'bottom' | 'edits';
+  onCaptionModeChange: (mode: 'hidden' | 'top' | 'bottom' | 'edits') => void;
   onShare: () => void;
   isSharing: boolean;
   shareUrl: string;
@@ -185,9 +185,7 @@ const Menu: React.FC<MenuProps> = ({
                 value={shareUrl}
                 readOnly
                 placeholder={
-                  isLoadingShare
-                    ? 'Loading shared grid...'
-                    : 'Get permalink...'
+                  isLoadingShare ? 'Loading shared grid...' : 'Get permalink...'
                 }
                 className="menu-permalink-input"
                 aria-label="Share URL"

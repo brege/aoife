@@ -211,12 +211,15 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  opacity: 0.75;
-  transition: opacity 0.2s ease, transform 0.2s ease;
+  opacity: 0;
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease;
   border: none;
   padding: 0;
   color: white;
   cursor: pointer;
+  pointer-events: none;
 }
 
 .media-type-badge svg {
@@ -229,6 +232,7 @@
 .grid-item.filled:focus-within .media-type-badge {
   opacity: 1;
   transform: translateY(-1px);
+  pointer-events: auto;
 }
 
 .alternate-poster-button {

@@ -13,8 +13,8 @@ interface MenuConfigProps {
   onLayoutDimensionChange: (dimension: 'width' | 'height') => void;
   bandPlacementMode: 'alwaysTop' | 'adaptive';
   onBandPlacementModeChange: (mode: 'alwaysTop' | 'adaptive') => void;
-  captionMode: 'hidden' | 'top' | 'bottom';
-  onCaptionModeChange: (mode: 'hidden' | 'top' | 'bottom') => void;
+  captionMode: 'hidden' | 'top' | 'bottom' | 'edits';
+  onCaptionModeChange: (mode: 'hidden' | 'top' | 'bottom' | 'edits') => void;
   coverViewMode?: 'grid' | 'carousel';
   onCoverViewModeChange?: (mode: 'grid' | 'carousel') => void;
 }
@@ -200,15 +200,16 @@ const MenuConfig: React.FC<MenuConfigProps> = ({
             value={captionMode}
             onChange={(event) =>
               onCaptionModeChange(
-                event.target.value as 'hidden' | 'top' | 'bottom',
-              )
-            }
-            aria-label="Caption position"
-          >
-            <option value="hidden">off</option>
-            <option value="top">top</option>
-            <option value="bottom">bottom</option>
-          </select>
+              event.target.value as 'hidden' | 'top' | 'bottom' | 'edits',
+            )
+          }
+          aria-label="Caption position"
+        >
+          <option value="hidden">off</option>
+          <option value="edits">edits</option>
+          <option value="top">top</option>
+          <option value="bottom">bottom</option>
+        </select>
           <MdKeyboardArrowDown
             className="caption-mode-icon"
             aria-hidden="true"

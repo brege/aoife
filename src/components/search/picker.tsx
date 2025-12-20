@@ -68,8 +68,7 @@ export const PosterPicker = ({
         ) : (
           urls.map((url, index) => {
             const matchedItem = alternateItems?.find(
-              (item) =>
-                item.coverUrl === url || item.coverThumbnailUrl === url,
+              (item) => item.coverUrl === url || item.coverThumbnailUrl === url,
             );
             const key =
               matchedItem?.id != null ? `${url}-${matchedItem.id}` : url;

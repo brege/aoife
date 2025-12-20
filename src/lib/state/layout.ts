@@ -28,10 +28,8 @@ export type UseLayoutStateReturn = {
   setCoverViewMode: (value: 'grid' | 'carousel') => void;
   bandPlacementMode: 'alwaysTop' | 'adaptive';
   setBandPlacementMode: (value: 'alwaysTop' | 'adaptive') => void;
-  captionMode: 'hidden' | 'top' | 'bottom';
-  setCaptionMode: (
-    value: 'hidden' | 'top' | 'bottom',
-  ) => void;
+  captionMode: 'hidden' | 'top' | 'bottom' | 'edits';
+  setCaptionMode: (value: 'hidden' | 'top' | 'bottom' | 'edits') => void;
 };
 
 export const useLayoutState = (
@@ -96,13 +94,14 @@ export const useLayoutState = (
   });
 
   const [captionMode, setCaptionMode] = useState<
-    'hidden' | 'top' | 'bottom'
+    'hidden' | 'top' | 'bottom' | 'edits'
   >(() => {
     const stored = localStorage.getItem(CAPTION_MODE_STORAGE_KEY);
     if (
       stored === 'hidden' ||
       stored === 'top' ||
-      stored === 'bottom'
+      stored === 'bottom' ||
+      stored === 'edits'
     ) {
       return stored;
     }

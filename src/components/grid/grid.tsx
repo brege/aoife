@@ -17,7 +17,7 @@ interface GridProps {
   placeholderLabel?: string;
   onAspectRatioUpdate?: (mediaId: string | number, aspectRatio: number) => void;
   layoutDimension?: 'width' | 'height';
-  captionMode?: 'hidden' | 'top' | 'bottom';
+  captionMode?: 'hidden' | 'top' | 'bottom' | 'edits';
 }
 
 const DEFAULT_ASPECT_RATIOS: Record<string, number> = {
@@ -247,8 +247,12 @@ const Grid: React.FC<GridProps> = ({
               {row.items.map(({ media, width }) => {
                 const captionTitle = getCaptionTitle(media);
                 const captionSubtitle = getCaptionSubtitle(media);
+                const hasEditedCaption =
+                  typeof media.caption === 'string' &&
+                  media.caption.trim() !== '';
                 const showCaption =
                   captionMode !== 'hidden' &&
+                  (captionMode !== 'edits' || hasEditedCaption) &&
                   (captionTitle.trim() !== '' || captionSubtitle !== '');
                 const captionClassName = `grid-caption grid-caption-${captionMode}`;
                 return (
