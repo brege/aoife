@@ -98,54 +98,64 @@ export class GamesService extends MediaService {
         return `${this.imageBaseUrl}/${filename}`;
       };
 
-      const fetchImageUrl = async (
-        gameId: number,
-      ): Promise<{ full?: string; thumb?: string }> => {
+      const fetchImagesForGames = async (
+        gameIds: number[],
+      ): Promise<Record<number, { full?: string; thumb?: string }>> => {
+        if (gameIds.length === 0) {
+          return {};
+        }
+
         try {
           const imageResponse = await axios.get(
             `${this.baseUrl}/Games/Images`,
             {
-              params: { games_id: gameId },
+              params: {
+                games_id: gameIds.join(','),
+              },
             },
           );
 
           const imageData = imageResponse.data
             .data as GameImagesResponse['data'];
           const baseUrl = imageData?.base_url;
-          const imageList = imageData?.images?.[gameId.toString()];
-          if (!imageList) return {};
+          const imagesByGame = imageData?.images ?? {};
+          const mapped: Record<number, { full?: string; thumb?: string }> = {};
 
-          const boxart = imageList.find(
-            (image) => image.type === 'boxart' && image.side === 'front',
-          );
-          const firstBox =
-            boxart ?? imageList.find((img) => img.type === 'boxart');
-
-          if (firstBox) {
-            return {
+          gameIds.forEach((gameId) => {
+            const imageList = imagesByGame[gameId.toString()];
+            if (!imageList) {
+              return;
+            }
+            const boxart = imageList.find(
+              (image) => image.type === 'boxart' && image.side === 'front',
+            );
+            const firstBox =
+              boxart ?? imageList.find((img) => img.type === 'boxart');
+            if (!firstBox) {
+              return;
+            }
+            mapped[gameId] = {
               full: buildImageUrl(baseUrl, firstBox.filename, 'original'),
               thumb: buildImageUrl(baseUrl, firstBox.filename, 'medium'),
             };
-          }
+          });
+
+          return mapped;
         } catch {
           return {};
         }
-        return {};
       };
 
-      const concurrencyLimit = 5;
-      const imagePromises = gameList.map((game) => fetchImageUrl(game.id));
-      const imageUrls = await this.promiseLimit(
-        concurrencyLimit,
-        imagePromises,
+      const imageUrls = await fetchImagesForGames(
+        gameList.map((game) => game.id),
       );
 
-      const results = gameList.map((game, index) => {
+      const results = gameList.map((game) => {
         const year = game.release_date
           ? new Date(game.release_date).getFullYear()
           : undefined;
 
-        const image = imageUrls[index] ?? {};
+        const image = imageUrls[game.id] ?? {};
 
         const mapped = {
           id: game.id,
@@ -206,35 +216,5 @@ export class GamesService extends MediaService {
     }
 
     return [];
-  }
-
-  private async promiseLimit<T>(
-    limit: number,
-    promises: Promise<T>[],
-  ): Promise<T[]> {
-    const results: T[] = [];
-    let current = 0;
-
-    return new Promise((resolve, reject) => {
-      const run = async () => {
-        while (current < promises.length) {
-          const index = current++;
-          try {
-            results[index] = await promises[index];
-          } catch (e) {
-            reject(e);
-            return;
-          }
-        }
-
-        if (current === promises.length) {
-          resolve(results);
-        }
-      };
-
-      for (let i = 0; i < Math.min(limit, promises.length); i++) {
-        run();
-      }
-    });
   }
 }

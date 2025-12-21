@@ -1,12 +1,31 @@
-import axios from 'axios';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useDropdownNavigation, useOutside } from '../../lib/escape';
 import './platform.css';
+import tgdbPlatforms from '../../../data/tgdb.json';
 
 type PlatformItem = {
   id: string;
   name: string;
 };
+
+type TgdbPlatformResponse = {
+  data?: {
+    platforms?: Record<
+      string,
+      {
+        id: number;
+        name: string;
+      }
+    >;
+  };
+};
+
+const PLATFORM_LIST: PlatformItem[] = Object.values(
+  (tgdbPlatforms as TgdbPlatformResponse).data?.platforms ?? {},
+).map((platform) => ({
+  id: platform.id.toString(),
+  name: platform.name,
+}));
 
 interface PlatformProps {
   value: string;
@@ -29,25 +48,7 @@ export function Platform({ onChange, placeholder, ariaLabel }: PlatformProps) {
   const optionRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
   useEffect(() => {
-    const fetchPlatforms = async () => {
-      try {
-        const response = await axios.get(
-          '/api/gamesdb/v1/Platforms?page_size=100',
-        );
-        const platformsData = response.data.data.platforms;
-        const platformList = Object.values(platformsData).map(
-          (platform: unknown) => ({
-            id: (platform as PlatformItem).id.toString(),
-            name: (platform as PlatformItem).name,
-          }),
-        );
-        setPlatforms(platformList);
-      } catch {
-        setPlatforms([]);
-      }
-    };
-
-    fetchPlatforms();
+    setPlatforms(PLATFORM_LIST);
   }, []);
 
   useEffect(() => {
