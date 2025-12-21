@@ -1,51 +1,31 @@
-import axios from 'axios';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useDropdownNavigation, useOutside } from '../../lib/escape';
 import './platform.css';
+import tgdbPlatforms from '../../../data/tgdb.json';
 
 type PlatformItem = {
   id: string;
   name: string;
 };
 
-const PLATFORM_CACHE_DURATION_MS = 60 * 60 * 1000;
-let cachedPlatformList: PlatformItem[] | null = null;
-let cachedPlatformRequest: Promise<PlatformItem[]> | null = null;
-let cachedPlatformTimestamp = 0;
-
-const fetchPlatformList = async (): Promise<PlatformItem[]> => {
-  const now = Date.now();
-  if (
-    cachedPlatformList &&
-    now - cachedPlatformTimestamp < PLATFORM_CACHE_DURATION_MS
-  ) {
-    return cachedPlatformList;
-  }
-
-  if (cachedPlatformRequest) {
-    return cachedPlatformRequest;
-  }
-
-  cachedPlatformRequest = axios
-    .get('/api/gamesdb/v1/Platforms?page_size=100')
-    .then((response) => {
-      const platformsData = response.data.data.platforms;
-      const platformList = Object.values(platformsData).map(
-        (platform: unknown) => ({
-          id: (platform as PlatformItem).id.toString(),
-          name: (platform as PlatformItem).name,
-        }),
-      );
-      cachedPlatformList = platformList;
-      cachedPlatformTimestamp = Date.now();
-      return platformList;
-    })
-    .finally(() => {
-      cachedPlatformRequest = null;
-    });
-
-  return cachedPlatformRequest;
+type TgdbPlatformResponse = {
+  data?: {
+    platforms?: Record<
+      string,
+      {
+        id: number;
+        name: string;
+      }
+    >;
+  };
 };
+
+const PLATFORM_LIST: PlatformItem[] = Object.values(
+  (tgdbPlatforms as TgdbPlatformResponse).data?.platforms ?? {},
+).map((platform) => ({
+  id: platform.id.toString(),
+  name: platform.name,
+}));
 
 interface PlatformProps {
   value: string;
@@ -68,22 +48,7 @@ export function Platform({ onChange, placeholder, ariaLabel }: PlatformProps) {
   const optionRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
   useEffect(() => {
-    let isCancelled = false;
-    fetchPlatformList()
-      .then((platformList) => {
-        if (isCancelled) {
-          return;
-        }
-        setPlatforms(platformList);
-      })
-      .catch(() => {
-        if (!isCancelled) {
-          setPlatforms([]);
-        }
-      });
-    return () => {
-      isCancelled = true;
-    };
+    setPlatforms(PLATFORM_LIST);
   }, []);
 
   useEffect(() => {

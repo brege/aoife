@@ -228,7 +228,7 @@ export const MediaForm: React.FC<MediaFormProps> = ({
             setIsLoadingSuggestions(false);
           }
         });
-    }, 200);
+    }, 350);
 
     return () => {
       isCancelled = true;
