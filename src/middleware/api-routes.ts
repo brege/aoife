@@ -21,14 +21,18 @@ export const createApiMiddleware = (env: Record<string, string>) => {
   const gridState: Record<string, unknown>[] = [];
   const shareStore = loadShareStore();
   const slugWords = loadSlugWords();
-  const gamesDatabaseKey =
+  const isContinuousIntegration = process.env.CI === 'true';
+  const privateGamesDatabaseKey =
     env.GAMESDB_KEY ||
     env.GAMESDB_API_KEY ||
-    env.VITE_GAMESDB_PUBLIC_KEY ||
     process.env.GAMESDB_KEY ||
     process.env.GAMESDB_API_KEY ||
-    process.env.VITE_GAMESDB_PUBLIC_KEY ||
     '';
+  const publicGamesDatabaseKey =
+    env.VITE_GAMESDB_PUBLIC_KEY || process.env.VITE_GAMESDB_PUBLIC_KEY || '';
+  const gamesDatabaseKey = isContinuousIntegration
+    ? publicGamesDatabaseKey
+    : privateGamesDatabaseKey || publicGamesDatabaseKey;
 
   return (req: IncomingMessage, res: ServerResponse, next: NextFunction) => {
     const url = new URL(req.url || '', 'http://localhost');
