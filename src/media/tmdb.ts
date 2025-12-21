@@ -17,7 +17,7 @@ type TmdbDetails = TmdbResult & {
 
 const buildPosterUrl = (
   path?: string | null,
-  size: 'w92' | 'w200' | 'w300' | 'w500' | 'original' = 'w500',
+  size: 'w92' | 'w200' | 'w300' | 'w500' | 'w780' | 'original' = 'w500',
 ) => {
   if (!path) return null;
   return `${TMDB_IMAGE_BASE}/${size}${path}`;

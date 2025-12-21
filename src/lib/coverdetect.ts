@@ -8,7 +8,7 @@ const loadPlaceholderHash = () => {
     return;
   }
   const placeholderImage = new Image();
-  placeholderImage.src = new URL('../../content.png', import.meta.url).toString();
+  placeholderImage.src = '/placeholder.webp';
   placeholderImage.addEventListener('load', () => {
     placeholderHash = computeAverageHash(placeholderImage);
   });

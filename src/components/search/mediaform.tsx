@@ -891,9 +891,15 @@ export const MediaForm: React.FC<MediaFormProps> = ({
                 key={field.id}
                 value={authorValue}
                 onChange={(value) => {
-                  onFieldChange(field.id, value);
+                  const nextValue = value ?? '';
+                  onFieldChange(field.id, nextValue);
+                  if (!nextValue) {
+                    setSelectedAuthorKeys([]);
+                    setBookTitleSuggestions([]);
+                    return;
+                  }
                   const matchingSuggestion = authorSuggestions.find(
-                    (suggestion) => suggestion.value === value,
+                    (suggestion) => suggestion.value === nextValue,
                   );
                   if (!matchingSuggestion) {
                     setSelectedAuthorKeys([]);
@@ -954,54 +960,55 @@ export const MediaForm: React.FC<MediaFormProps> = ({
               mediaType === 'tv' ||
               mediaType === 'games')
           ) {
-          const comboboxPlacementClass =
-            layout === 'band' ? `band-${bandPlacement}` : 'stack';
-          return (
-            <Combobox
-              key={field.id}
-              value={queryValue}
-              onChange={(value) => {
-                onFieldChange(field.id, value);
-                formRef.current?.requestSubmit();
-              }}
-              as="div"
-              className={`combobox ${comboboxPlacementClass}`.trim()}
-            >
-              <Combobox.Input
-                type="text"
+            const comboboxPlacementClass =
+              layout === 'band' ? `band-${bandPlacement}` : 'stack';
+            return (
+              <Combobox
+                key={field.id}
                 value={queryValue}
-                onChange={(e) => onFieldChange(field.id, e.target.value)}
-                placeholder={field.placeholder}
-                aria-label={field.label}
-                className="form-input"
-                required={field.required}
-                data-testid={`search-field-${field.id}`}
-              />
-              {titleSuggestions.length > 0 && (
-                <Combobox.Options className="combobox-options">
-                  {titleSuggestions.map((suggestion) => {
-                    return (
-                      <Combobox.Option
-                        key={suggestion.id}
-                        value={suggestion.value}
-                        className={({ active }) =>
-                          `combobox-option${active ? ' active' : ''}`
-                        }
-                      >
-                        <span className="combobox-option-label">
-                          {suggestion.label}
-                        </span>
-                      </Combobox.Option>
-                    );
-                  })}
-                </Combobox.Options>
-              )}
-              {isLoadingTitleSuggestions && titleSuggestions.length === 0 && (
-                <div className="combobox-loading">Searching...</div>
-              )}
-            </Combobox>
-          );
-        }
+                onChange={(value) => {
+                  onFieldChange(field.id, value ?? '');
+                  formRef.current?.requestSubmit();
+                }}
+                as="div"
+                className={`combobox ${comboboxPlacementClass}`.trim()}
+              >
+                <Combobox.Input
+                  type="text"
+                  value={queryValue}
+                  onChange={(e) => onFieldChange(field.id, e.target.value)}
+                  placeholder={field.placeholder}
+                  aria-label={field.label}
+                  className="form-input"
+                  required={field.required}
+                  data-testid={`search-field-${field.id}`}
+                />
+                {titleSuggestions.length > 0 && (
+                  <Combobox.Options className="combobox-options">
+                    {titleSuggestions.map((suggestion) => {
+                      return (
+                        <Combobox.Option
+                          key={suggestion.id}
+                          value={suggestion.value}
+                          className={({ active }) =>
+                            `combobox-option${active ? ' active' : ''}`
+                          }
+                        >
+                          <span className="combobox-option-label">
+                            {suggestion.label}
+                          </span>
+                        </Combobox.Option>
+                      );
+                    })}
+                  </Combobox.Options>
+                )}
+                {isLoadingTitleSuggestions &&
+                  titleSuggestions.length === 0 && (
+                    <div className="combobox-loading">Searching...</div>
+                  )}
+              </Combobox>
+            );
+          }
 
         if (field.id === 'artist' && mediaType === 'music') {
           const comboboxPlacementClass =
@@ -1011,9 +1018,15 @@ export const MediaForm: React.FC<MediaFormProps> = ({
               key={field.id}
               value={artistValue}
               onChange={(value) => {
-                onFieldChange(field.id, value);
+                const nextValue = value ?? '';
+                onFieldChange(field.id, nextValue);
+                if (!nextValue) {
+                  setSelectedArtistIdentifier(null);
+                  setAlbumSuggestions([]);
+                  return;
+                }
                 const matchingSuggestion = artistSuggestions.find(
-                  (suggestion) => suggestion.value === value,
+                  (suggestion) => suggestion.value === nextValue,
                 );
                 if (!matchingSuggestion) {
                   throw new Error('Selected artist not found in suggestions');
@@ -1079,7 +1092,7 @@ export const MediaForm: React.FC<MediaFormProps> = ({
               <Combobox
                 value={bookTitleValue}
                 onChange={(value) => {
-                  onFieldChange(field.id, value);
+                  onFieldChange(field.id, value ?? '');
                   window.setTimeout(() => {
                     formRef.current?.requestSubmit();
                   }, 0);
@@ -1125,14 +1138,14 @@ export const MediaForm: React.FC<MediaFormProps> = ({
                 type="button"
                 onClick={onOpenCoverLink}
                 className="icon-button"
-                  aria-label="Add cover link"
-                  title="Add cover link"
-                >
-                  <FaLink size={18} />
-                </button>
-              </div>
-            );
-          }
+                aria-label="Add cover link"
+                title="Add cover link"
+              >
+                <FaLink size={18} />
+              </button>
+            </div>
+          );
+        }
 
         if (
           field.id === 'album' &&
@@ -1146,7 +1159,7 @@ export const MediaForm: React.FC<MediaFormProps> = ({
               <Combobox
                 value={albumValue}
                 onChange={(value) => {
-                  onFieldChange(field.id, value);
+                  onFieldChange(field.id, value ?? '');
                   window.setTimeout(() => {
                     formRef.current?.requestSubmit();
                   }, 0);
