@@ -1,5 +1,6 @@
+import { Combobox } from '@headlessui/react';
 import type React from 'react';
-import { useCallback, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { FaLink } from 'react-icons/fa';
 import { MdDriveFolderUpload } from 'react-icons/md';
 import { storeImage } from '../../lib/indexeddb';
@@ -41,7 +42,16 @@ export const MediaForm: React.FC<MediaFormProps> = ({
   bandPlacement = 'top',
   onOpenCoverLink,
 }) => {
+  const formRef = useRef<HTMLFormElement>(null);
   const coverInputRef = useRef<HTMLInputElement>(null);
+  const [suggestions, setSuggestions] = useState<
+    Array<{ id: number; label: string; value: string }>
+  >([]);
+  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
+  const queryValue = useMemo(
+    () => String(searchValues.query ?? ''),
+    [searchValues.query],
+  );
 
   const handleCoverImageUpload = useCallback(
     async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -59,6 +69,86 @@ export const MediaForm: React.FC<MediaFormProps> = ({
     [searchValues.query, onFieldChange],
   );
 
+  useEffect(() => {
+    if (mediaType !== 'movies' && mediaType !== 'tv') {
+      setSuggestions([]);
+      return;
+    }
+
+    const trimmedQuery = queryValue.trim();
+    if (trimmedQuery.length < 2) {
+      setSuggestions([]);
+      return;
+    }
+
+    let isCancelled = false;
+    const timeoutId = window.setTimeout(() => {
+      setIsLoadingSuggestions(true);
+      const searchPath = mediaType === 'tv' ? 'search/tv' : 'search/movie';
+      const endpoint = `/api/tmdb/3/${searchPath}?query=${encodeURIComponent(
+        trimmedQuery,
+      )}`;
+
+      fetch(endpoint)
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error('TMDB suggestion request failed');
+          }
+          return response.json() as Promise<{
+            results?: Array<{
+              id: number;
+              title?: string;
+              name?: string;
+              release_date?: string;
+              first_air_date?: string;
+            }>;
+          }>;
+        })
+        .then((data) => {
+          if (isCancelled) {
+            return;
+          }
+          const results = Array.isArray(data?.results) ? data.results : [];
+          const mapped = results
+            .map((result) => {
+              const title = mediaType === 'tv' ? result.name : result.title;
+              if (!title) {
+                return null;
+              }
+              const dateValue =
+                mediaType === 'tv'
+                  ? result.first_air_date
+                  : result.release_date;
+              const year = dateValue
+                ? new Date(dateValue).getFullYear()
+                : undefined;
+              const label = year ? `${title} (${year})` : title;
+              return {
+                id: result.id,
+                label,
+                value: title,
+              };
+            })
+            .filter(
+              (item): item is { id: number; label: string; value: string } =>
+                item !== null,
+            )
+            .slice(0, 8);
+          setSuggestions(mapped);
+        })
+        .finally(() => {
+          if (!isCancelled) {
+            setIsLoadingSuggestions(false);
+          }
+        });
+    }, 200);
+
+    return () => {
+      isCancelled = true;
+      window.clearTimeout(timeoutId);
+    };
+  }, [mediaType, queryValue]);
+
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSubmit(e);
@@ -72,6 +162,7 @@ export const MediaForm: React.FC<MediaFormProps> = ({
       className={`media-search-form ${layoutClass} ${bandPlacementClass}`}
       onSubmit={handleFormSubmit}
       data-testid={`media-search-form-${layout}`}
+      ref={formRef}
     >
       {layout === 'stack' && (
         <Dropdown value={mediaType} onChange={onMediaTypeChange} />
@@ -92,6 +183,59 @@ export const MediaForm: React.FC<MediaFormProps> = ({
                 placeholder={field.placeholder}
                 ariaLabel={field.label}
               />
+            );
+          }
+
+          if (
+            field.id === 'query' &&
+            (mediaType === 'movies' || mediaType === 'tv')
+          ) {
+            const comboboxPlacementClass =
+              layout === 'band' ? `band-${bandPlacement}` : 'stack';
+            return (
+              <Combobox
+                key={field.id}
+                value={queryValue}
+                onChange={(value) => {
+                  onFieldChange(field.id, value);
+                  formRef.current?.requestSubmit();
+                }}
+                as="div"
+                className={`combobox ${comboboxPlacementClass}`.trim()}
+              >
+                <Combobox.Input
+                  type="text"
+                  value={queryValue}
+                  onChange={(e) => onFieldChange(field.id, e.target.value)}
+                  placeholder={field.placeholder}
+                  aria-label={field.label}
+                  className="form-input"
+                  required={field.required}
+                  data-testid={`search-field-${field.id}`}
+                />
+                {suggestions.length > 0 && (
+                  <Combobox.Options className="combobox-options">
+                    {suggestions.map((suggestion) => {
+                      return (
+                        <Combobox.Option
+                          key={suggestion.id}
+                          value={suggestion.value}
+                          className={({ active }) =>
+                            `combobox-option${active ? ' active' : ''}`
+                          }
+                        >
+                          <span className="combobox-option-label">
+                            {suggestion.label}
+                          </span>
+                        </Combobox.Option>
+                      );
+                    })}
+                  </Combobox.Options>
+                )}
+                {isLoadingSuggestions && suggestions.length === 0 && (
+                  <div className="combobox-loading">Searching...</div>
+                )}
+              </Combobox>
             );
           }
 

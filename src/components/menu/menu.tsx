@@ -174,10 +174,10 @@ const Menu: React.FC<MenuProps> = ({
             <div className="menu-permalink-header">
               <h3>Share</h3>
               {isSharing && (
-                <span className="menu-permalink-status">Creating…</span>
+                <span className="menu-permalink-status">Creating...</span>
               )}
               {isLoadingShare && !isSharing && (
-                <span className="menu-permalink-status">Loading…</span>
+                <span className="menu-permalink-status">Loading...</span>
               )}
               {copySuccess && (
                 <span className="menu-permalink-status success">Copied</span>

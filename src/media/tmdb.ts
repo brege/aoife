@@ -88,8 +88,8 @@ export class TMDBService extends MediaService {
               : undefined,
             year: dateField ? new Date(dateField).getFullYear() : undefined,
             type: this.mediaType,
-            coverUrl: buildPosterUrl(item.poster_path, 'w500'),
-            coverThumbnailUrl: buildPosterUrl(item.poster_path, 'w92'),
+            coverUrl: buildPosterUrl(item.poster_path, 'w780'),
+            coverThumbnailUrl: buildPosterUrl(item.poster_path, 'w200'),
             metadata: {
               release_date: dateField,
               poster_path: item.poster_path,
@@ -123,8 +123,8 @@ export class TMDBService extends MediaService {
           : undefined,
         year: dateField ? new Date(dateField).getFullYear() : undefined,
         type: this.mediaType,
-        coverUrl: buildPosterUrl(data.poster_path, 'w500'),
-        coverThumbnailUrl: buildPosterUrl(data.poster_path, 'w92'),
+        coverUrl: buildPosterUrl(data.poster_path, 'w780'),
+        coverThumbnailUrl: buildPosterUrl(data.poster_path, 'w200'),
         metadata: {
           release_date: dateField,
           poster_path: data.poster_path,
