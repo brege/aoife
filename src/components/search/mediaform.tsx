@@ -10,7 +10,7 @@ import { Platform } from './platform';
 import './mediaform.css';
 
 type SuggestionEntry = {
-  id: number;
+  id: string | number;
   label: string;
   value: string;
 };
@@ -22,10 +22,14 @@ const suggestionCache = new Map<
 >();
 const inFlightSuggestions = new Map<string, Promise<SuggestionEntry[]>>();
 
+type SuggestionResponseParser = (
+  response: Response,
+) => Promise<SuggestionEntry[]>;
+
 const fetchSuggestions = async (
   key: string,
   endpoint: string,
-  mediaType: MediaType,
+  parser: SuggestionResponseParser,
 ): Promise<SuggestionEntry[]> => {
   const cached = suggestionCache.get(key);
   if (cached && Date.now() - cached.timestamp < SUGGESTION_CACHE_TTL_MS) {
@@ -42,72 +46,9 @@ const fetchSuggestions = async (
       if (!response.ok) {
         throw new Error('Suggestion request failed');
       }
-      if (mediaType === 'games') {
-        return response.json() as Promise<{
-          data?: {
-            games?: Array<{
-              id: number;
-              game_title: string;
-              release_date?: string;
-            }>;
-          };
-        }>;
-      }
-      return response.json() as Promise<{
-        results?: Array<{
-          id: number;
-          title?: string;
-          name?: string;
-          release_date?: string;
-          first_air_date?: string;
-        }>;
-      }>;
+      return parser(response);
     })
-    .then((data) => {
-      const results =
-        mediaType === 'games'
-          ? Array.isArray(data?.data?.games)
-            ? data.data.games
-            : []
-          : Array.isArray(data?.results)
-            ? data.results
-            : [];
-      const mapped = results
-        .map((result) => {
-          if (mediaType === 'games') {
-            const title = result.game_title?.trim();
-            if (!title) {
-              return null;
-            }
-            const year = result.release_date
-              ? new Date(result.release_date).getFullYear()
-              : undefined;
-            const label = year ? `${title} (${year})` : title;
-            return {
-              id: result.id,
-              label,
-              value: title,
-            };
-          }
-          const title = mediaType === 'tv' ? result.name : result.title;
-          if (!title) {
-            return null;
-          }
-          const dateValue =
-            mediaType === 'tv' ? result.first_air_date : result.release_date;
-          const year = dateValue
-            ? new Date(dateValue).getFullYear()
-            : undefined;
-          const label = year ? `${title} (${year})` : title;
-          return {
-            id: result.id,
-            label,
-            value: title,
-          };
-        })
-        .filter((item): item is SuggestionEntry => item !== null)
-        .slice(0, 8);
-
+    .then((mapped) => {
       suggestionCache.set(key, {
         timestamp: Date.now(),
         results: mapped,
@@ -120,6 +61,166 @@ const fetchSuggestions = async (
 
   inFlightSuggestions.set(key, request);
   return request;
+};
+
+const parseGameSuggestions = async (
+  response: Response,
+): Promise<SuggestionEntry[]> => {
+  const data = (await response.json()) as {
+    data?: {
+      games?: Array<{
+        id: number;
+        game_title: string;
+        release_date?: string;
+      }>;
+    };
+  };
+  if (!data || typeof data !== 'object' || !data.data) {
+    throw new Error('Invalid games suggestion response');
+  }
+  if (!Array.isArray(data.data.games)) {
+    throw new Error('Invalid games suggestion response');
+  }
+
+  return data.data.games
+    .map((result) => {
+      if (!result || typeof result !== 'object') {
+        throw new Error('Invalid games suggestion result');
+      }
+      const title = result.game_title?.trim();
+      if (!title) {
+        throw new Error('Invalid games suggestion title');
+      }
+      const year = result.release_date
+        ? new Date(result.release_date).getFullYear()
+        : undefined;
+      const label = year ? `${title} (${year})` : title;
+      return {
+        id: result.id,
+        label,
+        value: title,
+      };
+    })
+    .slice(0, 8);
+};
+
+const parseTmdbSuggestions =
+  (mediaType: 'movies' | 'tv') =>
+  async (response: Response): Promise<SuggestionEntry[]> => {
+    const data = (await response.json()) as {
+      results?: Array<{
+        id: number;
+        title?: string;
+        name?: string;
+        release_date?: string;
+        first_air_date?: string;
+      }>;
+    };
+    if (!data || typeof data !== 'object') {
+      throw new Error('Invalid TMDB suggestion response');
+    }
+    if (!Array.isArray(data.results)) {
+      throw new Error('Invalid TMDB suggestion response');
+    }
+
+    return data.results
+      .map((result) => {
+        if (!result || typeof result !== 'object') {
+          throw new Error('Invalid TMDB suggestion result');
+        }
+        const title = mediaType === 'tv' ? result.name : result.title;
+        if (!title) {
+          throw new Error('Invalid TMDB suggestion title');
+        }
+        const dateValue =
+          mediaType === 'tv' ? result.first_air_date : result.release_date;
+        const year = dateValue ? new Date(dateValue).getFullYear() : undefined;
+        const label = year ? `${title} (${year})` : title;
+        return {
+          id: result.id,
+          label,
+          value: title,
+        };
+      })
+      .slice(0, 8);
+  };
+
+const parseMusicBrainzArtistSuggestions = async (
+  response: Response,
+): Promise<SuggestionEntry[]> => {
+  const data = (await response.json()) as {
+    artists?: Array<{
+      id: string;
+      name: string;
+      disambiguation?: string;
+    }>;
+  };
+  if (!data || typeof data !== 'object') {
+    throw new Error('Invalid MusicBrainz artist response');
+  }
+  if (!Array.isArray(data.artists)) {
+    throw new Error('Invalid MusicBrainz artist response');
+  }
+
+  return data.artists
+    .map((artist) => {
+      if (!artist || typeof artist !== 'object') {
+        throw new Error('Invalid MusicBrainz artist result');
+      }
+      if (typeof artist.id !== 'string' || typeof artist.name !== 'string') {
+        throw new Error('Invalid MusicBrainz artist result');
+      }
+      const disambiguation = artist.disambiguation?.trim();
+      const label = disambiguation
+        ? `${artist.name} (${disambiguation})`
+        : artist.name;
+      return {
+        id: artist.id,
+        label,
+        value: artist.name,
+      };
+    })
+    .slice(0, 8);
+};
+
+const parseMusicBrainzReleaseGroupSuggestions = async (
+  response: Response,
+): Promise<SuggestionEntry[]> => {
+  const data = (await response.json()) as {
+    'release-groups'?: Array<{
+      id: string;
+      title: string;
+      'first-release-date'?: string;
+    }>;
+  };
+  if (!data || typeof data !== 'object') {
+    throw new Error('Invalid MusicBrainz release group response');
+  }
+  if (!Array.isArray(data['release-groups'])) {
+    throw new Error('Invalid MusicBrainz release group response');
+  }
+
+  return data['release-groups']
+    .map((releaseGroup) => {
+      if (!releaseGroup || typeof releaseGroup !== 'object') {
+        throw new Error('Invalid MusicBrainz release group result');
+      }
+      if (
+        typeof releaseGroup.id !== 'string' ||
+        typeof releaseGroup.title !== 'string'
+      ) {
+        throw new Error('Invalid MusicBrainz release group result');
+      }
+      const yearValue = releaseGroup['first-release-date']?.slice(0, 4);
+      const year = yearValue ? Number.parseInt(yearValue, 10) : undefined;
+      const label = year ? `${releaseGroup.title} (${year})` : releaseGroup.title;
+      return {
+        id: releaseGroup.id,
+        label,
+        value: releaseGroup.title,
+      };
+    })
+    .slice(0, 8);
 };
 
 interface MediaFormProps {
@@ -157,11 +258,35 @@ export const MediaForm: React.FC<MediaFormProps> = ({
 }) => {
   const formRef = useRef<HTMLFormElement>(null);
   const coverInputRef = useRef<HTMLInputElement>(null);
-  const [suggestions, setSuggestions] = useState<SuggestionEntry[]>([]);
-  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
+  const [titleSuggestions, setTitleSuggestions] = useState<SuggestionEntry[]>(
+    [],
+  );
+  const [isLoadingTitleSuggestions, setIsLoadingTitleSuggestions] =
+    useState(false);
+  const [artistSuggestions, setArtistSuggestions] = useState<
+    SuggestionEntry[]
+  >([]);
+  const [albumSuggestions, setAlbumSuggestions] = useState<SuggestionEntry[]>(
+    [],
+  );
+  const [isLoadingArtistSuggestions, setIsLoadingArtistSuggestions] =
+    useState(false);
+  const [isLoadingAlbumSuggestions, setIsLoadingAlbumSuggestions] =
+    useState(false);
+  const [selectedArtistIdentifier, setSelectedArtistIdentifier] = useState<
+    string | null
+  >(null);
   const queryValue = useMemo(
     () => String(searchValues.query ?? ''),
     [searchValues.query],
+  );
+  const artistValue = useMemo(
+    () => String(searchValues.artist ?? ''),
+    [searchValues.artist],
+  );
+  const albumValue = useMemo(
+    () => String(searchValues.album ?? ''),
+    [searchValues.album],
   );
   const platformValue = useMemo(
     () => String(searchValues.platform ?? '').trim(),
@@ -186,20 +311,20 @@ export const MediaForm: React.FC<MediaFormProps> = ({
 
   useEffect(() => {
     if (mediaType !== 'movies' && mediaType !== 'tv' && mediaType !== 'games') {
-      setSuggestions([]);
+      setTitleSuggestions([]);
       return;
     }
 
     const trimmedQuery = queryValue.trim();
     if (trimmedQuery.length < 2) {
-      setSuggestions([]);
+      setTitleSuggestions([]);
       return;
     }
 
     let isCancelled = false;
     const requestKey = `${mediaType}|${trimmedQuery}|${platformValue}`;
     const timeoutId = window.setTimeout(() => {
-      setIsLoadingSuggestions(true);
+      setIsLoadingTitleSuggestions(true);
       const endpoint = (() => {
         if (mediaType === 'games') {
           const params = new URLSearchParams({
@@ -216,16 +341,21 @@ export const MediaForm: React.FC<MediaFormProps> = ({
         )}`;
       })();
 
-      fetchSuggestions(requestKey, endpoint, mediaType)
+      const parser =
+        mediaType === 'games'
+          ? parseGameSuggestions
+          : parseTmdbSuggestions(mediaType);
+
+      fetchSuggestions(requestKey, endpoint, parser)
         .then((mapped) => {
           if (isCancelled) {
             return;
           }
-          setSuggestions(mapped);
+          setTitleSuggestions(mapped);
         })
         .finally(() => {
           if (!isCancelled) {
-            setIsLoadingSuggestions(false);
+            setIsLoadingTitleSuggestions(false);
           }
         });
     }, 350);
@@ -235,6 +365,100 @@ export const MediaForm: React.FC<MediaFormProps> = ({
       window.clearTimeout(timeoutId);
     };
   }, [mediaType, platformValue, queryValue]);
+
+  useEffect(() => {
+    if (mediaType !== 'music') {
+      setArtistSuggestions([]);
+      setAlbumSuggestions([]);
+      setSelectedArtistIdentifier(null);
+      return;
+    }
+
+    const trimmedArtist = artistValue.trim();
+    if (trimmedArtist.length < 2) {
+      setArtistSuggestions([]);
+      setSelectedArtistIdentifier(null);
+      setAlbumSuggestions([]);
+      return;
+    }
+
+    let isCancelled = false;
+    const requestKey = `music-artist|${trimmedArtist}`;
+    const timeoutId = window.setTimeout(() => {
+      setIsLoadingArtistSuggestions(true);
+      const params = new URLSearchParams({
+        query: `artist:"${trimmedArtist}"`,
+        fmt: 'json',
+        limit: '8',
+      });
+      const endpoint = `https://musicbrainz.org/ws/2/artist?${params.toString()}`;
+
+      fetchSuggestions(requestKey, endpoint, parseMusicBrainzArtistSuggestions)
+        .then((mapped) => {
+          if (isCancelled) {
+            return;
+          }
+          setArtistSuggestions(mapped);
+        })
+        .finally(() => {
+          if (!isCancelled) {
+            setIsLoadingArtistSuggestions(false);
+          }
+        });
+    }, 350);
+
+    return () => {
+      isCancelled = true;
+      window.clearTimeout(timeoutId);
+    };
+  }, [mediaType, artistValue]);
+
+  useEffect(() => {
+    if (mediaType !== 'music') {
+      setAlbumSuggestions([]);
+      return;
+    }
+
+    const trimmedAlbum = albumValue.trim();
+    if (!selectedArtistIdentifier || trimmedAlbum.length < 2) {
+      setAlbumSuggestions([]);
+      return;
+    }
+
+    let isCancelled = false;
+    const requestKey = `music-album|${selectedArtistIdentifier}|${trimmedAlbum}`;
+    const timeoutId = window.setTimeout(() => {
+      setIsLoadingAlbumSuggestions(true);
+      const params = new URLSearchParams({
+        query: `arid:${selectedArtistIdentifier} AND release:"${trimmedAlbum}"`,
+        fmt: 'json',
+        limit: '8',
+      });
+      const endpoint = `https://musicbrainz.org/ws/2/release-group?${params.toString()}`;
+
+      fetchSuggestions(
+        requestKey,
+        endpoint,
+        parseMusicBrainzReleaseGroupSuggestions,
+      )
+        .then((mapped) => {
+          if (isCancelled) {
+            return;
+          }
+          setAlbumSuggestions(mapped);
+        })
+        .finally(() => {
+          if (!isCancelled) {
+            setIsLoadingAlbumSuggestions(false);
+          }
+        });
+    }, 350);
+
+    return () => {
+      isCancelled = true;
+      window.clearTimeout(timeoutId);
+    };
+  }, [mediaType, albumValue, selectedArtistIdentifier]);
 
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -273,66 +497,130 @@ export const MediaForm: React.FC<MediaFormProps> = ({
             );
           }
 
-          if (
-            field.id === 'query' &&
-            (mediaType === 'movies' ||
-              mediaType === 'tv' ||
-              mediaType === 'games')
-          ) {
-            const comboboxPlacementClass =
-              layout === 'band' ? `band-${bandPlacement}` : 'stack';
-            return (
-              <Combobox
-                key={field.id}
+        if (
+          field.id === 'query' &&
+          (mediaType === 'movies' ||
+            mediaType === 'tv' ||
+            mediaType === 'games')
+        ) {
+          const comboboxPlacementClass =
+            layout === 'band' ? `band-${bandPlacement}` : 'stack';
+          return (
+            <Combobox
+              key={field.id}
+              value={queryValue}
+              onChange={(value) => {
+                onFieldChange(field.id, value);
+                formRef.current?.requestSubmit();
+              }}
+              as="div"
+              className={`combobox ${comboboxPlacementClass}`.trim()}
+            >
+              <Combobox.Input
+                type="text"
                 value={queryValue}
-                onChange={(value) => {
-                  onFieldChange(field.id, value);
-                  formRef.current?.requestSubmit();
-                }}
-                as="div"
-                className={`combobox ${comboboxPlacementClass}`.trim()}
-              >
-                <Combobox.Input
-                  type="text"
-                  value={queryValue}
-                  onChange={(e) => onFieldChange(field.id, e.target.value)}
-                  placeholder={field.placeholder}
-                  aria-label={field.label}
-                  className="form-input"
-                  required={field.required}
-                  data-testid={`search-field-${field.id}`}
-                />
-                {suggestions.length > 0 && (
-                  <Combobox.Options className="combobox-options">
-                    {suggestions.map((suggestion) => {
-                      return (
-                        <Combobox.Option
-                          key={suggestion.id}
-                          value={suggestion.value}
-                          className={({ active }) =>
-                            `combobox-option${active ? ' active' : ''}`
-                          }
+                onChange={(e) => onFieldChange(field.id, e.target.value)}
+                placeholder={field.placeholder}
+                aria-label={field.label}
+                className="form-input"
+                required={field.required}
+                data-testid={`search-field-${field.id}`}
+              />
+              {titleSuggestions.length > 0 && (
+                <Combobox.Options className="combobox-options">
+                  {titleSuggestions.map((suggestion) => {
+                    return (
+                      <Combobox.Option
+                        key={suggestion.id}
+                        value={suggestion.value}
+                        className={({ active }) =>
+                          `combobox-option${active ? ' active' : ''}`
+                        }
                         >
                           <span className="combobox-option-label">
                             {suggestion.label}
                           </span>
                         </Combobox.Option>
-                      );
-                    })}
-                  </Combobox.Options>
-                )}
-                {isLoadingSuggestions && suggestions.length === 0 && (
-                  <div className="combobox-loading">Searching...</div>
-                )}
-              </Combobox>
-            );
-          }
+                    );
+                  })}
+                </Combobox.Options>
+              )}
+              {isLoadingTitleSuggestions && titleSuggestions.length === 0 && (
+                <div className="combobox-loading">Searching...</div>
+              )}
+            </Combobox>
+          );
+        }
 
-          if (
-            field.id === 'title' &&
-            mediaType === 'books' &&
-            onOpenCoverLink
-          ) {
+        if (field.id === 'artist' && mediaType === 'music') {
+          const comboboxPlacementClass =
+            layout === 'band' ? `band-${bandPlacement}` : 'stack';
+          return (
+            <Combobox
+              key={field.id}
+              value={artistValue}
+              onChange={(value) => {
+                onFieldChange(field.id, value);
+                const matchingSuggestion = artistSuggestions.find(
+                  (suggestion) => suggestion.value === value,
+                );
+                if (!matchingSuggestion) {
+                  throw new Error('Selected artist not found in suggestions');
+                }
+                if (typeof matchingSuggestion.id !== 'string') {
+                  throw new Error('Invalid MusicBrainz artist identifier');
+                }
+                setSelectedArtistIdentifier(matchingSuggestion.id);
+                setAlbumSuggestions([]);
+              }}
+              as="div"
+              className={`combobox ${comboboxPlacementClass}`.trim()}
+            >
+              <Combobox.Input
+                type="text"
+                value={artistValue}
+                onChange={(e) => {
+                  onFieldChange(field.id, e.target.value);
+                  setSelectedArtistIdentifier(null);
+                  setAlbumSuggestions([]);
+                }}
+                placeholder={field.placeholder}
+                aria-label={field.label}
+                className="form-input"
+                required={field.required}
+                data-testid={`search-field-${field.id}`}
+              />
+              {artistSuggestions.length > 0 && (
+                <Combobox.Options className="combobox-options">
+                  {artistSuggestions.map((suggestion) => {
+                    return (
+                      <Combobox.Option
+                        key={suggestion.id}
+                        value={suggestion.value}
+                        className={({ active }) =>
+                          `combobox-option${active ? ' active' : ''}`
+                        }
+                      >
+                        <span className="combobox-option-label">
+                          {suggestion.label}
+                        </span>
+                      </Combobox.Option>
+                    );
+                  })}
+                </Combobox.Options>
+              )}
+              {isLoadingArtistSuggestions && artistSuggestions.length === 0 && (
+                <div className="combobox-loading">Searching...</div>
+              )}
+            </Combobox>
+          );
+        }
+
+        if (
+          field.id === 'title' &&
+          mediaType === 'books' &&
+          onOpenCoverLink
+        ) {
             return (
               <div key={field.id} className="input-with-button">
                 <input
@@ -358,16 +646,29 @@ export const MediaForm: React.FC<MediaFormProps> = ({
             );
           }
 
-          if (
-            field.id === 'album' &&
-            mediaType === 'music' &&
-            onOpenCoverLink
-          ) {
-            return (
-              <div key={field.id} className="input-with-button">
-                <input
+        if (
+          field.id === 'album' &&
+          mediaType === 'music' &&
+          onOpenCoverLink
+        ) {
+          const comboboxPlacementClass =
+            layout === 'band' ? `band-${bandPlacement}` : 'stack';
+          return (
+            <div key={field.id} className="input-with-button">
+              <Combobox
+                value={albumValue}
+                onChange={(value) => {
+                  onFieldChange(field.id, value);
+                  window.setTimeout(() => {
+                    formRef.current?.requestSubmit();
+                  }, 0);
+                }}
+                as="div"
+                className={`combobox ${comboboxPlacementClass}`.trim()}
+              >
+                <Combobox.Input
                   type="text"
-                  value={searchValues[field.id] ?? ''}
+                  value={albumValue}
                   onChange={(e) => onFieldChange(field.id, e.target.value)}
                   placeholder={field.placeholder}
                   aria-label={field.label}
@@ -375,11 +676,34 @@ export const MediaForm: React.FC<MediaFormProps> = ({
                   required={field.required}
                   data-testid={`search-field-${field.id}`}
                 />
-                <button
-                  type="button"
-                  onClick={onOpenCoverLink}
-                  className="icon-button"
-                  aria-label="Add cover link"
+                {albumSuggestions.length > 0 && (
+                  <Combobox.Options className="combobox-options">
+                    {albumSuggestions.map((suggestion) => {
+                      return (
+                        <Combobox.Option
+                          key={suggestion.id}
+                          value={suggestion.value}
+                          className={({ active }) =>
+                            `combobox-option${active ? ' active' : ''}`
+                          }
+                        >
+                          <span className="combobox-option-label">
+                            {suggestion.label}
+                          </span>
+                        </Combobox.Option>
+                      );
+                    })}
+                  </Combobox.Options>
+                )}
+                {isLoadingAlbumSuggestions && albumSuggestions.length === 0 && (
+                  <div className="combobox-loading">Searching...</div>
+                )}
+              </Combobox>
+              <button
+                type="button"
+                onClick={onOpenCoverLink}
+                className="icon-button"
+                aria-label="Add cover link"
                   title="Add cover link"
                 >
                   <FaLink size={18} />
