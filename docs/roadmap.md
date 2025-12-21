@@ -12,9 +12,6 @@
 **Posters** 
 - ability to drag and reorder posters (research)
 
-**Auto-complete**
-- explore for different API sources
-
 **Themeable CSS**
 - using `var(--color-primary)` etc
 - allows for different fonts and decorations

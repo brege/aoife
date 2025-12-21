@@ -3,6 +3,7 @@ import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import './grid.css';
 import { MdClose } from 'react-icons/md';
 import logger from '../../lib/logger';
+import { isPlaceholderCover } from '../../lib/coverdetect';
 import type { MediaItem, MediaType } from '../../media/types';
 import { MEDIA_TYPE_ICONS } from '../search/dropdown';
 import { CustomImage } from '../ui/customimage';
@@ -195,6 +196,16 @@ const Grid: React.FC<GridProps> = ({
     event: React.SyntheticEvent<HTMLImageElement>,
   ) => {
     const img = event.target as HTMLImageElement;
+    if (media.type === 'books' && isPlaceholderCover(img)) {
+      logger.info(`GRID: Removed placeholder cover for "${media.title}"`, {
+        context: 'Grid.posterLoad',
+        action: 'poster_placeholder',
+        media: { id: media.id, title: media.title },
+        timestamp: Date.now(),
+      });
+      onRemoveMedia(media.id);
+      return;
+    }
     const naturalAspectRatio = img.naturalWidth / img.naturalHeight;
 
     if (!media.aspectRatio && onAspectRatioUpdate) {
@@ -270,6 +281,9 @@ const Grid: React.FC<GridProps> = ({
                           alt={`${media.title} cover`}
                           className="grid-poster"
                           onLoad={(e) => handleImageLoad(media, e)}
+                          crossOrigin={
+                            media.type === 'books' ? 'anonymous' : undefined
+                          }
                         />
                       </button>
                       {showCaption && (

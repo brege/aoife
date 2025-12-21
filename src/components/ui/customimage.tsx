@@ -7,6 +7,7 @@ interface CustomImageProps {
   alt: string;
   className?: string;
   onLoad?: (e: React.SyntheticEvent<HTMLImageElement>) => void;
+  crossOrigin?: 'anonymous' | 'use-credentials';
   style?: React.CSSProperties;
 }
 
@@ -15,6 +16,7 @@ export const CustomImage = ({
   alt,
   className,
   onLoad,
+  crossOrigin,
   style,
 }: CustomImageProps) => {
   const [imageSrc, setImageSrc] = useState<string | undefined>(src);
@@ -63,6 +65,7 @@ export const CustomImage = ({
       alt={alt}
       className={className}
       onLoad={onLoad}
+      crossOrigin={crossOrigin}
       style={style}
     />
   );
