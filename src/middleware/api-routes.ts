@@ -17,13 +17,18 @@ const getTmdbKey = (env: Record<string, string>) =>
   process.env.VITE_TMDB_API_KEY ||
   process.env.TMDB_API_KEY;
 
-const GAMESDB_API_KEY =
-  '46deb66fcbd4eb0d8887e1ac84876fe3b6cacfb956312e5d6e3e37d8ef798728';
-
 export const createApiMiddleware = (env: Record<string, string>) => {
   const gridState: Record<string, unknown>[] = [];
   const shareStore = loadShareStore();
   const slugWords = loadSlugWords();
+  const gamesDatabaseKey =
+    env.GAMESDB_KEY ||
+    env.GAMESDB_API_KEY ||
+    env.VITE_GAMESDB_PUBLIC_KEY ||
+    process.env.GAMESDB_KEY ||
+    process.env.GAMESDB_API_KEY ||
+    process.env.VITE_GAMESDB_PUBLIC_KEY ||
+    '';
 
   return (req: IncomingMessage, res: ServerResponse, next: NextFunction) => {
     const url = new URL(req.url || '', 'http://localhost');
@@ -484,6 +489,11 @@ export const createApiMiddleware = (env: Record<string, string>) => {
         res.end(JSON.stringify({ status: 'logged' }));
       });
     } else if (path === '/games/search' && req.method === 'GET') {
+      if (!gamesDatabaseKey) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'GamesDB API key not configured' }));
+        return;
+      }
       const query = url.searchParams.get('q');
       const platform = url.searchParams.get('platform');
 
@@ -493,7 +503,7 @@ export const createApiMiddleware = (env: Record<string, string>) => {
         return;
       }
 
-      let gamesdbUrl = `https://api.thegamesdb.net/v1/Games/ByGameName?name=${encodeURIComponent(query)}&apikey=${GAMESDB_API_KEY}`;
+      let gamesdbUrl = `https://api.thegamesdb.net/v1/Games/ByGameName?name=${encodeURIComponent(query)}&apikey=${gamesDatabaseKey}`;
 
       if (platform) {
         gamesdbUrl += `&filter[platform]=${encodeURIComponent(platform)}`;
@@ -516,7 +526,12 @@ export const createApiMiddleware = (env: Record<string, string>) => {
           res.end(JSON.stringify({ error: 'Failed to search games' }));
         });
     } else if (path === '/games/platforms' && req.method === 'GET') {
-      const gamesdbUrl = `https://api.thegamesdb.net/v1/Platforms?apikey=${GAMESDB_API_KEY}&page_size=100`;
+      if (!gamesDatabaseKey) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'GamesDB API key not configured' }));
+        return;
+      }
+      const gamesdbUrl = `https://api.thegamesdb.net/v1/Platforms?apikey=${gamesDatabaseKey}&page_size=100`;
 
       https
         .get(gamesdbUrl, (apiRes: IncomingMessage) => {
@@ -535,6 +550,11 @@ export const createApiMiddleware = (env: Record<string, string>) => {
           res.end(JSON.stringify({ error: 'Failed to fetch platforms' }));
         });
     } else if (path === '/games/images' && req.method === 'GET') {
+      if (!gamesDatabaseKey) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'GamesDB API key not configured' }));
+        return;
+      }
       const gameId = url.searchParams.get('id');
 
       if (!gameId) {
@@ -543,7 +563,7 @@ export const createApiMiddleware = (env: Record<string, string>) => {
         return;
       }
 
-      const gamesdbUrl = `https://api.thegamesdb.net/v1/Games/Images?games_id=${gameId}&apikey=${GAMESDB_API_KEY}`;
+      const gamesdbUrl = `https://api.thegamesdb.net/v1/Games/Images?games_id=${gameId}&apikey=${gamesDatabaseKey}`;
 
       https
         .get(gamesdbUrl, (apiRes: IncomingMessage) => {
@@ -582,10 +602,15 @@ export const createApiMiddleware = (env: Record<string, string>) => {
         res.end(JSON.stringify({ error: String(error) }));
       });
     } else if (path.startsWith('/gamesdb')) {
+      if (!gamesDatabaseKey) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'GamesDB API key not configured' }));
+        return;
+      }
       const gamesdbPrefix = '/gamesdb';
       const subpath = path.slice(gamesdbPrefix.length) || '/';
       const params = new URLSearchParams(url.search);
-      params.set('apikey', GAMESDB_API_KEY);
+      params.set('apikey', gamesDatabaseKey);
 
       const fullUrl = `https://api.thegamesdb.net${subpath}?${params.toString()}`;
 

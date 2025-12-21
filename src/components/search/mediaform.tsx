@@ -52,6 +52,10 @@ export const MediaForm: React.FC<MediaFormProps> = ({
     () => String(searchValues.query ?? ''),
     [searchValues.query],
   );
+  const platformValue = useMemo(
+    () => String(searchValues.platform ?? '').trim(),
+    [searchValues.platform],
+  );
 
   const handleCoverImageUpload = useCallback(
     async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -70,7 +74,7 @@ export const MediaForm: React.FC<MediaFormProps> = ({
   );
 
   useEffect(() => {
-    if (mediaType !== 'movies' && mediaType !== 'tv') {
+    if (mediaType !== 'movies' && mediaType !== 'tv' && mediaType !== 'games') {
       setSuggestions([]);
       return;
     }
@@ -84,15 +88,37 @@ export const MediaForm: React.FC<MediaFormProps> = ({
     let isCancelled = false;
     const timeoutId = window.setTimeout(() => {
       setIsLoadingSuggestions(true);
-      const searchPath = mediaType === 'tv' ? 'search/tv' : 'search/movie';
-      const endpoint = `/api/tmdb/3/${searchPath}?query=${encodeURIComponent(
-        trimmedQuery,
-      )}`;
+      const endpoint = (() => {
+        if (mediaType === 'games') {
+          const params = new URLSearchParams({
+            name: trimmedQuery,
+          });
+          if (platformValue) {
+            params.set('filter[platform]', platformValue);
+          }
+          return `/api/gamesdb/v1/Games/ByGameName?${params.toString()}`;
+        }
+        const searchPath = mediaType === 'tv' ? 'search/tv' : 'search/movie';
+        return `/api/tmdb/3/${searchPath}?query=${encodeURIComponent(
+          trimmedQuery,
+        )}`;
+      })();
 
       fetch(endpoint)
         .then((response) => {
           if (!response.ok) {
-            throw new Error('TMDB suggestion request failed');
+            throw new Error('Suggestion request failed');
+          }
+          if (mediaType === 'games') {
+            return response.json() as Promise<{
+              data?: {
+                games?: Array<{
+                  id: number;
+                  game_title: string;
+                  release_date?: string;
+                }>;
+              };
+            }>;
           }
           return response.json() as Promise<{
             results?: Array<{
@@ -108,9 +134,31 @@ export const MediaForm: React.FC<MediaFormProps> = ({
           if (isCancelled) {
             return;
           }
-          const results = Array.isArray(data?.results) ? data.results : [];
+          const results =
+            mediaType === 'games'
+              ? Array.isArray(data?.data?.games)
+                ? data.data.games
+                : []
+              : Array.isArray(data?.results)
+                ? data.results
+                : [];
           const mapped = results
             .map((result) => {
+              if (mediaType === 'games') {
+                const title = result.game_title?.trim();
+                if (!title) {
+                  return null;
+                }
+                const year = result.release_date
+                  ? new Date(result.release_date).getFullYear()
+                  : undefined;
+                const label = year ? `${title} (${year})` : title;
+                return {
+                  id: result.id,
+                  label,
+                  value: title,
+                };
+              }
               const title = mediaType === 'tv' ? result.name : result.title;
               if (!title) {
                 return null;
@@ -147,7 +195,7 @@ export const MediaForm: React.FC<MediaFormProps> = ({
       isCancelled = true;
       window.clearTimeout(timeoutId);
     };
-  }, [mediaType, queryValue]);
+  }, [mediaType, platformValue, queryValue]);
 
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -188,7 +236,9 @@ export const MediaForm: React.FC<MediaFormProps> = ({
 
           if (
             field.id === 'query' &&
-            (mediaType === 'movies' || mediaType === 'tv')
+            (mediaType === 'movies' ||
+              mediaType === 'tv' ||
+              mediaType === 'games')
           ) {
             const comboboxPlacementClass =
               layout === 'band' ? `band-${bandPlacement}` : 'stack';
