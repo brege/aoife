@@ -1,5 +1,10 @@
 ## Changelog
 
+### 2026-12-21
+
+- Add search suggestion support for all providers
+- Update cover finders to align with new string matching meta
+
 ### 2025-12-20
 
 - UI: better picker/search results styles

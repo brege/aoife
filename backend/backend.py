@@ -433,6 +433,39 @@ def proxy_coverart_image():
         return ("Not found", 404)
 
 
+@app.route("/api/googlebooks/image", methods=["GET"])
+@limiter.limit(RATE_LIMIT_UPSTREAM)
+def proxy_googlebooks_image():
+    volume_id = request.args.get("id")
+    zoom = request.args.get("zoom", "2")
+    if not volume_id:
+        return jsonify({"error": "Missing volume id"}), 400
+    if zoom not in ("1", "2", "3"):
+        zoom = "2"
+
+    try:
+        resp = requests.get(
+            "https://books.google.com/books/content",
+            params={
+                "id": volume_id,
+                "printsec": "frontcover",
+                "img": "1",
+                "zoom": zoom,
+            },
+            timeout=UPSTREAM_TIMEOUT_SECONDS,
+            allow_redirects=True,
+        )
+        return (
+            resp.content,
+            resp.status_code,
+            {"Content-Type": resp.headers.get("Content-Type", "image/jpeg")},
+        )
+    except requests.exceptions.Timeout:
+        return ("Not found", 404)
+    except Exception:
+        return ("Not found", 404)
+
+
 # Logging endpoint (optional telemetry)
 @app.route("/api/log", methods=["POST"])
 @limiter.limit(RATE_LIMIT_LOG_EVENT)

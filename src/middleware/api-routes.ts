@@ -212,6 +212,44 @@ export const createApiMiddleware = (env: Record<string, string>) => {
         res.writeHead(502, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ error: String(error) }));
       });
+    } else if (path === '/googlebooks/image' && req.method === 'GET') {
+      const volumeId = url.searchParams.get('id');
+      const zoomValue = url.searchParams.get('zoom');
+      if (!volumeId) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Missing volume id' }));
+        return;
+      }
+      const zoom = zoomValue === '1' || zoomValue === '3' ? zoomValue : '2';
+      const targetUrl = `https://books.google.com/books/content?id=${encodeURIComponent(
+        volumeId,
+      )}&printsec=frontcover&img=1&zoom=${zoom}`;
+
+      const requestCover = (requestUrl: string) => {
+        const coverReq = https.get(requestUrl, (coverRes) => {
+          const statusCode = coverRes.statusCode || 502;
+          const location = coverRes.headers.location;
+          if (statusCode >= 300 && statusCode < 400 && location) {
+            if (!location.startsWith('https://')) {
+              res.writeHead(502, { 'Content-Type': 'text/plain' });
+              res.end('Invalid redirect');
+              return;
+            }
+            requestCover(location);
+            return;
+          }
+          res.writeHead(statusCode, {
+            'Content-Type': coverRes.headers['content-type'] || 'image/jpeg',
+          });
+          coverRes.pipe(res);
+        });
+        coverReq.on('error', (_error) => {
+          res.writeHead(404, { 'Content-Type': 'text/plain' });
+          res.end('Not found');
+        });
+      };
+
+      requestCover(targetUrl);
     } else if (path === '/coverart/image' && req.method === 'GET') {
       const coverType = url.searchParams.get('type');
       const coverId = url.searchParams.get('id');

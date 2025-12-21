@@ -70,12 +70,11 @@ export class BooksService extends MediaService {
       : '/api/openlibrary';
 
   private buildGoogleBooksCoverUrl(volumeId: string, zoom: number): string {
-    const url = new URL('https://books.google.com/books/content');
-    url.searchParams.set('id', volumeId);
-    url.searchParams.set('printsec', 'frontcover');
-    url.searchParams.set('img', '1');
-    url.searchParams.set('zoom', String(zoom));
-    return url.toString();
+    const params = new URLSearchParams({
+      id: volumeId,
+      zoom: String(zoom),
+    });
+    return `/api/googlebooks/image?${params.toString()}`;
   }
 
   private buildOpenLibraryCoverUrl(coverId: number, size: 'L' | 'S'): string {
@@ -234,7 +233,17 @@ export class BooksService extends MediaService {
     if (!title && !author) {
       return [];
     }
-    const searchUrl = `${this.openLibraryBaseUrl}/search.json?title=${encodeURIComponent(title)}&author=${encodeURIComponent(author)}&limit=${limit}&offset=${offset}`;
+    const params = new URLSearchParams({
+      limit: String(limit),
+      offset: String(offset),
+    });
+    if (title) {
+      params.set('title', title);
+    }
+    if (author) {
+      params.set('author', author);
+    }
+    const searchUrl = `${this.openLibraryBaseUrl}/search.json?${params.toString()}`;
     const response = await axios.get<OpenLibrarySearchResponse>(searchUrl, {
       timeout: 2000,
     });

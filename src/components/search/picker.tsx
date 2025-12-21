@@ -2,6 +2,7 @@ import { FaStar } from 'react-icons/fa';
 import { MdClose } from 'react-icons/md';
 import type { MediaItem, MediaType } from '../../media/types';
 import Carousel from './carousel';
+import { isPlaceholderCover } from '../../lib/coverdetect';
 
 type PosterPickerProps = {
   coverViewMode: 'grid' | 'carousel';
@@ -30,6 +31,8 @@ export const PosterPicker = ({
   onSelectCarouselCover,
   onSelectGridCover,
 }: PosterPickerProps) => {
+  const detectPlaceholder = mediaType === 'books';
+
   if (coverViewMode === 'carousel') {
     return (
       <Carousel
@@ -39,6 +42,7 @@ export const PosterPicker = ({
         onCoverError={onCoverError}
         onSelectCover={onSelectCarouselCover}
         onClose={onClose}
+        detectPlaceholder={detectPlaceholder}
       />
     );
   }
@@ -89,6 +93,15 @@ export const PosterPicker = ({
                   alt={`Alternate cover ${index + 1}`}
                   className="poster-picker-image"
                   onError={() => onCoverError(url)}
+                  onLoad={(event) => {
+                    if (
+                      detectPlaceholder &&
+                      isPlaceholderCover(event.currentTarget)
+                    ) {
+                      onCoverError(url);
+                    }
+                  }}
+                  crossOrigin={detectPlaceholder ? 'anonymous' : undefined}
                 />
                 {isTmdb && isSelected && (
                   <div className="poster-picker-badge" aria-hidden="true">

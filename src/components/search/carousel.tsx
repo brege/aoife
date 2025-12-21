@@ -3,6 +3,7 @@ import type React from 'react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { MdClose } from 'react-icons/md';
 import './carousel.css';
+import { isPlaceholderCover } from '../../lib/coverdetect';
 
 interface CarouselProps {
   urls: string[];
@@ -11,6 +12,7 @@ interface CarouselProps {
   onCoverError: (url: string) => void;
   onSelectCover: (url: string) => void;
   onClose: () => void;
+  detectPlaceholder?: boolean;
 }
 
 const Carousel: React.FC<CarouselProps> = ({
@@ -20,6 +22,7 @@ const Carousel: React.FC<CarouselProps> = ({
   onCoverError,
   onSelectCover,
   onClose,
+  detectPlaceholder = false,
 }) => {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [loadedUrls, setLoadedUrls] = useState<Record<string, boolean>>({});
@@ -41,14 +44,22 @@ const Carousel: React.FC<CarouselProps> = ({
 
   const urlsKey = useMemo(() => urls.join('|'), [urls]);
 
-  const handleImageLoad = useCallback((url: string) => {
-    setLoadedUrls((current) => {
-      if (current[url]) {
-        return current;
+  const handleImageLoad = useCallback(
+    (url: string, event: React.SyntheticEvent<HTMLImageElement>) => {
+      if (detectPlaceholder && isPlaceholderCover(event.currentTarget)) {
+        setLoadedUrls((current) => ({ ...current, [url]: true }));
+        onCoverError(url);
+        return;
       }
-      return { ...current, [url]: true };
-    });
-  }, []);
+      setLoadedUrls((current) => {
+        if (current[url]) {
+          return current;
+        }
+        return { ...current, [url]: true };
+      });
+    },
+    [detectPlaceholder, onCoverError],
+  );
 
   const handleImageError = useCallback(
     (url: string) => {
@@ -141,8 +152,11 @@ const Carousel: React.FC<CarouselProps> = ({
                           src={url}
                           alt={`${mediaTitle} cover ${index + 1}`}
                           className="embla__slide__img"
-                          onLoad={() => handleImageLoad(url)}
+                          onLoad={(event) => handleImageLoad(url, event)}
                           onError={() => handleImageError(url)}
+                          crossOrigin={
+                            detectPlaceholder ? 'anonymous' : undefined
+                          }
                           loading={
                             Math.abs(index - selectedIndex) <= 2
                               ? 'eager'

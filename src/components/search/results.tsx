@@ -1,5 +1,6 @@
 import { MdClose } from 'react-icons/md';
 import type { MediaItem, MediaType } from '../../media/types';
+import { isPlaceholderCover } from '../../lib/coverdetect';
 
 type ExternalLink = {
   href: string;
@@ -178,6 +179,19 @@ export const SearchResults = ({
               : undefined;
           const externalLinks = getExternalLinks(result, mediaType, imdbId);
 
+          const handlePosterLoad = (
+            event: React.SyntheticEvent<HTMLImageElement>,
+          ) => {
+            if (
+              mediaType === 'books' &&
+              isPlaceholderCover(event.currentTarget)
+            ) {
+              onPosterError(result.id);
+              return;
+            }
+            onPosterLoad(result.id, event);
+          };
+
           return (
             <button
               key={result.id}
@@ -193,8 +207,9 @@ export const SearchResults = ({
                   src={result.coverThumbnailUrl || result.coverUrl || ''}
                   alt={`${result.title} cover`}
                   className="search-result-poster-large"
-                  onLoad={(event) => onPosterLoad(result.id, event)}
+                  onLoad={handlePosterLoad}
                   onError={() => onPosterError(result.id)}
+                  crossOrigin={mediaType === 'books' ? 'anonymous' : undefined}
                   style={
                     aspectRatios[result.id]
                       ? { aspectRatio: aspectRatios[result.id] }
