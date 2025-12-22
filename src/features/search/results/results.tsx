@@ -142,7 +142,7 @@ export const SearchResults = ({
           className="search-results-more"
           onClick={onShowMore}
         >
-          Add {showMoreCount} more
+          Show more
         </button>
       </div>
     )}

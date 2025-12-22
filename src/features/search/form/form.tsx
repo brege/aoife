@@ -2,6 +2,7 @@ import { Combobox } from '@headlessui/react';
 import type React from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { FaLink } from 'react-icons/fa';
+import { HiMiniViewfinderCircle } from 'react-icons/hi2';
 import { MdDriveFolderUpload } from 'react-icons/md';
 import { storeImage } from '../../../lib/indexeddb';
 import type { MediaSearchValues, MediaType } from '../../../media/types';
@@ -1278,13 +1279,23 @@ export const MediaForm: React.FC<MediaFormProps> = ({
         disabled={isLoading}
         data-testid="search-submit"
       >
-        {mediaType === 'custom'
-          ? isLoading
-            ? 'Uploading...'
-            : 'Upload'
-          : isLoading
-            ? 'Searching...'
-            : `Add ${provider.label}`}
+        {mediaType === 'custom' ? (
+          isLoading ? (
+            'Uploading...'
+          ) : (
+            'Upload'
+          )
+        ) : isLoading ? (
+          'Searching...'
+        ) : (
+          <>
+            <HiMiniViewfinderCircle
+              className="form-submit-icon"
+              aria-hidden="true"
+            />
+            <span>{provider.label}</span>
+          </>
+        )}
       </button>
     </form>
   );
