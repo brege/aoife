@@ -10,11 +10,10 @@ import { useSearchState } from './state';
 import { useShareState } from '../../lib/state/share';
 import { DEFAULT_TITLE, TITLE_STORAGE_KEY } from '../../lib/state/storage';
 import type { MediaItem, MediaType } from '../../media/types';
-import { CaptionModal } from './modals/caption';
 import Grid from '../grid/grid';
 import AppHeader from '../../ui/header';
 import { useSearchBridges } from './bridge';
-import { CoverLinkModal } from './modals/cover';
+import { EditModal } from './modals/edit';
 import { MediaForm } from './form/form';
 import { PosterPicker } from './picker/picker';
 import { SearchResults } from './results/results';
@@ -527,7 +526,8 @@ const MediaSearch: React.FC = () => {
                 onShowMore={handleShowMoreResults}
               />
             )}
-          <CoverLinkModal
+          <EditModal
+            mode="cover"
             isOpen={showCoverLinkModal}
             primaryValue={coverLinkPrimaryValue}
             secondaryValue={coverLinkSecondaryValue}
@@ -538,7 +538,8 @@ const MediaSearch: React.FC = () => {
             onClear={handleCoverLinkClear}
           />
           {activeCaptionItem && (
-            <CaptionModal
+            <EditModal
+              mode="caption"
               isOpen={showCaptionModal}
               title={activeCaptionItem.title}
               subtitle={activeCaptionItem.subtitle}

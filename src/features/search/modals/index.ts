@@ -1,2 +1,1 @@
-export { CaptionModal } from './caption';
-export { CoverLinkModal } from './cover';
+export { EditModal } from './edit';
