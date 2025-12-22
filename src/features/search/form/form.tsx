@@ -214,7 +214,9 @@ const parseMusicBrainzReleaseGroupSuggestions = async (
       }
       const yearValue = releaseGroup['first-release-date']?.slice(0, 4);
       const year = yearValue ? Number.parseInt(yearValue, 10) : undefined;
-      const label = year ? `${releaseGroup.title} (${year})` : releaseGroup.title;
+      const label = year
+        ? `${releaseGroup.title} (${year})`
+        : releaseGroup.title;
       return {
         id: releaseGroup.id,
         label,
@@ -488,9 +490,9 @@ export const MediaForm: React.FC<MediaFormProps> = ({
   );
   const [isLoadingTitleSuggestions, setIsLoadingTitleSuggestions] =
     useState(false);
-  const [artistSuggestions, setArtistSuggestions] = useState<
-    SuggestionEntry[]
-  >([]);
+  const [artistSuggestions, setArtistSuggestions] = useState<SuggestionEntry[]>(
+    [],
+  );
   const [albumSuggestions, setAlbumSuggestions] = useState<SuggestionEntry[]>(
     [],
   );
@@ -503,9 +505,9 @@ export const MediaForm: React.FC<MediaFormProps> = ({
   >([]);
   const [isLoadingBookTitleSuggestions, setIsLoadingBookTitleSuggestions] =
     useState(false);
-  const [authorSuggestions, setAuthorSuggestions] = useState<
-    SuggestionEntry[]
-  >([]);
+  const [authorSuggestions, setAuthorSuggestions] = useState<SuggestionEntry[]>(
+    [],
+  );
   const [isLoadingAuthorSuggestions, setIsLoadingAuthorSuggestions] =
     useState(false);
   const [selectedArtistIdentifier, setSelectedArtistIdentifier] = useState<
@@ -706,9 +708,11 @@ export const MediaForm: React.FC<MediaFormProps> = ({
 
   useEffect(() => {
     if (mediaType !== 'books') {
-      setBookTitleSuggestions([]);
-      setAuthorSuggestions([]);
-      setSelectedAuthorKeys([]);
+      setBookTitleSuggestions((current) =>
+        current.length === 0 ? current : [],
+      );
+      setAuthorSuggestions((current) => (current.length === 0 ? current : []));
+      setSelectedAuthorKeys((current) => (current.length === 0 ? current : []));
       return;
     }
 
@@ -731,7 +735,8 @@ export const MediaForm: React.FC<MediaFormProps> = ({
           return fetchSuggestions(
             `${requestKey}|${authorKey}`,
             endpoint,
-            (response) => parseOpenLibraryWorksSuggestions(response, trimmedTitle),
+            (response) =>
+              parseOpenLibraryWorksSuggestions(response, trimmedTitle),
           );
         });
         Promise.all(requests)
@@ -1002,209 +1007,210 @@ export const MediaForm: React.FC<MediaFormProps> = ({
                     })}
                   </Combobox.Options>
                 )}
-                {isLoadingTitleSuggestions &&
-                  titleSuggestions.length === 0 && (
+                {isLoadingTitleSuggestions && titleSuggestions.length === 0 && (
+                  <div className="combobox-loading">Searching...</div>
+                )}
+              </Combobox>
+            );
+          }
+
+          if (field.id === 'artist' && mediaType === 'music') {
+            const comboboxPlacementClass =
+              layout === 'band' ? `band-${bandPlacement}` : 'stack';
+            return (
+              <Combobox
+                key={field.id}
+                value={artistValue}
+                onChange={(value) => {
+                  const nextValue = value ?? '';
+                  onFieldChange(field.id, nextValue);
+                  if (!nextValue) {
+                    setSelectedArtistIdentifier(null);
+                    setAlbumSuggestions([]);
+                    return;
+                  }
+                  const matchingSuggestion = artistSuggestions.find(
+                    (suggestion) => suggestion.value === nextValue,
+                  );
+                  if (!matchingSuggestion) {
+                    throw new Error('Selected artist not found in suggestions');
+                  }
+                  if (typeof matchingSuggestion.id !== 'string') {
+                    throw new Error('Invalid MusicBrainz artist identifier');
+                  }
+                  setSelectedArtistIdentifier(matchingSuggestion.id);
+                  setAlbumSuggestions([]);
+                }}
+                as="div"
+                className={`combobox ${comboboxPlacementClass}`.trim()}
+              >
+                <Combobox.Input
+                  type="text"
+                  value={artistValue}
+                  onChange={(e) => {
+                    onFieldChange(field.id, e.target.value);
+                    setSelectedArtistIdentifier(null);
+                    setAlbumSuggestions([]);
+                  }}
+                  placeholder={field.placeholder}
+                  aria-label={field.label}
+                  className="form-input"
+                  required={field.required}
+                  data-testid={`search-field-${field.id}`}
+                />
+                {artistSuggestions.length > 0 && (
+                  <Combobox.Options className="combobox-options">
+                    {artistSuggestions.map((suggestion) => {
+                      return (
+                        <Combobox.Option
+                          key={suggestion.id}
+                          value={suggestion.value}
+                          className={({ active }) =>
+                            `combobox-option${active ? ' active' : ''}`
+                          }
+                        >
+                          <span className="combobox-option-label">
+                            {suggestion.label}
+                          </span>
+                        </Combobox.Option>
+                      );
+                    })}
+                  </Combobox.Options>
+                )}
+                {isLoadingArtistSuggestions &&
+                  artistSuggestions.length === 0 && (
                     <div className="combobox-loading">Searching...</div>
                   )}
               </Combobox>
             );
           }
 
-        if (field.id === 'artist' && mediaType === 'music') {
-          const comboboxPlacementClass =
-            layout === 'band' ? `band-${bandPlacement}` : 'stack';
-          return (
-            <Combobox
-              key={field.id}
-              value={artistValue}
-              onChange={(value) => {
-                const nextValue = value ?? '';
-                onFieldChange(field.id, nextValue);
-                if (!nextValue) {
-                  setSelectedArtistIdentifier(null);
-                  setAlbumSuggestions([]);
-                  return;
-                }
-                const matchingSuggestion = artistSuggestions.find(
-                  (suggestion) => suggestion.value === nextValue,
-                );
-                if (!matchingSuggestion) {
-                  throw new Error('Selected artist not found in suggestions');
-                }
-                if (typeof matchingSuggestion.id !== 'string') {
-                  throw new Error('Invalid MusicBrainz artist identifier');
-                }
-                setSelectedArtistIdentifier(matchingSuggestion.id);
-                setAlbumSuggestions([]);
-              }}
-              as="div"
-              className={`combobox ${comboboxPlacementClass}`.trim()}
-            >
-              <Combobox.Input
-                type="text"
-                value={artistValue}
-                onChange={(e) => {
-                  onFieldChange(field.id, e.target.value);
-                  setSelectedArtistIdentifier(null);
-                  setAlbumSuggestions([]);
-                }}
-                placeholder={field.placeholder}
-                aria-label={field.label}
-                className="form-input"
-                required={field.required}
-                data-testid={`search-field-${field.id}`}
-              />
-              {artistSuggestions.length > 0 && (
-                <Combobox.Options className="combobox-options">
-                  {artistSuggestions.map((suggestion) => {
-                    return (
-                      <Combobox.Option
-                        key={suggestion.id}
-                        value={suggestion.value}
-                        className={({ active }) =>
-                          `combobox-option${active ? ' active' : ''}`
-                        }
-                      >
-                        <span className="combobox-option-label">
-                          {suggestion.label}
-                        </span>
-                      </Combobox.Option>
-                    );
-                  })}
-                </Combobox.Options>
-              )}
-              {isLoadingArtistSuggestions && artistSuggestions.length === 0 && (
-                <div className="combobox-loading">Searching...</div>
-              )}
-            </Combobox>
-          );
-        }
-
-        if (
-          field.id === 'title' &&
-          mediaType === 'books' &&
-          onOpenCoverLink
-        ) {
-          const comboboxPlacementClass =
-            layout === 'band' ? `band-${bandPlacement}` : 'stack';
-          return (
-            <div key={field.id} className="input-with-button">
-              <Combobox
-                value={bookTitleValue}
-                onChange={(value) => {
-                  onFieldChange(field.id, value ?? '');
-                  window.setTimeout(() => {
-                    formRef.current?.requestSubmit();
-                  }, 0);
-                }}
-                as="div"
-                className={`combobox ${comboboxPlacementClass}`.trim()}
-              >
-                <Combobox.Input
-                  type="text"
+          if (
+            field.id === 'title' &&
+            mediaType === 'books' &&
+            onOpenCoverLink
+          ) {
+            const comboboxPlacementClass =
+              layout === 'band' ? `band-${bandPlacement}` : 'stack';
+            return (
+              <div key={field.id} className="input-with-button">
+                <Combobox
                   value={bookTitleValue}
-                  onChange={(e) => onFieldChange(field.id, e.target.value)}
-                  placeholder={field.placeholder}
-                  aria-label={field.label}
-                  className="form-input"
-                  required={field.required}
-                  data-testid={`search-field-${field.id}`}
-                />
-                {bookTitleSuggestions.length > 0 && (
-                  <Combobox.Options className="combobox-options">
-                    {bookTitleSuggestions.map((suggestion) => {
-                      return (
-                        <Combobox.Option
-                          key={suggestion.id}
-                          value={suggestion.value}
-                          className={({ active }) =>
-                            `combobox-option${active ? ' active' : ''}`
-                          }
-                        >
-                          <span className="combobox-option-label">
-                            {suggestion.label}
-                          </span>
-                        </Combobox.Option>
-                      );
-                    })}
-                  </Combobox.Options>
-                )}
-                {isLoadingBookTitleSuggestions &&
-                  bookTitleSuggestions.length === 0 && (
-                    <div className="combobox-loading">Searching...</div>
+                  onChange={(value) => {
+                    onFieldChange(field.id, value ?? '');
+                    window.setTimeout(() => {
+                      formRef.current?.requestSubmit();
+                    }, 0);
+                  }}
+                  as="div"
+                  className={`combobox ${comboboxPlacementClass}`.trim()}
+                >
+                  <Combobox.Input
+                    type="text"
+                    value={bookTitleValue}
+                    onChange={(e) => onFieldChange(field.id, e.target.value)}
+                    placeholder={field.placeholder}
+                    aria-label={field.label}
+                    className="form-input"
+                    required={field.required}
+                    data-testid={`search-field-${field.id}`}
+                  />
+                  {bookTitleSuggestions.length > 0 && (
+                    <Combobox.Options className="combobox-options">
+                      {bookTitleSuggestions.map((suggestion) => {
+                        return (
+                          <Combobox.Option
+                            key={suggestion.id}
+                            value={suggestion.value}
+                            className={({ active }) =>
+                              `combobox-option${active ? ' active' : ''}`
+                            }
+                          >
+                            <span className="combobox-option-label">
+                              {suggestion.label}
+                            </span>
+                          </Combobox.Option>
+                        );
+                      })}
+                    </Combobox.Options>
                   )}
-              </Combobox>
-              <button
-                type="button"
-                onClick={onOpenCoverLink}
-                className="icon-button"
-                aria-label="Add cover link"
-                title="Add cover link"
-              >
-                <FaLink size={18} />
-              </button>
-            </div>
-          );
-        }
+                  {isLoadingBookTitleSuggestions &&
+                    bookTitleSuggestions.length === 0 && (
+                      <div className="combobox-loading">Searching...</div>
+                    )}
+                </Combobox>
+                <button
+                  type="button"
+                  onClick={onOpenCoverLink}
+                  className="icon-button"
+                  aria-label="Add cover link"
+                  title="Add cover link"
+                >
+                  <FaLink size={18} />
+                </button>
+              </div>
+            );
+          }
 
-        if (
-          field.id === 'album' &&
-          mediaType === 'music' &&
-          onOpenCoverLink
-        ) {
-          const comboboxPlacementClass =
-            layout === 'band' ? `band-${bandPlacement}` : 'stack';
-          return (
-            <div key={field.id} className="input-with-button">
-              <Combobox
-                value={albumValue}
-                onChange={(value) => {
-                  onFieldChange(field.id, value ?? '');
-                  window.setTimeout(() => {
-                    formRef.current?.requestSubmit();
-                  }, 0);
-                }}
-                as="div"
-                className={`combobox ${comboboxPlacementClass}`.trim()}
-              >
-                <Combobox.Input
-                  type="text"
+          if (
+            field.id === 'album' &&
+            mediaType === 'music' &&
+            onOpenCoverLink
+          ) {
+            const comboboxPlacementClass =
+              layout === 'band' ? `band-${bandPlacement}` : 'stack';
+            return (
+              <div key={field.id} className="input-with-button">
+                <Combobox
                   value={albumValue}
-                  onChange={(e) => onFieldChange(field.id, e.target.value)}
-                  placeholder={field.placeholder}
-                  aria-label={field.label}
-                  className="form-input"
-                  required={field.required}
-                  data-testid={`search-field-${field.id}`}
-                />
-                {albumSuggestions.length > 0 && (
-                  <Combobox.Options className="combobox-options">
-                    {albumSuggestions.map((suggestion) => {
-                      return (
-                        <Combobox.Option
-                          key={suggestion.id}
-                          value={suggestion.value}
-                          className={({ active }) =>
-                            `combobox-option${active ? ' active' : ''}`
-                          }
-                        >
-                          <span className="combobox-option-label">
-                            {suggestion.label}
-                          </span>
-                        </Combobox.Option>
-                      );
-                    })}
-                  </Combobox.Options>
-                )}
-                {isLoadingAlbumSuggestions && albumSuggestions.length === 0 && (
-                  <div className="combobox-loading">Searching...</div>
-                )}
-              </Combobox>
-              <button
-                type="button"
-                onClick={onOpenCoverLink}
-                className="icon-button"
-                aria-label="Add cover link"
+                  onChange={(value) => {
+                    onFieldChange(field.id, value ?? '');
+                    window.setTimeout(() => {
+                      formRef.current?.requestSubmit();
+                    }, 0);
+                  }}
+                  as="div"
+                  className={`combobox ${comboboxPlacementClass}`.trim()}
+                >
+                  <Combobox.Input
+                    type="text"
+                    value={albumValue}
+                    onChange={(e) => onFieldChange(field.id, e.target.value)}
+                    placeholder={field.placeholder}
+                    aria-label={field.label}
+                    className="form-input"
+                    required={field.required}
+                    data-testid={`search-field-${field.id}`}
+                  />
+                  {albumSuggestions.length > 0 && (
+                    <Combobox.Options className="combobox-options">
+                      {albumSuggestions.map((suggestion) => {
+                        return (
+                          <Combobox.Option
+                            key={suggestion.id}
+                            value={suggestion.value}
+                            className={({ active }) =>
+                              `combobox-option${active ? ' active' : ''}`
+                            }
+                          >
+                            <span className="combobox-option-label">
+                              {suggestion.label}
+                            </span>
+                          </Combobox.Option>
+                        );
+                      })}
+                    </Combobox.Options>
+                  )}
+                  {isLoadingAlbumSuggestions &&
+                    albumSuggestions.length === 0 && (
+                      <div className="combobox-loading">Searching...</div>
+                    )}
+                </Combobox>
+                <button
+                  type="button"
+                  onClick={onOpenCoverLink}
+                  className="icon-button"
+                  aria-label="Add cover link"
                   title="Add cover link"
                 >
                   <FaLink size={18} />

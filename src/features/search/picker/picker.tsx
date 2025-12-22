@@ -1,8 +1,9 @@
 import { FaStar } from 'react-icons/fa';
 import { MdClose } from 'react-icons/md';
-import type { MediaItem, MediaType } from '../../../media/types';
 import { isPlaceholderCover } from '../../../lib/coverdetect';
+import type { MediaItem, MediaType } from '../../../media/types';
 import { CandidateCard } from '../results/card';
+import { getExternalLinks } from '../results/links';
 import Carousel from './carousel';
 
 type PosterPickerProps = {
@@ -80,6 +81,15 @@ export const PosterPicker = ({
             const isSelected = Boolean(
               selectedCoverUrl && url === selectedCoverUrl,
             );
+            const linkTarget = matchedItem ?? null;
+            const linkMediaType = (linkTarget?.type ?? mediaType) as MediaType;
+            const imdbId =
+              typeof linkTarget?.metadata?.imdb_id === 'string'
+                ? linkTarget.metadata.imdb_id
+                : undefined;
+            const externalLinks = linkTarget
+              ? getExternalLinks(linkTarget, linkMediaType, imdbId)
+              : [];
 
             return (
               <CandidateCard
@@ -119,6 +129,28 @@ export const PosterPicker = ({
                     {matchedItem.year && (
                       <div className="poster-picker-year">
                         {matchedItem.year}
+                      </div>
+                    )}
+                    {externalLinks.length > 0 && (
+                      <div className="search-result-badges">
+                        {externalLinks.map((link) => (
+                          <a
+                            key={link.href}
+                            href={link.href}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="search-badge"
+                            aria-label={link.label}
+                            onClick={(event) => event.stopPropagation()}
+                          >
+                            <img
+                              src={`https://www.google.com/s2/favicons?sz=32&domain=${link.domain}`}
+                              alt=""
+                              aria-hidden="true"
+                            />
+                            <span>{link.label}</span>
+                          </a>
+                        ))}
                       </div>
                     )}
                   </div>

@@ -497,6 +497,10 @@
   gap: 6px;
 }
 
+.poster-picker-meta .search-result-badges {
+  margin-top: 6px;
+}
+
 .search-badge {
   display: inline-flex;
   align-items: center;

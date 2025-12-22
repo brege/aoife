@@ -6,17 +6,17 @@ import { useGridOperations } from '../../lib/grid-operations';
 import logger from '../../lib/logger';
 import { useModalClosed, useModalManager } from '../../lib/modalmanager';
 import { useLayoutState } from '../../lib/state/layout';
-import { useSearchState } from './state';
 import { useShareState } from '../../lib/state/share';
 import { DEFAULT_TITLE, TITLE_STORAGE_KEY } from '../../lib/state/storage';
 import type { MediaItem, MediaType } from '../../media/types';
-import Grid from '../grid/grid';
 import AppHeader from '../../ui/header';
+import Grid from '../grid/grid';
 import { useSearchBridges } from './bridge';
-import { EditModal } from './modals/edit';
 import { MediaForm } from './form/form';
+import { EditModal } from './modals/edit';
 import { PosterPicker } from './picker/picker';
 import { SearchResults } from './results/results';
+import { useSearchState } from './state';
 
 const normalizeTitle = (value: string): string => {
   const trimmed = value.trim();
