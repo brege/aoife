@@ -12,7 +12,7 @@ import { DEFAULT_TITLE, TITLE_STORAGE_KEY } from '../../lib/state/storage';
 import type { MediaItem, MediaType } from '../../media/types';
 import { CaptionModal } from '../grid/caption';
 import Grid from '../grid/grid';
-import AppHeader from '../ui/header';
+import AppHeader from '../../ui/header';
 import { useSearchBridges } from './bridge';
 import { CoverLinkModal } from './coverlink';
 import { MediaForm } from './mediaform';

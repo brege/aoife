@@ -2,7 +2,7 @@ import type React from 'react';
 import { GrAdd } from 'react-icons/gr';
 import './header.css';
 import './title.css';
-import Menu from '../menu/menu';
+import Menu from '../features/menu/menu';
 import EditableTitle from './title';
 
 interface AppHeaderProps {

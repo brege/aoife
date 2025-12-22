@@ -6,7 +6,7 @@ import logger from '../../lib/logger';
 import { isPlaceholderCover } from '../../lib/coverdetect';
 import type { MediaItem, MediaType } from '../../media/types';
 import { MEDIA_TYPE_ICONS } from '../search/dropdown';
-import { CustomImage } from '../ui/customimage';
+import { CustomImage } from '../../ui/customimage';
 
 interface GridProps {
   items: MediaItem[];
