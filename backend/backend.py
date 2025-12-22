@@ -176,8 +176,8 @@ def set_csp_header(response):
     return response
 
 
-TMDB_KEY = os.getenv("VITE_TMDB_API_KEY")
-GAMESDB_KEY = os.getenv("VITE_GAMESDB_PUBLIC_KEY")
+TMDB_KEY = os.getenv("TMDB_API_KEY")
+GAMESDB_KEY = os.getenv("GAMESDB_PUBLIC_KEY")
 UPSTREAM_TIMEOUT_SECONDS = 10
 MAX_SHARE_PAYLOAD_BYTES = 200_000
 MAX_SHARE_ITEMS = 24

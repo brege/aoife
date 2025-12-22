@@ -34,17 +34,7 @@ export function setMediaType(mediaType) {
 
 export function searchThroughApplication(payload) {
   const mediaType = payload.mediaType || payload.type || 'movies';
-  const values =
-    payload.values || payload.query || payload.title || payload.album
-      ? {
-          query:
-            payload.query ||
-            payload.title ||
-            payload.album ||
-            payload.artist ||
-            '',
-        }
-      : {};
+  const values = buildSearchValues(payload, mediaType);
 
   return getApplicationTestApi().then((testApi) =>
     testApi.search(values, mediaType).then((results) => ({
@@ -52,6 +42,41 @@ export function searchThroughApplication(payload) {
       mediaType,
     })),
   );
+}
+
+const searchFieldsByMediaType = {
+  movies: ['query'],
+  tv: ['query'],
+  games: ['query', 'platform'],
+  books: ['author', 'title'],
+  music: ['artist', 'album'],
+  custom: ['query', 'cover'],
+};
+
+function buildSearchValues(payload, mediaType) {
+  if (payload.values && typeof payload.values === 'object') {
+    return payload.values;
+  }
+
+  const fields = searchFieldsByMediaType[mediaType] || [];
+  const values = {};
+
+  for (const field of fields) {
+    const value = payload[field];
+    if (typeof value === 'string' && value.trim() !== '') {
+      values[field] = value;
+    }
+  }
+
+  if (Object.keys(values).length === 0) {
+    const fallbackQuery =
+      payload.query || payload.title || payload.album || payload.artist || '';
+    if (typeof fallbackQuery === 'string' && fallbackQuery.trim() !== '') {
+      values.query = fallbackQuery;
+    }
+  }
+
+  return values;
 }
 
 export function applySearchFixtureResults(mediaType, results, summary) {

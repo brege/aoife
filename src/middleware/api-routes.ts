@@ -13,9 +13,7 @@ import { getReactClient } from './websocket';
 type NextFunction = (error?: unknown) => void;
 
 const getTmdbKey = (env: Record<string, string>) =>
-  env.VITE_TMDB_API_KEY ||
-  process.env.VITE_TMDB_API_KEY ||
-  process.env.TMDB_API_KEY;
+  env.TMDB_API_KEY || process.env.TMDB_API_KEY;
 
 export const createApiMiddleware = (env: Record<string, string>) => {
   const gridState: Record<string, unknown>[] = [];
@@ -23,13 +21,9 @@ export const createApiMiddleware = (env: Record<string, string>) => {
   const slugWords = loadSlugWords();
   const isContinuousIntegration = process.env.CI === 'true';
   const privateGamesDatabaseKey =
-    env.GAMESDB_KEY ||
-    env.GAMESDB_API_KEY ||
-    process.env.GAMESDB_KEY ||
-    process.env.GAMESDB_API_KEY ||
-    '';
+    env.GAMESDB_PRIVATE_KEY || process.env.GAMESDB_PRIVATE_KEY || '';
   const publicGamesDatabaseKey =
-    env.VITE_GAMESDB_PUBLIC_KEY || process.env.VITE_GAMESDB_PUBLIC_KEY || '';
+    env.GAMESDB_PUBLIC_KEY || process.env.GAMESDB_PUBLIC_KEY || '';
   const gamesDatabaseKey = isContinuousIntegration
     ? publicGamesDatabaseKey
     : privateGamesDatabaseKey || publicGamesDatabaseKey;

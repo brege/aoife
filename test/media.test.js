@@ -116,7 +116,7 @@ describe('YAML workflows via Cypress', function () {
         env: {
           workflow: JSON.stringify(workflow),
           measurementsPath,
-          VITE_TMDB_API_KEY: process.env.VITE_TMDB_API_KEY,
+          TMDB_API_KEY: process.env.TMDB_API_KEY,
         },
       });
 

@@ -91,9 +91,7 @@ describe('API integration', function () {
   });
 
   it('searches movies when TMDB key is present', async function () {
-    const hasTmdbKey =
-      Boolean(process.env.VITE_TMDB_API_KEY) ||
-      Boolean(process.env.TMDB_API_KEY);
+    const hasTmdbKey = Boolean(process.env.TMDB_API_KEY);
     if (!hasTmdbKey) {
       this.skip();
     }

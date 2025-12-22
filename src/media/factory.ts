@@ -18,10 +18,7 @@ function getTmdbKey(): string {
       ? (import.meta as ImportMeta).env
       : undefined;
   return (
-    metaEnv?.VITE_TMDB_API_KEY ||
-    process.env.VITE_TMDB_API_KEY ||
-    process.env.TMDB_API_KEY ||
-    ''
+    metaEnv?.TMDB_API_KEY || process.env.TMDB_API_KEY || ''
   );
 }
 

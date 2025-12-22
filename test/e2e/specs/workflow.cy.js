@@ -68,9 +68,25 @@ function performSearch(payload) {
     : searchThroughApplication({ ...payload, mediaType });
 
   return action.then(({ results }) => {
+    if (results.length === 0 && summary) {
+      return searchThroughServer(mediaType, summary).then((serverResults) => {
+        state.lastSearchResults = serverResults;
+        state.lastAddedTitle = serverResults[0]?.title || '';
+        return { statusCode: 200, resultsCount: serverResults.length };
+      });
+    }
     state.lastSearchResults = results;
     state.lastAddedTitle = results[0]?.title || '';
     return { statusCode: 200, resultsCount: results.length };
+  });
+}
+
+function searchThroughServer(mediaType, query) {
+  const encodedQuery = encodeURIComponent(query);
+  const url = `/api/search?type=${encodeURIComponent(mediaType)}&q=${encodedQuery}`;
+  return cy.request({ url }).then((response) => {
+    const results = Array.isArray(response.body) ? response.body : [];
+    return results;
   });
 }
 

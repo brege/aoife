@@ -27,8 +27,8 @@ jobs:
       - name: Run tests
         run: npm test
         env:
-          VITE_TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
-          VITE_GAMESDB_PUBLIC_KEY: ${{ secrets.GAMESDB_PUBLIC_KEY }}
+          TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
+          GAMESDB_PUBLIC_KEY: ${{ secrets.GAMESDB_PUBLIC_KEY }}
           VITE_DEV_SERVER_ORIGIN: http://localhost:5173
 
       - name: Upload benchmarks
