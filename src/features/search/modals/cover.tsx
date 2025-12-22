@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { MdClose } from 'react-icons/md';
-import './coverlink.css';
+import './cover.css';
 
 type CoverLinkModalProps = {
   isOpen: boolean;

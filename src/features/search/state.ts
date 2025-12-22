@@ -6,8 +6,8 @@ import type {
   MediaSearchValues,
   MediaType,
 } from '../../media/types';
-import logger from '../logger';
-import { MEDIA_TYPE_STORAGE_KEY } from './storage';
+import logger from '../../lib/logger';
+import { MEDIA_TYPE_STORAGE_KEY } from '../../lib/state/storage';
 
 const constrainAspectRatio = (aspectRatio: number): number => {
   const minimumRatio = 0.5;

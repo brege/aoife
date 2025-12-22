@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { MdClose } from 'react-icons/md';
-import '../search/coverlink.css';
+import './cover.css';
 
 type CaptionModalProps = {
   isOpen: boolean;

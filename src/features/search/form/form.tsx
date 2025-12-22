@@ -3,11 +3,11 @@ import type React from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { FaLink } from 'react-icons/fa';
 import { MdDriveFolderUpload } from 'react-icons/md';
-import { storeImage } from '../../lib/indexeddb';
-import type { MediaSearchValues, MediaType } from '../../media/types';
-import Dropdown from './dropdown';
+import { storeImage } from '../../../lib/indexeddb';
+import type { MediaSearchValues, MediaType } from '../../../media/types';
+import Dropdown from '../suggestion/list';
 import { Platform } from './platform';
-import './mediaform.css';
+import './form.css';
 
 type SuggestionEntry = {
   id: string | number;

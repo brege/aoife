@@ -1,8 +1,8 @@
 import { FaStar } from 'react-icons/fa';
 import { MdClose } from 'react-icons/md';
-import type { MediaItem, MediaType } from '../../media/types';
+import type { MediaItem, MediaType } from '../../../media/types';
 import Carousel from './carousel';
-import { isPlaceholderCover } from '../../lib/coverdetect';
+import { isPlaceholderCover } from '../../../lib/coverdetect';
 
 type PosterPickerProps = {
   coverViewMode: 'grid' | 'carousel';

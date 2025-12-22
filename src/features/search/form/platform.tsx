@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useDropdownNavigation, useOutside } from '../../lib/escape';
+import { useDropdownNavigation, useOutside } from '../../../lib/escape';
 import './platform.css';
-import tgdbPlatforms from '../../../data/tgdb.json';
+import tgdbPlatforms from '../../../../data/tgdb.json';
 
 type PlatformItem = {
   id: string;

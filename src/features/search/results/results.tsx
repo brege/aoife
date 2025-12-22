@@ -1,6 +1,6 @@
 import { MdClose } from 'react-icons/md';
-import type { MediaItem, MediaType } from '../../media/types';
-import { isPlaceholderCover } from '../../lib/coverdetect';
+import type { MediaItem, MediaType } from '../../../media/types';
+import { isPlaceholderCover } from '../../../lib/coverdetect';
 
 type ExternalLink = {
   href: string;

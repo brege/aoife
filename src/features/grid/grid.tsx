@@ -5,7 +5,7 @@ import { MdClose } from 'react-icons/md';
 import logger from '../../lib/logger';
 import { isPlaceholderCover } from '../../lib/coverdetect';
 import type { MediaItem, MediaType } from '../../media/types';
-import { MEDIA_TYPE_ICONS } from '../search/dropdown';
+import { MEDIA_TYPE_ICONS } from '../search/suggestion/list';
 import { CustomImage } from '../../ui/customimage';
 
 interface GridProps {

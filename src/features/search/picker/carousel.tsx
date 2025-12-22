@@ -3,7 +3,7 @@ import type React from 'react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { MdClose } from 'react-icons/md';
 import './carousel.css';
-import { isPlaceholderCover } from '../../lib/coverdetect';
+import { isPlaceholderCover } from '../../../lib/coverdetect';
 
 interface CarouselProps {
   urls: string[];
