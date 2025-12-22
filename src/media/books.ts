@@ -88,6 +88,19 @@ export class BooksService extends MediaService {
     return `https://covers.openlibrary.org/b/isbn/${internationalStandardBookNumber}-${size}.jpg?default=false`;
   }
 
+  private formatAuthorSubtitle(
+    authors: string[] | undefined,
+  ): string | undefined {
+    if (!authors || authors.length === 0) {
+      return undefined;
+    }
+    const joined = authors.join(', ');
+    if (joined.length <= 50) {
+      return joined;
+    }
+    return `${joined.slice(0, 50)}...`;
+  }
+
   async search(values: MediaSearchValues): Promise<MediaSearchResult[]> {
     const title = values.title || values.query || '';
     const author = values.author || '';
@@ -449,7 +462,7 @@ export class BooksService extends MediaService {
               : `ol:${doc.title}`,
           type: 'books',
           title: doc.title,
-          subtitle: doc.author_name ? doc.author_name.join(', ') : undefined,
+          subtitle: this.formatAuthorSubtitle(doc.author_name),
           year: doc.first_publish_year,
           coverUrl,
           coverThumbnailUrl,
@@ -493,9 +506,7 @@ export class BooksService extends MediaService {
           id: `gb:${item.id}`,
           type: 'books',
           title: volumeInfo.title || 'Unknown',
-          subtitle: volumeInfo.authors
-            ? volumeInfo.authors.join(', ')
-            : undefined,
+          subtitle: this.formatAuthorSubtitle(volumeInfo.authors),
           year: publishedYear,
           coverUrl: this.ensureHttps(coverUrl),
           coverThumbnailUrl: this.ensureHttps(coverThumbnailUrl),
@@ -790,9 +801,7 @@ export class BooksService extends MediaService {
         id: `gb:${volumeId}`,
         type: 'books',
         title: volumeInfo.title || 'Unknown',
-        subtitle: volumeInfo.authors
-          ? volumeInfo.authors.join(', ')
-          : undefined,
+        subtitle: this.formatAuthorSubtitle(volumeInfo.authors),
         year: publishedYear,
         coverUrl: this.ensureHttps(coverUrl),
         coverThumbnailUrl: this.ensureHttps(coverThumbnailUrl),

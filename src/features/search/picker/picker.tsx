@@ -1,8 +1,10 @@
 import { FaStar } from 'react-icons/fa';
 import { MdClose } from 'react-icons/md';
-import type { MediaItem, MediaType } from '../../media/types';
+import { isPlaceholderCover } from '../../../lib/coverdetect';
+import type { MediaItem, MediaType } from '../../../media/types';
+import { CandidateCard } from '../results/card';
+import { getExternalLinks } from '../results/links';
 import Carousel from './carousel';
-import { isPlaceholderCover } from '../../lib/coverdetect';
 
 type PosterPickerProps = {
   coverViewMode: 'grid' | 'carousel';
@@ -79,30 +81,36 @@ export const PosterPicker = ({
             const isSelected = Boolean(
               selectedCoverUrl && url === selectedCoverUrl,
             );
+            const linkTarget = matchedItem ?? null;
+            const linkMediaType = (linkTarget?.type ?? mediaType) as MediaType;
+            const imdbId =
+              typeof linkTarget?.metadata?.imdb_id === 'string'
+                ? linkTarget.metadata.imdb_id
+                : undefined;
+            const externalLinks = linkTarget
+              ? getExternalLinks(linkTarget, linkMediaType, imdbId)
+              : [];
 
             return (
-              <button
+              <CandidateCard
                 key={key}
-                type="button"
                 className="poster-picker-card"
                 onClick={() => onSelectGridCover(url, index)}
-                aria-label={`Use alternate cover ${index + 1}`}
+                ariaLabel={`Use alternate cover ${index + 1}`}
+                imageUrl={url}
+                imageAlt={`Alternate cover ${index + 1}`}
+                imageClassName="poster-picker-image"
+                onImageError={() => onCoverError(url)}
+                onImageLoad={(event) => {
+                  if (
+                    detectPlaceholder &&
+                    isPlaceholderCover(event.currentTarget)
+                  ) {
+                    onCoverError(url);
+                  }
+                }}
+                crossOrigin={detectPlaceholder ? 'anonymous' : undefined}
               >
-                <img
-                  src={url}
-                  alt={`Alternate cover ${index + 1}`}
-                  className="poster-picker-image"
-                  onError={() => onCoverError(url)}
-                  onLoad={(event) => {
-                    if (
-                      detectPlaceholder &&
-                      isPlaceholderCover(event.currentTarget)
-                    ) {
-                      onCoverError(url);
-                    }
-                  }}
-                  crossOrigin={detectPlaceholder ? 'anonymous' : undefined}
-                />
                 {isTmdb && isSelected && (
                   <div className="poster-picker-badge" aria-hidden="true">
                     <FaStar />
@@ -123,9 +131,31 @@ export const PosterPicker = ({
                         {matchedItem.year}
                       </div>
                     )}
+                    {externalLinks.length > 0 && (
+                      <div className="search-result-badges">
+                        {externalLinks.map((link) => (
+                          <a
+                            key={link.href}
+                            href={link.href}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="search-badge"
+                            aria-label={link.label}
+                            onClick={(event) => event.stopPropagation()}
+                          >
+                            <img
+                              src={`https://www.google.com/s2/favicons?sz=32&domain=${link.domain}`}
+                              alt=""
+                              aria-hidden="true"
+                            />
+                            <span>{link.label}</span>
+                          </a>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
-              </button>
+              </CandidateCard>
             );
           })
         )}

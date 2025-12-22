@@ -6,18 +6,17 @@ import { useGridOperations } from '../../lib/grid-operations';
 import logger from '../../lib/logger';
 import { useModalClosed, useModalManager } from '../../lib/modalmanager';
 import { useLayoutState } from '../../lib/state/layout';
-import { useSearchState } from '../../lib/state/search';
 import { useShareState } from '../../lib/state/share';
 import { DEFAULT_TITLE, TITLE_STORAGE_KEY } from '../../lib/state/storage';
 import type { MediaItem, MediaType } from '../../media/types';
-import { CaptionModal } from '../grid/caption';
+import AppHeader from '../../ui/header';
 import Grid from '../grid/grid';
-import AppHeader from '../ui/header';
 import { useSearchBridges } from './bridge';
-import { CoverLinkModal } from './coverlink';
-import { MediaForm } from './mediaform';
-import { PosterPicker } from './picker';
-import { SearchResults } from './results';
+import { MediaForm } from './form/form';
+import { EditModal } from './modals/edit';
+import { PosterPicker } from './picker/picker';
+import { SearchResults } from './results/results';
+import { useSearchState } from './state';
 
 const normalizeTitle = (value: string): string => {
   const trimmed = value.trim();
@@ -527,7 +526,8 @@ const MediaSearch: React.FC = () => {
                 onShowMore={handleShowMoreResults}
               />
             )}
-          <CoverLinkModal
+          <EditModal
+            mode="cover"
             isOpen={showCoverLinkModal}
             primaryValue={coverLinkPrimaryValue}
             secondaryValue={coverLinkSecondaryValue}
@@ -538,7 +538,8 @@ const MediaSearch: React.FC = () => {
             onClear={handleCoverLinkClear}
           />
           {activeCaptionItem && (
-            <CaptionModal
+            <EditModal
+              mode="caption"
               isOpen={showCaptionModal}
               title={activeCaptionItem.title}
               subtitle={activeCaptionItem.subtitle}

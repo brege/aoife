@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import logger from '../../lib/logger';
+import { MEDIA_TYPE_STORAGE_KEY } from '../../lib/state/storage';
 import { getMediaService } from '../../media/factory';
 import { getMediaProvider } from '../../media/providers';
 import type {
@@ -6,8 +8,6 @@ import type {
   MediaSearchValues,
   MediaType,
 } from '../../media/types';
-import logger from '../logger';
-import { MEDIA_TYPE_STORAGE_KEY } from './storage';
 
 const constrainAspectRatio = (aspectRatio: number): number => {
   const minimumRatio = 0.5;

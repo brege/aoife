@@ -275,6 +275,38 @@
   background: #00d474;
 }
 
+.candidate-image {
+  position: relative;
+  width: 100%;
+}
+
+.candidate-image-dimensions {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  padding: 4px 6px;
+  border-radius: 6px;
+  background: rgba(15, 23, 32, 0.85);
+  color: #e5e7eb;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  opacity: 0;
+  transform: translateY(-2px);
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease;
+  pointer-events: none;
+}
+
+.search-result-card:hover .candidate-image-dimensions,
+.search-result-card:focus-within .candidate-image-dimensions,
+.poster-picker-card:hover .candidate-image-dimensions,
+.poster-picker-card:focus-within .candidate-image-dimensions {
+  opacity: 1;
+  transform: translateY(0);
+}
+
 .search-result-card {
   background: #2c3e50;
   border-radius: 12px;
@@ -495,6 +527,10 @@
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
+}
+
+.poster-picker-meta .search-result-badges {
+  margin-top: 6px;
 }
 
 .search-badge {

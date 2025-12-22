@@ -3,7 +3,8 @@
 ### 2026-12-21
 
 - Add search suggestion support for all providers
-- Update cover finders to align with new string matching meta
+- Update cover finders to align with new string matching metadata
+- Untangled environment variables used in production, dev, and test
 
 ### 2025-12-20
 

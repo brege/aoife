@@ -235,6 +235,44 @@
   pointer-events: auto;
 }
 
+.grid-source-badges {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  display: flex;
+  gap: 6px;
+  opacity: 0;
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease;
+  transform: translateY(2px);
+  z-index: 10;
+  pointer-events: none;
+}
+
+.grid-source-link {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.7);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.grid-source-link img {
+  width: 16px;
+  height: 16px;
+  display: block;
+}
+
+.grid-item.filled:hover .grid-source-badges,
+.grid-item.filled:focus-within .grid-source-badges {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
 .alternate-poster-button {
   border: none;
   background: transparent;

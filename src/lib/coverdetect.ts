@@ -63,7 +63,11 @@ export const isPlaceholderCover = (image: HTMLImageElement): boolean => {
   if (!placeholderHash) {
     return false;
   }
-  if (!image.complete || image.naturalWidth === 0 || image.naturalHeight === 0) {
+  if (
+    !image.complete ||
+    image.naturalWidth === 0 ||
+    image.naturalHeight === 0
+  ) {
     return false;
   }
   const candidateHash = computeAverageHash(image);

@@ -2,11 +2,12 @@ import type React from 'react';
 import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import './grid.css';
 import { MdClose } from 'react-icons/md';
-import logger from '../../lib/logger';
 import { isPlaceholderCover } from '../../lib/coverdetect';
+import logger from '../../lib/logger';
 import type { MediaItem, MediaType } from '../../media/types';
-import { MEDIA_TYPE_ICONS } from '../search/dropdown';
-import { CustomImage } from '../ui/customimage';
+import { CustomImage } from '../../ui/customimage';
+import { getExternalLinks } from '../search/results/links';
+import { MEDIA_TYPE_ICONS } from '../search/suggestion/list';
 
 interface GridProps {
   items: MediaItem[];
@@ -251,6 +252,15 @@ const Grid: React.FC<GridProps> = ({
               {row.items.map(({ media, width }) => {
                 const captionTitle = getCaptionTitle(media);
                 const captionSubtitle = getCaptionSubtitle(media);
+                const imdbId =
+                  typeof media.metadata?.imdb_id === 'string'
+                    ? media.metadata.imdb_id
+                    : undefined;
+                const externalLinks = getExternalLinks(
+                  media,
+                  media.type as MediaType,
+                  imdbId,
+                );
                 const hasEditedCaption =
                   typeof media.caption === 'string' &&
                   media.caption.trim() !== '';
@@ -314,6 +324,28 @@ const Grid: React.FC<GridProps> = ({
                       >
                         {MEDIA_TYPE_ICONS[media.type as MediaType]}
                       </button>
+                      {externalLinks.length > 0 && (
+                        <div className="grid-source-badges">
+                          {externalLinks.map((link) => (
+                            <a
+                              key={link.href}
+                              href={link.href}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="grid-source-link"
+                              aria-label={link.label}
+                              onClick={(event) => event.stopPropagation()}
+                            >
+                              <img
+                                src={`https://www.google.com/s2/favicons?sz=32&domain=${link.domain}`}
+                                alt=""
+                                aria-hidden="true"
+                              />
+                              <span className="sr-only">{link.label}</span>
+                            </a>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
                 );

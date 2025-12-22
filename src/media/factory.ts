@@ -17,9 +17,8 @@ function getTmdbKey(): string {
     typeof import.meta !== 'undefined'
       ? (import.meta as ImportMeta).env
       : undefined;
-  return (
-    metaEnv?.TMDB_API_KEY || process.env.TMDB_API_KEY || ''
-  );
+  const nodeEnv = typeof process !== 'undefined' ? process.env : undefined;
+  return metaEnv?.TMDB_API_KEY || nodeEnv?.TMDB_API_KEY || '';
 }
 
 export function getMediaService(mediaType: MediaType): MediaService {

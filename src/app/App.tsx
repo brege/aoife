@@ -1,4 +1,4 @@
-import MediaSearch from '../components/search/search';
+import MediaSearch from '../features/search/search';
 import { ModalProvider } from '../lib/modalmanager';
 
 function App() {
