@@ -16,12 +16,6 @@
 - using `var(--color-primary)` etc
 - allows for different fonts and decorations
 
-#### Internals
-
-**Consolidations** 
-- extract reusable, generic card structure from the search result/picker elements
-- unify the caption and custom url modals into a central edit modal
-
 #### Providers
 
 - **Music Albums**

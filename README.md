@@ -46,7 +46,7 @@ URLs have memorable slugs so it's easier to manually copy between devices.  From
 **Mixed Media** [?share=chardonnay-horseradish-kiwi](https://aoife.brege.org/?share=chardonnay-horseradish-kiwi)
 
 
-## Setup
+## Running aoife Locally
 
 ```bash
 git clone git@github.com:brege/aoife.git
@@ -57,18 +57,16 @@ npm run dev
 
 This will start a [Vite](https://vitejs.dev/) React server, which will print the local URL and port number to console.
 
-**aoife** has an API that's easy to curl and test behaviors against through a CLI bridge. In production, the backend, `backend/`, is served by Flask/Gunicorn workers. Vite is only used in development and building `dist/`.
+**aoife** has an API that's easy to curl and test behaviors against through its CLI bridge. In production, the backend, `backend/`, is served by Flask/Gunicorn workers. Vite is only used in development and building `dist/`.
 
 API Keys are not included in the repo. They are configured in a `.env` file.
-
 ```
-VITE_TMDB_API_KEY=abcdefghijklmnopqrstuvwxyz
-VITE_GAMESDB_PUBLIC_KEY=zyxwvutsrqponmlkjihgfedcba
+TMDB_API_KEY=abcdefghijklmnopqrstuvwxyz
+GAMESDB_PUBLIC_KEY=zyxwvutsrqponmlkjihgfedcba
 ```
 
 > [!NOTE]
-> aoife has no plans to store pictures. Any images uploaded via the **Custom** option are stored in localStorage in your browser. **Permalinking is limited to only URL-based images.**
-Use a service like [catbox](https://catbox.moe/) or [pixelfed](https://pixelfed.org/) to host ephemeral or long-lived images, respectively.
+> aoife has no plans to host images. Any images uploaded via the **Custom** option are stored in localStorage in your browser. **Permalinking is limited to only URL-based images.** Use a service like [catbox](https://catbox.moe/), [immich](https://immich.app/) or [pixelfed](https://pixelfed.org/) to host pictures by external-to-aoife URLs.
 
 ## Development
 

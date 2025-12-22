@@ -1,5 +1,16 @@
 ## Changelog
 
+### 2026-12-22
+
+- Reprganized component and business-logic topology in src/
+- Extracted CandidateCards as common component from picker and results
+- Extracted common edit modal from custom cover-urls and captions
+- Added hover links to service providers from main-view posters
+- Added Provider links for books, music, and thegamersdb
+- Added a poster-dimensions hover overlay
+- Just use "Show More" instead of "Show X More" since books, music are non-deterministic
+- Replaced the "Add" in "Add <MediaType>" button with HiMiniViewfinderCircle react-icon
+
 ### 2026-12-21
 
 - Add search suggestion support for all providers
