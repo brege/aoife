@@ -1,6 +1,7 @@
 import { MdClose } from 'react-icons/md';
 import type { MediaItem, MediaType } from '../../../media/types';
 import { isPlaceholderCover } from '../../../lib/coverdetect';
+import { CandidateCard } from './card';
 
 type ExternalLink = {
   href: string;
@@ -193,32 +194,23 @@ export const SearchResults = ({
           };
 
           return (
-            <button
+            <CandidateCard
               key={result.id}
-              type="button"
               className="search-result-card"
-              data-media-id={result.id}
-              data-media-title={result.title}
               onClick={() => onAdd(result, availableCovers)}
-              aria-label={`Add ${result.title}`}
+              ariaLabel={`Add ${result.title}`}
+              imageUrl={result.coverThumbnailUrl || result.coverUrl || undefined}
+              imageAlt={`${result.title} cover`}
+              imageClassName="search-result-poster-large"
+              placeholderClassName="search-result-placeholder large"
+              placeholderLabel="No cover"
+              onImageLoad={handlePosterLoad}
+              onImageError={() => onPosterError(result.id)}
+              crossOrigin={mediaType === 'books' ? 'anonymous' : undefined}
+              aspectRatio={aspectRatios[result.id]}
+              dataMediaId={result.id}
+              dataMediaTitle={result.title}
             >
-              {result.coverThumbnailUrl || result.coverUrl ? (
-                <img
-                  src={result.coverThumbnailUrl || result.coverUrl || ''}
-                  alt={`${result.title} cover`}
-                  className="search-result-poster-large"
-                  onLoad={handlePosterLoad}
-                  onError={() => onPosterError(result.id)}
-                  crossOrigin={mediaType === 'books' ? 'anonymous' : undefined}
-                  style={
-                    aspectRatios[result.id]
-                      ? { aspectRatio: aspectRatios[result.id] }
-                      : undefined
-                  }
-                />
-              ) : (
-                <div className="search-result-placeholder large">No cover</div>
-              )}
               <div className="search-result-meta">
                 <div className="search-result-title">
                   <span className="search-result-name">{result.title}</span>
@@ -254,7 +246,7 @@ export const SearchResults = ({
                   ))}
                 </div>
               )}
-            </button>
+            </CandidateCard>
           );
         })}
     </div>

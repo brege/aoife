@@ -1,8 +1,9 @@
 import { FaStar } from 'react-icons/fa';
 import { MdClose } from 'react-icons/md';
 import type { MediaItem, MediaType } from '../../../media/types';
-import Carousel from './carousel';
 import { isPlaceholderCover } from '../../../lib/coverdetect';
+import { CandidateCard } from '../results/card';
+import Carousel from './carousel';
 
 type PosterPickerProps = {
   coverViewMode: 'grid' | 'carousel';
@@ -81,28 +82,25 @@ export const PosterPicker = ({
             );
 
             return (
-              <button
+              <CandidateCard
                 key={key}
-                type="button"
                 className="poster-picker-card"
                 onClick={() => onSelectGridCover(url, index)}
-                aria-label={`Use alternate cover ${index + 1}`}
+                ariaLabel={`Use alternate cover ${index + 1}`}
+                imageUrl={url}
+                imageAlt={`Alternate cover ${index + 1}`}
+                imageClassName="poster-picker-image"
+                onImageError={() => onCoverError(url)}
+                onImageLoad={(event) => {
+                  if (
+                    detectPlaceholder &&
+                    isPlaceholderCover(event.currentTarget)
+                  ) {
+                    onCoverError(url);
+                  }
+                }}
+                crossOrigin={detectPlaceholder ? 'anonymous' : undefined}
               >
-                <img
-                  src={url}
-                  alt={`Alternate cover ${index + 1}`}
-                  className="poster-picker-image"
-                  onError={() => onCoverError(url)}
-                  onLoad={(event) => {
-                    if (
-                      detectPlaceholder &&
-                      isPlaceholderCover(event.currentTarget)
-                    ) {
-                      onCoverError(url);
-                    }
-                  }}
-                  crossOrigin={detectPlaceholder ? 'anonymous' : undefined}
-                />
                 {isTmdb && isSelected && (
                   <div className="poster-picker-badge" aria-hidden="true">
                     <FaStar />
@@ -125,7 +123,7 @@ export const PosterPicker = ({
                     )}
                   </div>
                 )}
-              </button>
+              </CandidateCard>
             );
           })
         )}
