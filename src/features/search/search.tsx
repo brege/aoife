@@ -1,6 +1,6 @@
 import type React from 'react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import '../../app/styles/global.css';
+import '../../app/app.css';
 import './search.css';
 import { useGridOperations } from '../../lib/grid-operations';
 import logger from '../../lib/logger';

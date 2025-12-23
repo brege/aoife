@@ -20,8 +20,10 @@
   --bg-secondary: #2c3e50;
   --bg-tertiary: #34495e;
   --bg-overlay: rgba(0, 0, 0, 0.7);
+  --bg-overlay-dark: rgba(0, 0, 0, 0.8);
   --bg-hover: rgba(255, 255, 255, 0.1);
   --border-color: #34495e;
+  --border-radius-xs: 4px;
   --border-radius-sm: 6px;
   --border-radius-md: 8px;
   --border-radius-lg: 12px;
