@@ -63,7 +63,7 @@
 }
 
 .hamburger-button:focus-visible {
-  outline: 2px solid var(--accent-color);
+  outline: 2px solid var(--accent-blue);
   outline-offset: 2px;
 }
 
@@ -81,7 +81,7 @@
   height: 2px;
   width: 100%;
   background: var(--text-primary);
-  border-radius: 1px;
+  border-radius: 2px;
   transition: all var(--transition-medium);
   transform-origin: center;
 }
@@ -93,9 +93,6 @@
   right: 0;
   background: var(--bg-primary);
   border-radius: var(--border-radius-lg);
-  --menu-segmented-background: rgba(255, 255, 255, 0.04);
-  --menu-toggle-track: #444;
-  --menu-toggle-border: #555;
   width: 340px;
   max-height: 70vh;
   overflow-y: auto;
@@ -542,7 +539,7 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: var(--menu-segmented-background);
+  background: var(--bg-hover);
   border: 1px solid var(--border-color);
   border-radius: 999px;
   justify-self: end;
@@ -577,7 +574,7 @@
 }
 
 .segmented-input:checked + .segmented-button {
-  background: var(--bg-tertiary);
+  background: var(--primary-lighter);
   color: var(--text-primary);
 }
 
@@ -651,7 +648,7 @@
   display: inline-flex;
   align-items: center;
   gap: var(--spacing-xs);
-  color: var(--accent-color);
+  color: var(--accent-blue);
   text-decoration: none;
 }
 
@@ -674,9 +671,9 @@
   cursor: pointer;
   justify-self: center;
   border-radius: 9999px;
-  background: var(--menu-toggle-track);
+  background: var(--bg-tertiary);
   transition: background-color 200ms;
-  border: 1px solid var(--menu-toggle-border);
+  border: 1px solid var(--border-color);
 }
 
 .layout-dimension-toggle[aria-checked="true"],
@@ -711,9 +708,9 @@
   cursor: pointer;
   justify-self: center;
   border-radius: 9999px;
-  background: var(--menu-toggle-track);
+  background: var(--bg-tertiary);
   transition: background-color 200ms;
-  border: 1px solid var(--menu-toggle-border);
+  border: 1px solid var(--border-color);
 }
 
 .cover-view-toggle[aria-checked="true"] {

@@ -9,10 +9,10 @@
   align-items: center;
   gap: 12px;
   padding: 0 12px;
-  background-color: #2c3e50;
-  color: #ffffff;
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
   border: none;
-  border-radius: 8px;
+  border-radius: var(--border-radius-md);
   min-height: 46px;
   cursor: pointer;
   transition: background-color 0.3s ease;
@@ -21,11 +21,11 @@
 }
 
 .dropdown-button:hover {
-  background-color: #34495e;
+  background-color: var(--bg-tertiary);
 }
 
 .dropdown-button:focus {
-  outline: 2px solid #00d474;
+  outline: 2px solid var(--accent-green);
   outline-offset: 2px;
 }
 
@@ -47,9 +47,9 @@
   top: calc(100% + 8px);
   left: 0;
   right: 0;
-  background-color: #1f2933;
-  border-radius: 8px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  background-color: var(--bg-primary);
+  border-radius: var(--border-radius-md);
+  box-shadow: var(--shadow-lg);
   z-index: 1000;
   overflow: hidden;
 }
@@ -61,7 +61,7 @@
   gap: 12px;
   padding: 12px;
   background: transparent;
-  color: #ffffff;
+  color: var(--text-primary);
   border: none;
   cursor: pointer;
   transition: background-color 0.2s ease;
@@ -70,15 +70,15 @@
 }
 
 .dropdown-option:hover {
-  background-color: #2c3e50;
+  background-color: var(--bg-secondary);
 }
 
 .dropdown-option.active {
-  background-color: #34495e;
+  background-color: var(--bg-tertiary);
 }
 
 .dropdown-option.highlighted {
-  background-color: #2c3e50;
+  background-color: var(--bg-secondary);
 }
 
 .dropdown-option-icon {
@@ -112,7 +112,7 @@
 .media-search-form.band.band-bottom .dropdown-menu {
   top: auto;
   bottom: calc(100% + 8px);
-  border-radius: 8px 8px 0 0;
+  border-radius: var(--border-radius-md) var(--border-radius-md) 0 0;
 }
 
 .media-search-form.stack .dropdown {
@@ -130,6 +130,6 @@
   .media-search-form.stack .dropdown-menu {
     top: auto;
     bottom: calc(100% + 8px);
-    border-radius: 8px 8px 0 0;
+    border-radius: var(--border-radius-md) var(--border-radius-md) 0 0;
   }
 }
