@@ -12,10 +12,6 @@
 **Posters** 
 - ability to drag and reorder posters (research)
 
-**Themeable CSS**
-- using `var(--color-primary)` etc
-- allows for different fonts and decorations
-
 #### Providers
 
 - **Music Albums**

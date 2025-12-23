@@ -1,11 +1,11 @@
 .grid {
-  --grid-gap: 16px;
+  --grid-gap: var(--spacing-lg);
   width: 100%;
   height: calc(100vh - var(--header-height));
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: var(--spacing-xl) 40px;
+  padding: var(--spacing-xl) var(--spacing-xl);
   box-sizing: border-box;
   position: relative;
 }
@@ -72,7 +72,7 @@
     180deg,
     rgba(0, 0, 0, 0) 0%,
     var(--bg-overlay) 55%,
-    rgba(0, 0, 0, 0.85) 100%
+    var(--bg-overlay-darkest) 100%
   );
   color: var(--text-primary);
   display: flex;
@@ -88,7 +88,7 @@
     0deg,
     rgba(0, 0, 0, 0) 0%,
     var(--bg-overlay) 55%,
-    rgba(0, 0, 0, 0.85) 100%
+    var(--bg-overlay-darkest) 100%
   );
 }
 
@@ -100,13 +100,13 @@
   font-size: 14px;
   font-weight: 600;
   line-height: 1.2;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+  text-shadow: var(--text-shadow);
 }
 
 .grid-caption-subtitle {
   font-size: 12px;
   color: var(--text-secondary);
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+  text-shadow: var(--text-shadow);
 }
 
 .empty-state-hint {
@@ -144,7 +144,7 @@
   width: 100%;
   height: auto;
   cursor: pointer;
-  transition: opacity 0.2s ease;
+  transition: opacity var(--transition-fast);
 }
 
 .grid .grid-poster {
