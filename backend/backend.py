@@ -199,6 +199,10 @@ def is_allowed_cover_url(value: str) -> bool:
     return parsed.scheme in ("https", "http")
 
 
+def is_uploaded_cover(value: str) -> bool:
+    return value.startswith("img-")
+
+
 def validate_and_canonicalize_share_payload(payload: str) -> str:
     payload_bytes = payload.encode("utf-8")
     if len(payload_bytes) > MAX_SHARE_PAYLOAD_BYTES:
@@ -232,8 +236,6 @@ def validate_and_canonicalize_share_payload(payload: str) -> str:
             raise ValueError("Share payload gridItems entries must be objects")
 
         media_type = item.get("type")
-        if media_type == "custom":
-            raise ValueError("Custom uploads cannot be shared")
         if not isinstance(media_type, str) or not media_type:
             raise ValueError("Share payload item type is invalid")
 
@@ -247,11 +249,17 @@ def validate_and_canonicalize_share_payload(payload: str) -> str:
 
         cover_url = item.get("coverUrl")
         if cover_url is not None:
+            if isinstance(cover_url, str) and is_uploaded_cover(cover_url):
+                raise ValueError("Uploaded files cannot be shared")
             if not isinstance(cover_url, str) or not is_allowed_cover_url(cover_url):
                 raise ValueError("Share payload item coverUrl is not allowed")
 
         cover_thumbnail_url = item.get("coverThumbnailUrl")
         if cover_thumbnail_url is not None:
+            if isinstance(cover_thumbnail_url, str) and is_uploaded_cover(
+                cover_thumbnail_url
+            ):
+                raise ValueError("Uploaded files cannot be shared")
             if not isinstance(cover_thumbnail_url, str) or not is_allowed_cover_url(
                 cover_thumbnail_url
             ):
@@ -264,6 +272,8 @@ def validate_and_canonicalize_share_payload(payload: str) -> str:
             if len(alternate_cover_urls) > MAX_ALTERNATE_COVERS:
                 raise ValueError("Share payload item alternateCoverUrls is too large")
             for url in alternate_cover_urls:
+                if isinstance(url, str) and is_uploaded_cover(url):
+                    raise ValueError("Uploaded files cannot be shared")
                 if not isinstance(url, str) or not is_allowed_cover_url(url):
                     raise ValueError(
                         "Share payload item alternateCoverUrls contains a disallowed URL"

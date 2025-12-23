@@ -68,6 +68,8 @@ export const isAllowedCoverUrl = (value: string): boolean => {
   return parsed.protocol === 'https:' || parsed.protocol === 'http:';
 };
 
+const isUploadedCover = (value: string): boolean => value.startsWith('img-');
+
 export const validateAndCanonicalizeSharePayload = (
   payload: string,
 ): string => {
@@ -121,9 +123,6 @@ export const validateAndCanonicalizeSharePayload = (
     const rawItem = item as Record<string, unknown>;
 
     const type = rawItem.type;
-    if (type === 'custom') {
-      throw new Error('Custom uploads cannot be shared');
-    }
     if (typeof type !== 'string' || type.trim() === '') {
       throw new Error('Share payload item type is invalid');
     }
@@ -140,6 +139,9 @@ export const validateAndCanonicalizeSharePayload = (
 
     const coverUrl = rawItem.coverUrl;
     if (coverUrl != null) {
+      if (typeof coverUrl === 'string' && isUploadedCover(coverUrl)) {
+        throw new Error('Uploaded files cannot be shared');
+      }
       if (typeof coverUrl !== 'string' || !isAllowedCoverUrl(coverUrl)) {
         console.error('Share payload coverUrl rejected', {
           coverUrl,
@@ -150,6 +152,12 @@ export const validateAndCanonicalizeSharePayload = (
 
     const coverThumbnailUrl = rawItem.coverThumbnailUrl;
     if (coverThumbnailUrl != null) {
+      if (
+        typeof coverThumbnailUrl === 'string' &&
+        isUploadedCover(coverThumbnailUrl)
+      ) {
+        throw new Error('Uploaded files cannot be shared');
+      }
       if (
         typeof coverThumbnailUrl !== 'string' ||
         !isAllowedCoverUrl(coverThumbnailUrl)
@@ -170,6 +178,9 @@ export const validateAndCanonicalizeSharePayload = (
         throw new Error('Share payload item alternateCoverUrls is too large');
       }
       for (const url of alternateCoverUrls) {
+        if (typeof url === 'string' && isUploadedCover(url)) {
+          throw new Error('Uploaded files cannot be shared');
+        }
         if (typeof url !== 'string' || !isAllowedCoverUrl(url)) {
           console.error('Share payload alternate coverUrl rejected', {
             coverUrl: url,

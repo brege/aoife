@@ -1,5 +1,9 @@
 ## Changelog
 
+### 2026-12-23
+
+- Fixed/relaxed custom upload blocking on general media type to clamp only to localStorage files
+
 ### 2026-12-22
 
 - Reprganized component and business-logic topology in src/
