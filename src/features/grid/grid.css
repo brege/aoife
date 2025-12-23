@@ -52,13 +52,9 @@
   flex-shrink: 0;
 }
 
-.grid-item.filled {
-  cursor: grab;
-}
-
 .grid-item.is-dragging {
   opacity: 0.6;
-  cursor: grabbing;
+  cursor: default;
 }
 
 .grid-item.is-drag-over {
@@ -151,6 +147,41 @@
 .alternate-poster-button:focus-visible {
   outline: 2px solid var(--accent-blue);
   outline-offset: 2px;
+}
+
+.grid-drag-handle {
+  position: absolute;
+  top: 6px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 999px;
+  background: var(--bg-overlay-dark);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease;
+  cursor: grab;
+  z-index: 10;
+}
+
+.grid-drag-handle svg {
+  width: 18px;
+  height: 18px;
+  color: white;
+}
+
+.grid-item.filled:hover .grid-drag-handle,
+.grid-item.filled:focus-within .grid-drag-handle {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translate(-50%, -1px);
 }
 
 .grid-poster {
@@ -316,5 +347,15 @@
   .grid-close-button svg {
     width: 14px;
     height: 14px;
+  }
+
+  .grid-drag-handle {
+    width: 28px;
+    height: 28px;
+  }
+
+  .grid-drag-handle svg {
+    width: 16px;
+    height: 16px;
   }
 }

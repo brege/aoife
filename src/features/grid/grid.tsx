@@ -1,7 +1,7 @@
 import type React from 'react';
 import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import './grid.css';
-import { MdClose } from 'react-icons/md';
+import { MdClose, MdDragHandle } from 'react-icons/md';
 import { isPlaceholderCover } from '../../lib/coverdetect';
 import logger from '../../lib/logger';
 import type { MediaItem, MediaType } from '../../media/types';
@@ -251,6 +251,9 @@ const Grid: React.FC<GridProps> = ({
         return;
       }
       const target = event.target as HTMLElement | null;
+      if (!target?.closest('.grid-drag-handle')) {
+        return;
+      }
       if (
         target?.closest(
           '.grid-close-button, .media-type-badge, .grid-source-link',
@@ -430,6 +433,14 @@ const Grid: React.FC<GridProps> = ({
                             media.type === 'books' ? 'anonymous' : undefined
                           }
                         />
+                      </button>
+                      <button
+                        type="button"
+                        className="grid-drag-handle"
+                        aria-label={`Reorder ${media.title}`}
+                        onClick={(event) => event.stopPropagation()}
+                      >
+                        <MdDragHandle aria-hidden="true" focusable="false" />
                       </button>
                       {showCaption && (
                         <div className={captionClassName}>
