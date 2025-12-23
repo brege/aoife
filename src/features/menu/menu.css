@@ -37,8 +37,8 @@
   background: var(--bg-tertiary);
   border-color: var(--border-color);
   box-shadow:
-    inset 0 4px 10px rgba(0, 0, 0, 0.45),
-    0 1px 0 rgba(255, 255, 255, 0.06);
+    var(--shadow-inset),
+    var(--shadow-highlight);
   transform: translateY(1px);
 }
 
@@ -48,8 +48,8 @@
 
 .hamburger-button.open:active {
   box-shadow:
-    inset 0 4px 10px rgba(0, 0, 0, 0.45),
-    0 1px 0 rgba(255, 255, 255, 0.06);
+    var(--shadow-inset),
+    var(--shadow-highlight);
   transform: translateY(2px);
 }
 
@@ -57,13 +57,13 @@
   background: var(--bg-tertiary);
   border-color: var(--border-color);
   box-shadow:
-    inset 0 4px 10px rgba(0, 0, 0, 0.45),
-    0 1px 0 rgba(255, 255, 255, 0.06);
+    var(--shadow-inset),
+    var(--shadow-highlight);
   transform: translateY(1px);
 }
 
 .hamburger-button:focus-visible {
-  outline: 2px solid var(--accent-color);
+  outline: 2px solid var(--accent-blue);
   outline-offset: 2px;
 }
 
@@ -81,7 +81,7 @@
   height: 2px;
   width: 100%;
   background: var(--text-primary);
-  border-radius: 1px;
+  border-radius: 2px;
   transition: all var(--transition-medium);
   transform-origin: center;
 }
@@ -539,7 +539,7 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--bg-hover);
   border: 1px solid var(--border-color);
   border-radius: 999px;
   justify-self: end;
@@ -574,7 +574,7 @@
 }
 
 .segmented-input:checked + .segmented-button {
-  background: var(--bg-tertiary);
+  background: var(--primary-lighter);
   color: var(--text-primary);
 }
 
@@ -648,7 +648,7 @@
   display: inline-flex;
   align-items: center;
   gap: var(--spacing-xs);
-  color: var(--accent-color);
+  color: var(--accent-blue);
   text-decoration: none;
 }
 
@@ -671,9 +671,9 @@
   cursor: pointer;
   justify-self: center;
   border-radius: 9999px;
-  background: #444;
+  background: var(--bg-tertiary);
   transition: background-color 200ms;
-  border: 1px solid #555;
+  border: 1px solid var(--border-color);
 }
 
 .layout-dimension-toggle[aria-checked="true"],
@@ -708,9 +708,9 @@
   cursor: pointer;
   justify-self: center;
   border-radius: 9999px;
-  background: #444;
+  background: var(--bg-tertiary);
   transition: background-color 200ms;
-  border: 1px solid #555;
+  border: 1px solid var(--border-color);
 }
 
 .cover-view-toggle[aria-checked="true"] {

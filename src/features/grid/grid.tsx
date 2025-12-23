@@ -14,6 +14,10 @@ interface GridProps {
   onRemoveMedia: (mediaId: string | number) => void;
   onPosterClick: (media: MediaItem) => void;
   onCaptionEdit: (media: MediaItem) => void;
+  onReorderMedia: (
+    sourceId: string | number,
+    targetId: string | number,
+  ) => void;
   columns: number;
   minRows: number;
   placeholderLabel?: string;
@@ -127,6 +131,7 @@ const Grid: React.FC<GridProps> = ({
   onRemoveMedia,
   onPosterClick,
   onCaptionEdit,
+  onReorderMedia,
   columns,
   minRows,
   placeholderLabel,
@@ -139,6 +144,21 @@ const Grid: React.FC<GridProps> = ({
   const [containerWidth, setContainerWidth] = useState(0);
   const [containerHeight, setContainerHeight] = useState(0);
   const [containerGap, setContainerGap] = useState(16);
+  const [draggingId, setDraggingId] = useState<string | number | null>(null);
+  const [dragOverId, setDragOverId] = useState<string | number | null>(null);
+  const dragStateRef = useRef<{
+    pointerId: number | null;
+    sourceId: string | number | null;
+    startX: number;
+    startY: number;
+    isDragging: boolean;
+  }>({
+    pointerId: null,
+    sourceId: null,
+    startX: 0,
+    startY: 0,
+    isDragging: false,
+  });
 
   const updateContainerDimensions = useCallback(() => {
     const element = wrapperRef.current;
@@ -225,6 +245,108 @@ const Grid: React.FC<GridProps> = ({
     );
   };
 
+  const handlePointerDown = useCallback(
+    (mediaId: string | number, event: React.PointerEvent<HTMLDivElement>) => {
+      if (event.button !== 0) {
+        return;
+      }
+      const target = event.target as HTMLElement | null;
+      if (
+        target?.closest(
+          '.grid-close-button, .media-type-badge, .grid-source-link',
+        )
+      ) {
+        return;
+      }
+      dragStateRef.current = {
+        pointerId: event.pointerId,
+        sourceId: mediaId,
+        startX: event.clientX,
+        startY: event.clientY,
+        isDragging: false,
+      };
+      event.currentTarget.setPointerCapture(event.pointerId);
+    },
+    [],
+  );
+
+  const handlePointerMove = useCallback(
+    (event: React.PointerEvent<HTMLDivElement>) => {
+      const dragState = dragStateRef.current;
+      if (dragState.pointerId !== event.pointerId || dragState.sourceId == null) {
+        return;
+      }
+      const distance = Math.hypot(
+        event.clientX - dragState.startX,
+        event.clientY - dragState.startY,
+      );
+      if (!dragState.isDragging) {
+        if (distance < 6) {
+          return;
+        }
+        dragState.isDragging = true;
+        setDraggingId(dragState.sourceId);
+      }
+
+      event.preventDefault();
+
+      const target = document.elementFromPoint(event.clientX, event.clientY);
+      const itemElement = target?.closest('.grid-item[data-media-id]');
+      if (!itemElement) {
+        if (dragOverId !== null) {
+          setDragOverId(null);
+        }
+        return;
+      }
+      const dataId = itemElement.getAttribute('data-media-id');
+      if (!dataId) {
+        return;
+      }
+      const targetItem = items.find((item) => String(item.id) === dataId);
+      if (!targetItem) {
+        return;
+      }
+      if (targetItem.id === dragState.sourceId) {
+        if (dragOverId !== null) {
+          setDragOverId(null);
+        }
+        return;
+      }
+      if (dragOverId !== targetItem.id) {
+        setDragOverId(targetItem.id);
+      }
+    },
+    [dragOverId, items],
+  );
+
+  const handlePointerUp = useCallback(() => {
+    const dragState = dragStateRef.current;
+    if (dragState.isDragging && dragState.sourceId != null && dragOverId != null) {
+      onReorderMedia(dragState.sourceId, dragOverId);
+    }
+    dragStateRef.current = {
+      pointerId: null,
+      sourceId: null,
+      startX: 0,
+      startY: 0,
+      isDragging: false,
+    };
+    setDraggingId(null);
+    setDragOverId(null);
+  }, [dragOverId, onReorderMedia]);
+
+  const handlePointerCancel = useCallback(() => {
+    dragStateRef.current = {
+      pointerId: null,
+      sourceId: null,
+      startX: 0,
+      startY: 0,
+      isDragging: false,
+    };
+    setDraggingId(null);
+    setDragOverId(null);
+  }, []);
+
   const renderGrid = () => {
     if (placeholderLabel && items.length === 0) {
       return (
@@ -269,21 +391,34 @@ const Grid: React.FC<GridProps> = ({
                   (!captionEditsOnly || hasEditedCaption) &&
                   (captionTitle.trim() !== '' || captionSubtitle !== '');
                 const captionClassName = `grid-caption grid-caption-${captionMode}`;
+                const isDragging = draggingId === media.id;
+                const isDragOver = dragOverId === media.id;
+                const dragStateClassName = `${isDragging ? ' is-dragging' : ''}${isDragOver ? ' is-drag-over' : ''}`;
                 return (
                   <div
                     key={media.id}
-                    className="grid-item filled"
+                    className={`grid-item filled${dragStateClassName}`}
                     data-type={media.type}
+                    data-media-id={String(media.id)}
                     style={{
                       width,
                       height: layoutDimension === 'width' ? 'auto' : row.height,
                     }}
+                    onPointerDown={(event) => handlePointerDown(media.id, event)}
+                    onPointerMove={handlePointerMove}
+                    onPointerUp={handlePointerUp}
+                    onPointerCancel={handlePointerCancel}
                   >
                     <div className="poster-wrapper">
                       <button
                         type="button"
                         className="poster-button"
-                        onClick={() => onPosterClick(media)}
+                        onClick={() => {
+                          if (draggingId) {
+                            return;
+                          }
+                          onPosterClick(media);
+                        }}
                         aria-label={`View poster for ${media.title}`}
                       >
                         <CustomImage

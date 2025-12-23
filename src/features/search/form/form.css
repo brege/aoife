@@ -5,8 +5,8 @@
   padding: 12px 20px;
   width: 100%;
   box-sizing: border-box;
-  background-color: #1f2933;
-  border-bottom: 1px solid #2c3e50;
+  background-color: var(--bg-primary);
+  border-bottom: 1px solid var(--border-color);
   position: sticky;
   top: var(--header-height);
   z-index: 100;
@@ -43,9 +43,9 @@
   top: calc(100% + 6px);
   left: 0;
   right: 0;
-  background: #1f2933;
-  border: 1px solid rgba(44, 62, 80, 0.8);
-  border-radius: 10px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-md);
   padding: 6px;
   box-shadow: var(--shadow-lg);
   z-index: var(--z-dropdown);
@@ -65,7 +65,7 @@
 
 .combobox-option {
   padding: 8px 10px;
-  border-radius: 8px;
+  border-radius: var(--border-radius-md);
   cursor: pointer;
   color: var(--text-primary);
   font-size: 13px;
@@ -73,7 +73,7 @@
 }
 
 .combobox-option.active {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--bg-hover);
 }
 
 .combobox-option-label {
@@ -86,9 +86,9 @@
   left: 0;
   right: 0;
   padding: 8px 10px;
-  border-radius: 8px;
-  background: #1f2933;
-  border: 1px solid rgba(44, 62, 80, 0.8);
+  border-radius: var(--border-radius-md);
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
   color: var(--text-muted);
   font-size: 12px;
   z-index: var(--z-dropdown);
@@ -107,10 +107,10 @@
 .form-input {
   padding: 0 12px;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--border-radius-md);
   min-height: 40px;
-  background-color: #2c3e50;
-  color: #ffffff;
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
   font-size: 14px;
   font-family: inherit;
   flex: 1;
@@ -135,11 +135,11 @@
 }
 
 .form-input:focus {
-  outline: 2px solid #00d474;
+  outline: 2px solid var(--accent-green);
 }
 
 .form-input::placeholder {
-  color: #bdc3c7;
+  color: var(--text-placeholder);
 }
 
 .form-submit-button {
@@ -152,7 +152,7 @@
   white-space: nowrap;
   cursor: pointer;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--border-radius-md);
   font-family: inherit;
   font-size: 12px;
   text-transform: uppercase;
@@ -160,8 +160,8 @@
   line-height: 1;
   appearance: none;
   transition: all 0.3s ease;
-  background-color: #008000;
-  color: #fff;
+  background-color: var(--accent-green-hover);
+  color: var(--text-primary);
   font-weight: 600;
   flex-shrink: 0;
 }
@@ -179,7 +179,7 @@
 }
 
 .form-submit-button:hover:not(:disabled) {
-  background-color: #00d474;
+  background-color: var(--accent-green);
 }
 
 .form-submit-button:disabled {
@@ -243,11 +243,11 @@
   justify-content: center;
   cursor: pointer;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--border-radius-md);
   appearance: none;
   transition: all 0.3s ease;
-  background-color: #2c3e50;
-  color: #ffffff;
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
   padding: 0;
 }
 
@@ -257,7 +257,7 @@
 }
 
 .icon-button:hover {
-  background-color: #34495e;
+  background-color: var(--bg-tertiary);
 }
 
 .media-search-form > .dropdown {
@@ -282,9 +282,9 @@
     max-width: 520px;
     margin: 0 auto;
     padding: 12px;
-    background: rgba(31, 41, 51, 0.92);
-    border: 1px solid rgba(44, 62, 80, 0.8);
-    border-radius: 12px;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-lg);
     box-shadow: var(--shadow-lg);
     z-index: var(--z-header);
   }
@@ -303,9 +303,9 @@
     width: calc(100% - 80px);
     max-width: 1600px;
     border-bottom: none;
-    border-radius: 12px;
-    border: 1px solid rgba(44, 62, 80, 0.8);
-    background-color: rgba(31, 41, 51, 0.92);
+    border-radius: var(--border-radius-lg);
+    border: 1px solid var(--border-color);
+    background-color: var(--bg-primary);
     box-shadow: var(--shadow-lg);
   }
 

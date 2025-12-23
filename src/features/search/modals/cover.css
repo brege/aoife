@@ -1,7 +1,7 @@
 .cover-link-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(10, 15, 20, 0.7);
+  background: var(--bg-overlay);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -11,12 +11,12 @@
 .cover-link-modal {
   position: relative;
   width: min(520px, calc(100% - 32px));
-  background: #1f2933;
-  border-radius: 14px;
+  background: var(--bg-primary);
+  border-radius: var(--border-radius-lg);
   padding: 24px;
   box-shadow:
-    0 24px 40px rgba(0, 0, 0, 0.4),
-    0 0 0 1px rgba(255, 255, 255, 0.08);
+    var(--shadow-lg),
+    0 0 0 1px var(--border-color);
 }
 
 .cover-link-close {
@@ -29,7 +29,7 @@
   padding: 0;
   border: none;
   border-radius: 50%;
-  background: rgba(0, 0, 0, 0.8);
+  background: var(--bg-overlay);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -37,7 +37,7 @@
 }
 
 .cover-link-close:hover {
-  background: rgba(220, 38, 38, 0.9);
+  background: var(--accent-red-alpha);
   transform: scale(1.05);
 }
 
@@ -45,29 +45,29 @@
   width: 16px;
   height: 16px;
   display: block;
-  color: white;
+  color: var(--text-primary);
 }
 
 .cover-link-title {
   margin: 0;
-  color: #ffffff;
+  color: var(--text-primary);
   font-size: 1.2rem;
   font-weight: 700;
 }
 
 .cover-link-subtitle {
   margin: 8px 0 16px;
-  color: #cbd5e1;
+  color: var(--text-light);
   font-size: 0.9rem;
 }
 
 .cover-link-input {
   width: 100%;
   padding: 12px 14px;
-  border-radius: 10px;
-  border: 1px solid #334155;
-  background: #111827;
-  color: #f8fafc;
+  border-radius: var(--border-radius-md);
+  border: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
   box-sizing: border-box;
 }
 
@@ -80,7 +80,7 @@
 .cover-link-save,
 .cover-link-clear {
   border: none;
-  border-radius: 8px;
+  border-radius: var(--border-radius-md);
   padding: 10px 16px;
   font-weight: 700;
   cursor: pointer;
@@ -94,12 +94,12 @@
 }
 
 .cover-link-save {
-  background-color: #008000;
-  color: #fff;
+  background-color: var(--accent-green-hover);
+  color: var(--text-primary);
 }
 
 .cover-link-save:hover {
-  background-color: #00d474;
+  background-color: var(--accent-green);
 }
 
 .cover-link-save:disabled {
@@ -108,12 +108,12 @@
 }
 
 .cover-link-clear {
-  background: #334155;
-  color: #f8fafc;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
 }
 
 .cover-link-clear:hover {
-  background: #475569;
+  background: var(--bg-tertiary);
 }
 
 .cover-link-sources {
@@ -124,7 +124,7 @@
 }
 
 .cover-link-sources a {
-  color: #93c5fd;
+  color: var(--accent-blue);
   text-decoration: none;
   font-size: 0.9rem;
 }

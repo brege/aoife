@@ -1,6 +1,6 @@
 import type React from 'react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import '../../app/styles/global.css';
+import '../../app/app.css';
 import './search.css';
 import { useGridOperations } from '../../lib/grid-operations';
 import logger from '../../lib/logger';
@@ -175,6 +175,35 @@ const MediaSearch: React.FC = () => {
       setShowPosterGrid,
       setActivePosterItemId,
     },
+  );
+
+  const handleReorderMedia = useCallback(
+    (sourceId: string | number, targetId: string | number) => {
+      setGridItems((current) => {
+        if (sourceId === targetId) {
+          return current;
+        }
+        const sourceIndex = current.findIndex((item) => item.id === sourceId);
+        const targetIndex = current.findIndex((item) => item.id === targetId);
+        if (sourceIndex === -1 || targetIndex === -1) {
+          return current;
+        }
+        const next = [...current];
+        const [moved] = next.splice(sourceIndex, 1);
+        next.splice(targetIndex, 0, moved);
+        logger.info('GRID: Reordered media', {
+          context: 'MediaSearch.handleReorderMedia',
+          action: 'grid_reorder',
+          sourceId,
+          targetId,
+          sourceIndex,
+          targetIndex,
+          timestamp: Date.now(),
+        });
+        return next;
+      });
+    },
+    [],
   );
 
   const { openModal, closeModal } = useModalManager();
@@ -440,6 +469,7 @@ const MediaSearch: React.FC = () => {
                 setActiveCaptionItemId(item.id);
                 setShowCaptionModal(true);
               }}
+              onReorderMedia={handleReorderMedia}
               columns={columns}
               minRows={minRows}
               placeholderLabel={

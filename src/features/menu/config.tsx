@@ -1,5 +1,6 @@
 import { Switch } from '@headlessui/react';
 import type React from 'react';
+import { FaChevronDown, FaChevronRight } from 'react-icons/fa';
 import logger from '../../lib/logger';
 
 interface MenuConfigProps {
@@ -94,10 +95,22 @@ const MenuConfig: React.FC<MenuConfigProps> = ({
   };
 
   return (
-    <div className="menu-grid-config-section">
-      <div className="grid-config-header">
-        <h3>Layout</h3>
-      </div>
+    <details className="menu-status menu-grid-config-section" open>
+      <summary className="menu-status-summary">
+        <span className="menu-status-summary-label">
+          <span>Layout</span>
+          <FaChevronRight
+            className="menu-status-chevron menu-status-chevron-right"
+            aria-hidden="true"
+            focusable="false"
+          />
+          <FaChevronDown
+            className="menu-status-chevron menu-status-chevron-down"
+            aria-hidden="true"
+            focusable="false"
+          />
+        </span>
+      </summary>
 
       <div className="config-group">
         <div className="config-group-title">Grid</div>
@@ -182,9 +195,12 @@ const MenuConfig: React.FC<MenuConfigProps> = ({
             className="cover-view-toggle"
           />
         </div>
+      </div>
 
+      <div className="config-group">
+        <div className="config-group-title">Captions</div>
         <div className="config-row">
-          <span className="config-label">captions</span>
+          <span className="config-label">position</span>
           <fieldset className="segmented-control" aria-label="Caption position">
             <label className="segmented-option">
               <input
@@ -265,7 +281,7 @@ const MenuConfig: React.FC<MenuConfigProps> = ({
           </fieldset>
         </div>
       </div>
-    </div>
+    </details>
   );
 };
 

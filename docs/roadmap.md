@@ -9,12 +9,8 @@
 
 #### UX
 
-**Posters** 
-- ability to drag and reorder posters (research)
-
-**Themeable CSS**
-- using `var(--color-primary)` etc
-- allows for different fonts and decorations
+**Layout** - add total-width method to make the span of all rows the same
+**HQ Poster Consumer** - sort/front-load posters that have highest qualities
 
 #### Providers
 
