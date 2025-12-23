@@ -3,7 +3,8 @@
 ### 2026-12-23
 
 - Fixed/relaxed custom upload blocking on general media type to clamp only to localStorage files
-- Made CSS themable with var(--\*) variables
+- Made CSS theme-able with var(--\*) variables
+- Added Drag-n-Reorder support for grid items on both mobile and desktop
 
 ### 2026-12-22
 
