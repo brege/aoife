@@ -9,8 +9,8 @@
 
 #### UX
 
-**Posters** 
-- ability to drag and reorder posters (research)
+**Layout** - add total-width method to make the span of all rows the same
+**HQ Poster Consumer** - sort/front-load posters that have highest qualities
 
 #### Providers
 
