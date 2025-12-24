@@ -62,6 +62,10 @@ const Menu: React.FC<MenuProps> = ({
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [isStatusSectionOpen, setIsStatusSectionOpen] = useState(() => {
+    const stored = localStorage.getItem('status-section-open');
+    return stored ? stored === 'true' : false;
+  });
   const menuRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const confirmRef = useRef<HTMLDivElement>(null);
@@ -102,6 +106,10 @@ const Menu: React.FC<MenuProps> = ({
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [showResetConfirm]);
+
+  useEffect(() => {
+    localStorage.setItem('status-section-open', String(isStatusSectionOpen));
+  }, [isStatusSectionOpen]);
 
   useEffect(() => {
     if (isOpen) {
@@ -241,7 +249,13 @@ const Menu: React.FC<MenuProps> = ({
             onCoverViewModeChange={onCoverViewModeChange}
           />
 
-          <details className="menu-status menu-grid-config-section">
+          <details
+            className="menu-status menu-grid-config-section"
+            open={isStatusSectionOpen}
+            onToggle={(e) => {
+              setIsStatusSectionOpen((e.target as HTMLDetailsElement).open);
+            }}
+          >
             <summary className="menu-status-summary">
               <span className="menu-status-summary-label">
                 <span>Is it down?</span>

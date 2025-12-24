@@ -1,7 +1,10 @@
 import { Switch } from '@headlessui/react';
 import type React from 'react';
+import { useEffect, useState } from 'react';
 import { FaChevronDown, FaChevronRight } from 'react-icons/fa';
 import logger from '../../lib/logger';
+
+const LAYOUT_SECTION_OPEN_KEY = 'layout-section-open';
 
 interface MenuConfigProps {
   onMenuClose: () => void;
@@ -42,6 +45,15 @@ const MenuConfig: React.FC<MenuConfigProps> = ({
   coverViewMode = 'grid',
   onCoverViewModeChange,
 }) => {
+  const [isLayoutSectionOpen, setIsLayoutSectionOpen] = useState(() => {
+    const stored = localStorage.getItem(LAYOUT_SECTION_OPEN_KEY);
+    return stored ? stored === 'true' : true;
+  });
+
+  useEffect(() => {
+    localStorage.setItem(LAYOUT_SECTION_OPEN_KEY, String(isLayoutSectionOpen));
+  }, [isLayoutSectionOpen]);
+
   const handleColumnsDecrement = () => {
     if (columns <= MIN_COLUMNS) return;
     const nextValue = columns - 1;
@@ -95,7 +107,13 @@ const MenuConfig: React.FC<MenuConfigProps> = ({
   };
 
   return (
-    <details className="menu-status menu-grid-config-section" open>
+    <details
+      className="menu-status menu-grid-config-section"
+      open={isLayoutSectionOpen}
+      onToggle={(e) => {
+        setIsLayoutSectionOpen((e.target as HTMLDetailsElement).open);
+      }}
+    >
       <summary className="menu-status-summary">
         <span className="menu-status-summary-label">
           <span>Layout</span>

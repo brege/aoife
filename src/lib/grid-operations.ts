@@ -333,6 +333,8 @@ export const useGridOperations = (
 
   const clearGrid = useCallback(() => {
     setGridItems([]);
+    localStorage.removeItem('layout-section-open');
+    localStorage.removeItem('status-section-open');
   }, [setGridItems]);
 
   return {
