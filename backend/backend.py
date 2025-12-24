@@ -9,7 +9,7 @@ import os
 import random
 import tempfile
 import time
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urljoin
 from dotenv import load_dotenv
 import requests
 
@@ -457,13 +457,21 @@ def proxy_coverart_metadata():
 
     def request_metadata(url, depth=0):
         if depth > 2:
-            return jsonify({"error": "Too many redirects"}), 502
+            return jsonify({"error": "Cover art metadata unavailable"}), 404
         resp = requests.get(
             url, timeout=UPSTREAM_TIMEOUT_SECONDS, allow_redirects=False
         )
         if 300 <= resp.status_code < 400 and resp.headers.get("Location"):
-            return request_metadata(resp.headers["Location"], depth + 1)
-        return jsonify(resp.json()), resp.status_code
+            next_url = urljoin(url, resp.headers["Location"])
+            return request_metadata(next_url, depth + 1)
+        content_type = resp.headers.get("Content-Type", "")
+        if "application/json" not in content_type.lower():
+            return jsonify({"error": "Cover art metadata unavailable"}), 404
+        try:
+            payload = resp.json()
+        except ValueError:
+            return jsonify({"error": "Cover art metadata unavailable"}), 404
+        return jsonify(payload), resp.status_code
 
     try:
         return request_metadata(target_url)

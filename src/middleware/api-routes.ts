@@ -296,15 +296,15 @@ export const createApiMiddleware = (env: Record<string, string>) => {
       }
       const requestMetadata = (targetUrl: string, depth = 0) => {
         if (depth > 2) {
-          res.writeHead(502, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ error: 'Too many redirects' }));
+          res.writeHead(404, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Cover art metadata unavailable' }));
           return;
         }
         const coverReq = https.get(targetUrl, (coverRes) => {
           const statusCode = coverRes.statusCode || 502;
           const location = coverRes.headers.location;
           if (statusCode >= 300 && statusCode < 400 && location) {
-            requestMetadata(location, depth + 1);
+            requestMetadata(new URL(location, targetUrl).toString(), depth + 1);
             return;
           }
           let responseBody = '';
@@ -312,6 +312,14 @@ export const createApiMiddleware = (env: Record<string, string>) => {
             responseBody += chunk;
           });
           coverRes.on('end', () => {
+            const contentType = coverRes.headers['content-type'];
+            if (!contentType?.includes('application/json')) {
+              res.writeHead(404, { 'Content-Type': 'application/json' });
+              res.end(
+                JSON.stringify({ error: 'Cover art metadata unavailable' }),
+              );
+              return;
+            }
             res.writeHead(statusCode, {
               'Content-Type': 'application/json',
             });

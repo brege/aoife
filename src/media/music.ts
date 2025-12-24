@@ -77,49 +77,106 @@ const buildCoverArtArchiveProxyUrl = (
   return `/api/coverart/image?${params.toString()}`;
 };
 
+const normalizeCoverArtUrl = (value: string): string => {
+  try {
+    const parsed = new URL(value);
+    if (
+      parsed.protocol === 'http:' &&
+      parsed.hostname.endsWith('coverartarchive.org')
+    ) {
+      parsed.protocol = 'https:';
+      return parsed.toString();
+    }
+  } catch {
+    return value;
+  }
+  return value;
+};
+
 class CoverArtArchiveSource implements CoverArtSource {
   name = 'CoverArtArchive';
   priority = 1;
+  private metadataCache = new Map<string, CoverArtArchiveMetadataResponse | null>();
+  private metadataInFlight = new Map<
+    string,
+    Promise<CoverArtArchiveMetadataResponse | null>
+  >();
 
   private async fetchMetadata(
     releaseId: string,
   ): Promise<CoverArtArchiveMetadataResponse | null> {
+    const cached = this.metadataCache.get(releaseId);
+    if (cached !== undefined) {
+      return cached;
+    }
+    const inFlight = this.metadataInFlight.get(releaseId);
+    if (inFlight) {
+      return inFlight;
+    }
     const params = new URLSearchParams({
       type: 'release',
       id: releaseId,
     });
-    const response = await axios.get<CoverArtArchiveMetadataResponse>(
-      `/api/coverart/metadata?${params.toString()}`,
-      {
-        timeout: 5000,
-        validateStatus: (status) => status === 200 || status === 404,
-      },
-    );
-    if (response.status === 404) {
-      return null;
+    const request = axios
+      .get<CoverArtArchiveMetadataResponse>(
+        `/api/coverart/metadata?${params.toString()}`,
+        {
+          timeout: 5000,
+          validateStatus: (status) => status >= 200 && status < 600,
+        },
+      )
+      .then((response) => {
+        if (response.status !== 200) {
+          return null;
+        }
+        return response.data;
+      })
+      .catch(() => null)
+      .finally(() => {
+        this.metadataInFlight.delete(releaseId);
+      });
+    this.metadataInFlight.set(releaseId, request);
+    const result = await request;
+    this.metadataCache.set(releaseId, result);
+    return result;
+  }
+
+  private shouldRequestMetadata(release: MusicBrainzRelease): boolean {
+    const coverArtArchive = release['cover-art-archive'];
+    if (!coverArtArchive) {
+      return true;
     }
-    return response.data;
+    if (coverArtArchive.front || coverArtArchive.artwork) {
+      return true;
+    }
+    return (coverArtArchive.count ?? 0) > 0;
   }
 
   async getCoverUrl(release: MusicBrainzRelease): Promise<string | null> {
+    if (!this.shouldRequestMetadata(release)) {
+      return null;
+    }
     const metadata = await this.fetchMetadata(release.id);
     const image =
       metadata?.images?.find((item) => item.front) ?? metadata?.images?.[0];
     if (image?.image) {
-      return image.image;
+      return normalizeCoverArtUrl(image.image);
     }
     return buildCoverArtArchiveProxyUrl('release', release.id, 500);
   }
 
   async getThumbnailUrl(release: MusicBrainzRelease): Promise<string | null> {
+    if (!this.shouldRequestMetadata(release)) {
+      return null;
+    }
     const metadata = await this.fetchMetadata(release.id);
     const image =
       metadata?.images?.find((item) => item.front) ?? metadata?.images?.[0];
     if (image?.thumbnails?.large) {
-      return image.thumbnails.large;
+      return normalizeCoverArtUrl(image.thumbnails.large);
     }
     if (image?.thumbnails?.small) {
-      return image.thumbnails.small;
+      return normalizeCoverArtUrl(image.thumbnails.small);
     }
     return buildCoverArtArchiveProxyUrl('release', release.id, 500);
   }
