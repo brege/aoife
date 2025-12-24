@@ -1,5 +1,10 @@
 ## Changelog
 
+### 2026-12-24
+
+- Improved music cover-art quality by defaulting to highest quality from CAA
+- Made music searches clamp on rgid, not exact album ID for more diverse alts
+
 ### 2026-12-23
 
 - Fixed/relaxed custom upload blocking on general media type to clamp only to localStorage files
