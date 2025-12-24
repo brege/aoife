@@ -189,7 +189,7 @@
 
 .input-with-button {
   display: flex;
-  gap: 8px;
+  gap: 12px;
   align-items: center;
   flex: 1;
   min-width: 200px;
@@ -201,7 +201,7 @@
   flex: none;
   display: flex;
   flex-direction: row;
-  gap: 8px;
+  gap: 12px;
 }
 
 .input-with-button > .form-input {

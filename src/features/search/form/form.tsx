@@ -2,8 +2,8 @@ import { Combobox } from '@headlessui/react';
 import type React from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { FaLink } from 'react-icons/fa';
-import { HiMiniViewfinderCircle } from 'react-icons/hi2';
 import { MdDriveFolderUpload } from 'react-icons/md';
+import { RiPhoneFindLine } from 'react-icons/ri';
 import { storeImage } from '../../../lib/indexeddb';
 import type { MediaSearchValues, MediaType } from '../../../media/types';
 import Dropdown from '../suggestion/list';
@@ -1472,17 +1472,29 @@ export const MediaForm: React.FC<MediaFormProps> = ({
           isLoading ? (
             'Uploading...'
           ) : (
-            'Upload'
+            'Add image'
           )
         ) : isLoading ? (
           'Searching...'
         ) : (
           <>
-            <HiMiniViewfinderCircle
+            <RiPhoneFindLine
               className="form-submit-icon"
               aria-hidden="true"
             />
-            <span>{provider.label}</span>
+            <span>
+              {mediaType === 'music'
+                ? 'Cover art'
+                : mediaType === 'movies'
+                  ? 'Poster'
+                  : mediaType === 'tv'
+                    ? 'Poster'
+                    : mediaType === 'books'
+                      ? 'Cover art'
+                      : mediaType === 'games'
+                        ? 'Box art'
+                        : provider.label}
+            </span>
           </>
         )}
       </button>
