@@ -204,15 +204,28 @@
   gap: 8px;
 }
 
-.input-with-button .form-input {
+.input-with-button > .form-input {
   flex: 1;
   margin: 0;
   width: auto;
 }
 
-.media-search-form.stack .input-with-button .form-input {
+.input-with-button .combobox {
+  flex: 1;
+  min-width: 0;
+}
+
+.input-with-button .combobox .form-input {
+  width: 100%;
+}
+
+.media-search-form.stack .input-with-button > .form-input {
   flex: 1;
   width: auto;
+}
+
+.media-search-form.stack .input-with-button .combobox .form-input {
+  width: 100%;
 }
 
 .media-search-form.band .form-fields {
