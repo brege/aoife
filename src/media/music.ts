@@ -1,4 +1,5 @@
 import axios from 'axios';
+import packageJson from '../../package.json';
 import { type MediaSearchResult, MediaService } from './service';
 import type { MediaSearchValues } from './types';
 
@@ -51,7 +52,8 @@ interface CoverArtArchiveMetadataResponse {
   }>;
 }
 
-const USER_AGENT = 'aoife/0.4.2 (https://github.com/brege/aoife)';
+const appVersion = packageJson.version ?? 'unknown';
+const USER_AGENT = `aoife/${appVersion} (https://github.com/brege/aoife)`;
 
 const normalizeSearchToken = (value: string): string =>
   value
