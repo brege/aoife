@@ -40,6 +40,17 @@ interface MusicBrainzSearchResponse {
   releases: MusicBrainzRelease[];
 }
 
+interface CoverArtArchiveMetadataResponse {
+  images?: Array<{
+    front?: boolean;
+    image?: string;
+    thumbnails?: {
+      small?: string;
+      large?: string;
+    };
+  }>;
+}
+
 const USER_AGENT = 'aoife/0.4.2 (https://github.com/brege/aoife)';
 
 const normalizeSearchToken = (value: string): string =>
@@ -68,11 +79,46 @@ class CoverArtArchiveSource implements CoverArtSource {
   name = 'CoverArtArchive';
   priority = 1;
 
+  private async fetchMetadata(
+    releaseId: string,
+  ): Promise<CoverArtArchiveMetadataResponse | null> {
+    const params = new URLSearchParams({
+      type: 'release',
+      id: releaseId,
+    });
+    const response = await axios.get<CoverArtArchiveMetadataResponse>(
+      `/api/coverart/metadata?${params.toString()}`,
+      {
+        timeout: 5000,
+        validateStatus: (status) => status === 200 || status === 404,
+      },
+    );
+    if (response.status === 404) {
+      return null;
+    }
+    return response.data;
+  }
+
   async getCoverUrl(release: MusicBrainzRelease): Promise<string | null> {
+    const metadata = await this.fetchMetadata(release.id);
+    const image =
+      metadata?.images?.find((item) => item.front) ?? metadata?.images?.[0];
+    if (image?.image) {
+      return image.image;
+    }
     return buildCoverArtArchiveProxyUrl('release', release.id, 500);
   }
 
   async getThumbnailUrl(release: MusicBrainzRelease): Promise<string | null> {
+    const metadata = await this.fetchMetadata(release.id);
+    const image =
+      metadata?.images?.find((item) => item.front) ?? metadata?.images?.[0];
+    if (image?.thumbnails?.large) {
+      return image.thumbnails.large;
+    }
+    if (image?.thumbnails?.small) {
+      return image.thumbnails.small;
+    }
     return buildCoverArtArchiveProxyUrl('release', release.id, 500);
   }
 }
@@ -180,6 +226,7 @@ export class MusicService extends MediaService {
     const query = values.query || '';
     const artist = values.artist || '';
     const album = values.album || values.title || '';
+    const releaseGroupId = values.releaseGroupId?.trim();
     const coverUrlValue = values.coverUrl?.trim();
 
     if (coverUrlValue) {
@@ -212,7 +259,7 @@ export class MusicService extends MediaService {
       return [];
     }
 
-    const cacheKey = `${query}|${artist}|${album}`;
+    const cacheKey = `${query}|${artist}|${album}|${releaseGroupId ?? ''}`;
 
     if (
       this.searchCache &&
@@ -223,8 +270,16 @@ export class MusicService extends MediaService {
     }
 
     try {
-      const releases = await this.searchMusicBrainz(query, artist, album);
-      const results = await this.mapReleasesToResults(releases);
+      const releases = releaseGroupId
+        ? await this.searchMusicBrainzReleaseGroup(releaseGroupId)
+        : await this.searchMusicBrainz(query, artist, album);
+      const resolvedReleases =
+        releases.length === 0 && !query && !releaseGroupId
+          ? []
+          : releases.length === 0 && releaseGroupId
+            ? await this.searchMusicBrainz(query, artist, album)
+            : releases;
+      const results = await this.mapReleasesToResults(resolvedReleases);
 
       this.searchCache = {
         params: cacheKey,
@@ -312,6 +367,26 @@ export class MusicService extends MediaService {
       {
         params: {
           query: searchQuery,
+          fmt: 'json',
+          limit: 50,
+          inc: 'artist-credits+release-groups+cover-art-archive',
+        },
+        headers: { 'User-Agent': USER_AGENT },
+        timeout: 5000,
+      },
+    );
+
+    return response.data.releases || [];
+  }
+
+  private async searchMusicBrainzReleaseGroup(
+    releaseGroupId: string,
+  ): Promise<MusicBrainzRelease[]> {
+    const response = await axios.get<MusicBrainzSearchResponse>(
+      'https://musicbrainz.org/ws/2/release',
+      {
+        params: {
+          query: `rgid:${releaseGroupId}`,
           fmt: 'json',
           limit: 50,
           inc: 'artist-credits+release-groups+cover-art-archive',

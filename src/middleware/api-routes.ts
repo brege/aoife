@@ -281,6 +281,50 @@ export const createApiMiddleware = (env: Record<string, string>) => {
         res.writeHead(404, { 'Content-Type': 'text/plain' });
         res.end('Not found');
       });
+    } else if (path === '/coverart/metadata' && req.method === 'GET') {
+      const coverType = url.searchParams.get('type');
+      const coverId = url.searchParams.get('id');
+      if (coverType !== 'release' && coverType !== 'release-group') {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Invalid cover type' }));
+        return;
+      }
+      if (!coverId) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Missing cover id' }));
+        return;
+      }
+      const requestMetadata = (targetUrl: string, depth = 0) => {
+        if (depth > 2) {
+          res.writeHead(502, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Too many redirects' }));
+          return;
+        }
+        const coverReq = https.get(targetUrl, (coverRes) => {
+          const statusCode = coverRes.statusCode || 502;
+          const location = coverRes.headers.location;
+          if (statusCode >= 300 && statusCode < 400 && location) {
+            requestMetadata(location, depth + 1);
+            return;
+          }
+          let responseBody = '';
+          coverRes.on('data', (chunk) => {
+            responseBody += chunk;
+          });
+          coverRes.on('end', () => {
+            res.writeHead(statusCode, {
+              'Content-Type': 'application/json',
+            });
+            res.end(responseBody);
+          });
+        });
+        coverReq.on('error', (_error) => {
+          res.writeHead(404, { 'Content-Type': 'text/plain' });
+          res.end('Not found');
+        });
+      };
+
+      requestMetadata(`https://coverartarchive.org/${coverType}/${coverId}`);
     } else if (path === '/add' && req.method === 'POST') {
       let body = '';
       req.setEncoding('utf8');

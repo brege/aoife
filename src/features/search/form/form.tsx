@@ -17,12 +17,26 @@ type SuggestionEntry = {
   authorKeys?: string[];
 };
 
+type ReleaseGroupEntry = {
+  id: string;
+  title: string;
+  year?: number;
+};
+
 const SUGGESTION_CACHE_TTL_MS = 60 * 1000;
+const RELEASE_GROUP_CACHE_TTL_MS = 5 * 60 * 1000;
+const RELEASE_GROUP_PAGE_SIZE = 100;
+const MAX_RELEASE_GROUPS = 300;
 const suggestionCache = new Map<
   string,
   { timestamp: number; results: SuggestionEntry[] }
 >();
 const inFlightSuggestions = new Map<string, Promise<SuggestionEntry[]>>();
+const releaseGroupCache = new Map<
+  string,
+  { timestamp: number; results: ReleaseGroupEntry[] }
+>();
+const releaseGroupInFlight = new Map<string, Promise<ReleaseGroupEntry[]>>();
 
 type SuggestionResponseParser = (
   response: Response,
@@ -185,15 +199,19 @@ const parseMusicBrainzArtistSuggestions = async (
     .slice(0, 8);
 };
 
-const parseMusicBrainzReleaseGroupSuggestions = async (
+const parseMusicBrainzReleaseGroups = async (
   response: Response,
-): Promise<SuggestionEntry[]> => {
+): Promise<{
+  entries: ReleaseGroupEntry[];
+  count: number;
+}> => {
   const data = (await response.json()) as {
     'release-groups'?: Array<{
       id: string;
       title: string;
       'first-release-date'?: string;
     }>;
+    'release-group-count'?: number;
   };
   if (!data || typeof data !== 'object') {
     throw new Error('Invalid MusicBrainz release group response');
@@ -202,29 +220,93 @@ const parseMusicBrainzReleaseGroupSuggestions = async (
     throw new Error('Invalid MusicBrainz release group response');
   }
 
-  return data['release-groups']
-    .map((releaseGroup) => {
-      if (!releaseGroup || typeof releaseGroup !== 'object') {
-        throw new Error('Invalid MusicBrainz release group result');
+  const entries = data['release-groups'].map((releaseGroup) => {
+    if (!releaseGroup || typeof releaseGroup !== 'object') {
+      throw new Error('Invalid MusicBrainz release group result');
+    }
+    if (
+      typeof releaseGroup.id !== 'string' ||
+      typeof releaseGroup.title !== 'string'
+    ) {
+      throw new Error('Invalid MusicBrainz release group result');
+    }
+    const yearValue = releaseGroup['first-release-date']?.slice(0, 4);
+    const year = yearValue ? Number.parseInt(yearValue, 10) : undefined;
+    return {
+      id: releaseGroup.id,
+      title: releaseGroup.title,
+      year,
+    };
+  });
+
+  const countValue =
+    typeof data['release-group-count'] === 'number'
+      ? data['release-group-count']
+      : entries.length;
+
+  return {
+    entries,
+    count: countValue,
+  };
+};
+
+const fetchArtistReleaseGroups = async (
+  artistId: string,
+): Promise<ReleaseGroupEntry[]> => {
+  const cached = releaseGroupCache.get(artistId);
+  if (cached && Date.now() - cached.timestamp < RELEASE_GROUP_CACHE_TTL_MS) {
+    return cached.results;
+  }
+
+  const existing = releaseGroupInFlight.get(artistId);
+  if (existing) {
+    return existing;
+  }
+
+  const request = (async () => {
+    const allEntries: ReleaseGroupEntry[] = [];
+    let offset = 0;
+    let totalCount = Number.POSITIVE_INFINITY;
+
+    while (offset < totalCount && allEntries.length < MAX_RELEASE_GROUPS) {
+      const params = new URLSearchParams({
+        artist: artistId,
+        fmt: 'json',
+        limit: String(RELEASE_GROUP_PAGE_SIZE),
+        offset: String(offset),
+      });
+      const endpoint = `https://musicbrainz.org/ws/2/release-group?${params.toString()}`;
+      const response = await fetch(endpoint);
+      if (!response.ok) {
+        throw new Error('Release group request failed');
       }
-      if (
-        typeof releaseGroup.id !== 'string' ||
-        typeof releaseGroup.title !== 'string'
-      ) {
-        throw new Error('Invalid MusicBrainz release group result');
+      const { entries, count } = await parseMusicBrainzReleaseGroups(response);
+      allEntries.push(...entries);
+      totalCount = count;
+      offset += RELEASE_GROUP_PAGE_SIZE;
+      if (entries.length === 0) {
+        break;
       }
-      const yearValue = releaseGroup['first-release-date']?.slice(0, 4);
-      const year = yearValue ? Number.parseInt(yearValue, 10) : undefined;
-      const label = year
-        ? `${releaseGroup.title} (${year})`
-        : releaseGroup.title;
-      return {
-        id: releaseGroup.id,
-        label,
-        value: releaseGroup.title,
-      };
-    })
-    .slice(0, 8);
+    }
+
+    const unique = new Map<string, ReleaseGroupEntry>();
+    allEntries.forEach((entry) => {
+      if (!unique.has(entry.id)) {
+        unique.set(entry.id, entry);
+      }
+    });
+    const results = Array.from(unique.values());
+    releaseGroupCache.set(artistId, {
+      timestamp: Date.now(),
+      results,
+    });
+    return results;
+  })().finally(() => {
+    releaseGroupInFlight.delete(artistId);
+  });
+
+  releaseGroupInFlight.set(artistId, request);
+  return request;
 };
 
 const parseOpenLibraryBookSuggestions = async (
@@ -501,6 +583,12 @@ export const MediaForm: React.FC<MediaFormProps> = ({
     useState(false);
   const [isLoadingAlbumSuggestions, setIsLoadingAlbumSuggestions] =
     useState(false);
+  const [artistReleaseGroups, setArtistReleaseGroups] = useState<{
+    artistId: string;
+    entries: ReleaseGroupEntry[];
+  } | null>(null);
+  const [isLoadingArtistReleaseGroups, setIsLoadingArtistReleaseGroups] =
+    useState(false);
   const [bookTitleSuggestions, setBookTitleSuggestions] = useState<
     SuggestionEntry[]
   >([]);
@@ -618,6 +706,7 @@ export const MediaForm: React.FC<MediaFormProps> = ({
       setArtistSuggestions([]);
       setAlbumSuggestions([]);
       setSelectedArtistIdentifier(null);
+      setArtistReleaseGroups(null);
       return;
     }
 
@@ -661,51 +750,124 @@ export const MediaForm: React.FC<MediaFormProps> = ({
   }, [mediaType, artistValue]);
 
   useEffect(() => {
+    if (!selectedArtistIdentifier || mediaType !== 'music') {
+      setArtistReleaseGroups(null);
+      setIsLoadingArtistReleaseGroups(false);
+      return;
+    }
+
+    let isCancelled = false;
+    setIsLoadingArtistReleaseGroups(true);
+    fetchArtistReleaseGroups(selectedArtistIdentifier)
+      .then((entries) => {
+        if (isCancelled) {
+          return;
+        }
+        setArtistReleaseGroups({
+          artistId: selectedArtistIdentifier,
+          entries,
+        });
+      })
+      .finally(() => {
+        if (!isCancelled) {
+          setIsLoadingArtistReleaseGroups(false);
+        }
+      });
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [mediaType, selectedArtistIdentifier]);
+
+  useEffect(() => {
     if (mediaType !== 'music') {
       setAlbumSuggestions([]);
+      setIsLoadingAlbumSuggestions(false);
       return;
     }
 
     const trimmedAlbum = albumValue.trim();
     if (!selectedArtistIdentifier || trimmedAlbum.length < 2) {
       setAlbumSuggestions([]);
+      setIsLoadingAlbumSuggestions(false);
       return;
     }
 
     let isCancelled = false;
-    const requestKey = `music-album|${selectedArtistIdentifier}|${trimmedAlbum}`;
-    const timeoutId = window.setTimeout(() => {
-      setIsLoadingAlbumSuggestions(true);
-      const params = new URLSearchParams({
-        query: `arid:${selectedArtistIdentifier} AND release:"${trimmedAlbum}"`,
-        fmt: 'json',
-        limit: '8',
-      });
-      const endpoint = `https://musicbrainz.org/ws/2/release-group?${params.toString()}`;
+    const normalizedQuery = normalizeTitleKey(trimmedAlbum);
+    const activeReleaseGroups =
+      artistReleaseGroups?.artistId === selectedArtistIdentifier
+        ? artistReleaseGroups.entries
+        : [];
 
-      fetchSuggestions(
-        requestKey,
-        endpoint,
-        parseMusicBrainzReleaseGroupSuggestions,
-      )
-        .then((mapped) => {
-          if (isCancelled) {
-            return;
+    setIsLoadingAlbumSuggestions(true);
+    const timeoutId = window.setTimeout(() => {
+      if (activeReleaseGroups.length > 0) {
+        const mapped = activeReleaseGroups
+          .map((entry) => {
+            const normalizedTitle = normalizeTitleKey(entry.title);
+            const score = scoreTitleMatch(normalizedQuery, normalizedTitle);
+            if (normalizedQuery && score === 0) {
+              return null;
+            }
+            const label = entry.year
+              ? `${entry.title} (${entry.year})`
+              : entry.title;
+            return {
+              id: entry.id,
+              label,
+              value: entry.title,
+              score,
+            };
+          })
+          .filter(
+            (
+              entry,
+            ): entry is {
+              id: string;
+              label: string;
+              value: string;
+              score: number;
+            } => entry !== null,
+          );
+
+        mapped.sort((left, right) => {
+          if (left.score !== right.score) {
+            return right.score - left.score;
           }
-          setAlbumSuggestions(mapped);
-        })
-        .finally(() => {
-          if (!isCancelled) {
-            setIsLoadingAlbumSuggestions(false);
-          }
+          return left.label.localeCompare(right.label);
         });
-    }, 350);
+
+        if (!isCancelled) {
+          setAlbumSuggestions(
+            mapped.slice(0, 8).map((entry) => ({
+              id: entry.id,
+              label: entry.label,
+              value: entry.value,
+            })),
+          );
+          setIsLoadingAlbumSuggestions(false);
+        }
+        return;
+      }
+
+      if (!isLoadingArtistReleaseGroups) {
+        setAlbumSuggestions([]);
+        setIsLoadingAlbumSuggestions(false);
+      }
+    }, 200);
 
     return () => {
       isCancelled = true;
       window.clearTimeout(timeoutId);
     };
-  }, [mediaType, albumValue, selectedArtistIdentifier]);
+  }, [
+    albumValue,
+    artistReleaseGroups,
+    isLoadingArtistReleaseGroups,
+    mediaType,
+    selectedArtistIdentifier,
+  ]);
 
   useEffect(() => {
     if (mediaType !== 'books') {
@@ -1028,6 +1190,9 @@ export const MediaForm: React.FC<MediaFormProps> = ({
                   if (!nextValue) {
                     setSelectedArtistIdentifier(null);
                     setAlbumSuggestions([]);
+                    setArtistReleaseGroups(null);
+                    setIsLoadingAlbumSuggestions(false);
+                    onFieldChange('releaseGroupId', '');
                     return;
                   }
                   const matchingSuggestion = artistSuggestions.find(
@@ -1041,6 +1206,9 @@ export const MediaForm: React.FC<MediaFormProps> = ({
                   }
                   setSelectedArtistIdentifier(matchingSuggestion.id);
                   setAlbumSuggestions([]);
+                  setArtistReleaseGroups(null);
+                  setIsLoadingAlbumSuggestions(false);
+                  onFieldChange('releaseGroupId', '');
                 }}
                 as="div"
                 className={`combobox ${comboboxPlacementClass}`.trim()}
@@ -1052,6 +1220,8 @@ export const MediaForm: React.FC<MediaFormProps> = ({
                     onFieldChange(field.id, e.target.value);
                     setSelectedArtistIdentifier(null);
                     setAlbumSuggestions([]);
+                    setIsLoadingAlbumSuggestions(false);
+                    onFieldChange('releaseGroupId', '');
                   }}
                   placeholder={field.placeholder}
                   aria-label={field.label}
@@ -1165,7 +1335,23 @@ export const MediaForm: React.FC<MediaFormProps> = ({
                 <Combobox
                   value={albumValue}
                   onChange={(value) => {
-                    onFieldChange(field.id, value ?? '');
+                    const nextValue = value ?? '';
+                    onFieldChange(field.id, nextValue);
+                    if (!nextValue) {
+                      onFieldChange('releaseGroupId', '');
+                    } else {
+                      const matchingSuggestion = albumSuggestions.find(
+                        (suggestion) => suggestion.value === nextValue,
+                      );
+                      if (
+                        matchingSuggestion &&
+                        typeof matchingSuggestion.id === 'string'
+                      ) {
+                        onFieldChange('releaseGroupId', matchingSuggestion.id);
+                      } else {
+                        onFieldChange('releaseGroupId', '');
+                      }
+                    }
                     window.setTimeout(() => {
                       formRef.current?.requestSubmit();
                     }, 0);
@@ -1176,7 +1362,10 @@ export const MediaForm: React.FC<MediaFormProps> = ({
                   <Combobox.Input
                     type="text"
                     value={albumValue}
-                    onChange={(e) => onFieldChange(field.id, e.target.value)}
+                    onChange={(e) => {
+                      onFieldChange(field.id, e.target.value);
+                      onFieldChange('releaseGroupId', '');
+                    }}
                     placeholder={field.placeholder}
                     aria-label={field.label}
                     className="form-input"
@@ -1202,10 +1391,10 @@ export const MediaForm: React.FC<MediaFormProps> = ({
                       })}
                     </Combobox.Options>
                   )}
-                  {isLoadingAlbumSuggestions &&
-                    albumSuggestions.length === 0 && (
-                      <div className="combobox-loading">Searching...</div>
-                    )}
+                {isLoadingAlbumSuggestions &&
+                  albumSuggestions.length === 0 && (
+                    <div className="combobox-loading">Searching...</div>
+                  )}
                 </Combobox>
                 <button
                   type="button"

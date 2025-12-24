@@ -111,7 +111,7 @@ export const PosterPicker = ({
                 }}
                 crossOrigin={detectPlaceholder ? 'anonymous' : undefined}
               >
-                {isTmdb && isSelected && (
+                {isSelected && (
                   <div className="poster-picker-badge" aria-hidden="true">
                     <FaStar />
                   </div>

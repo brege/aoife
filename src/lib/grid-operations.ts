@@ -75,6 +75,19 @@ const getTmdbPosterPath = (url: string): string | null => {
   return `/${segments.slice(1).join('/')}`;
 };
 
+const mergeSelectedCover = (
+  urls: string[],
+  selectedCoverUrl: string | null,
+): string[] => {
+  if (!selectedCoverUrl) {
+    return urls;
+  }
+  if (urls.includes(selectedCoverUrl)) {
+    return urls;
+  }
+  return [selectedCoverUrl, ...urls];
+};
+
 export const useGridOperations = (
   deps: GridOperationDeps,
   setters: GridOperationSetters,
@@ -285,11 +298,15 @@ export const useGridOperations = (
       mediaType: MediaType,
       storedCovers?: string[],
     ) => {
+      const selectedItem = gridItems.find((item) => item.id === mediaId);
+      const selectedCoverUrl = selectedItem
+        ? resolveCoverUrl(selectedItem)
+        : null;
       try {
         const service = getMediaService(mediaType);
         const covers = await service.getAlternateCovers(mediaId);
         if (covers.length > 0) {
-          setAlternateCoverUrls(covers);
+          setAlternateCoverUrls(mergeSelectedCover(covers, selectedCoverUrl));
           return;
         }
       } catch (err) {
@@ -302,12 +319,16 @@ export const useGridOperations = (
       }
 
       if (storedCovers && storedCovers.length > 0) {
-        setAlternateCoverUrls(storedCovers);
+        setAlternateCoverUrls(
+          mergeSelectedCover(storedCovers, selectedCoverUrl),
+        );
       } else {
-        setAlternateCoverUrls([]);
+        setAlternateCoverUrls(
+          selectedCoverUrl ? [selectedCoverUrl] : [],
+        );
       }
     },
-    [setAlternateCoverUrls],
+    [gridItems, setAlternateCoverUrls],
   );
 
   const clearGrid = useCallback(() => {

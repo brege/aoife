@@ -443,6 +443,36 @@ def proxy_coverart_image():
         return ("Not found", 404)
 
 
+@app.route("/api/coverart/metadata", methods=["GET"])
+@limiter.limit(RATE_LIMIT_UPSTREAM)
+def proxy_coverart_metadata():
+    cover_type = request.args.get("type")
+    cover_id = request.args.get("id")
+    if cover_type not in ("release", "release-group"):
+        return jsonify({"error": "Invalid cover type"}), 400
+    if not cover_id:
+        return jsonify({"error": "Missing cover id"}), 400
+
+    target_url = f"https://coverartarchive.org/{cover_type}/{cover_id}"
+
+    def request_metadata(url, depth=0):
+        if depth > 2:
+            return jsonify({"error": "Too many redirects"}), 502
+        resp = requests.get(
+            url, timeout=UPSTREAM_TIMEOUT_SECONDS, allow_redirects=False
+        )
+        if 300 <= resp.status_code < 400 and resp.headers.get("Location"):
+            return request_metadata(resp.headers["Location"], depth + 1)
+        return jsonify(resp.json()), resp.status_code
+
+    try:
+        return request_metadata(target_url)
+    except requests.exceptions.Timeout:
+        return jsonify({"error": "Upstream request timed out"}), 504
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 @app.route("/api/googlebooks/image", methods=["GET"])
 @limiter.limit(RATE_LIMIT_UPSTREAM)
 def proxy_googlebooks_image():
