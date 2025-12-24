@@ -151,14 +151,15 @@
 
 .grid-drag-handle {
   position: absolute;
-  top: 6px;
+  top: 0;
   left: 50%;
   transform: translateX(-50%);
-  width: 32px;
-  height: 32px;
-  border: none;
-  border-radius: 999px;
-  background: var(--bg-overlay-dark);
+  width: 52px;
+  height: 22px;
+  border-radius: 0 0 var(--border-radius-sm) var(--border-radius-sm);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-top: none;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -166,22 +167,27 @@
   pointer-events: none;
   transition:
     opacity 0.2s ease,
-    transform 0.2s ease;
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
   cursor: grab;
   z-index: 10;
+  box-shadow:
+    0 6px 12px rgba(0, 0, 0, 0.18),
+    var(--shadow-highlight);
 }
 
 .grid-drag-handle svg {
-  width: 18px;
-  height: 18px;
-  color: white;
+  width: 26px;
+  height: 14px;
+  color: var(--text-primary);
+  transform: scaleX(3);
 }
 
 .grid-item.filled:hover .grid-drag-handle,
 .grid-item.filled:focus-within .grid-drag-handle {
   opacity: 1;
   pointer-events: auto;
-  transform: translate(-50%, -1px);
+  transform: translate(-50%, 0);
 }
 
 .grid-poster {
@@ -350,12 +356,18 @@
   }
 
   .grid-drag-handle {
-    width: 28px;
-    height: 28px;
+    width: 46px;
+    height: 20px;
   }
 
   .grid-drag-handle svg {
-    width: 16px;
-    height: 16px;
+    width: 22px;
+    height: 12px;
+  }
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .grid-drag-handle {
+    display: none;
   }
 }

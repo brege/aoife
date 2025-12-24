@@ -251,14 +251,14 @@ const Grid: React.FC<GridProps> = ({
         return;
       }
       const target = event.target as HTMLElement | null;
-      if (!target?.closest('.grid-drag-handle')) {
-        return;
-      }
       if (
         target?.closest(
           '.grid-close-button, .media-type-badge, .grid-source-link',
         )
       ) {
+        return;
+      }
+      if (event.pointerType !== 'touch' && !target?.closest('.grid-drag-handle')) {
         return;
       }
       dragStateRef.current = {
