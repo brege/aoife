@@ -1,6 +1,9 @@
 import { Combobox } from '@headlessui/react';
 import type React from 'react';
 import { useEffect, useState } from 'react';
+import type { Control } from 'react-hook-form';
+import { useController, useWatch } from 'react-hook-form';
+import type { MediaSearchValues } from '../../../providers/types';
 import {
   fetchSuggestions,
   parseTmdbSuggestions,
@@ -19,9 +22,8 @@ type TheMovieDatabaseFormProps = {
   field: QueryField;
   layout: 'band' | 'stack';
   bandPlacement: 'top' | 'bottom';
-  value: string;
-  onFieldChange: (fieldId: string, value: string) => void;
   formRef: React.RefObject<HTMLFormElement>;
+  control: Control<MediaSearchValues>;
 };
 
 const TheMovieDatabaseForm = ({
@@ -29,10 +31,17 @@ const TheMovieDatabaseForm = ({
   field,
   layout,
   bandPlacement,
-  value,
-  onFieldChange,
   formRef,
+  control,
 }: TheMovieDatabaseFormProps) => {
+  const watchedValue = useWatch({
+    control,
+    name: field.id as keyof MediaSearchValues,
+  });
+  const { field: queryField } = useController({
+    name: field.id as keyof MediaSearchValues,
+    control,
+  });
   const [titleSuggestions, setTitleSuggestions] = useState<SuggestionEntry[]>(
     [],
   );
@@ -40,7 +49,8 @@ const TheMovieDatabaseForm = ({
     useState(false);
 
   useEffect(() => {
-    const trimmedQuery = value.trim();
+    const resolvedValue = typeof watchedValue === 'string' ? watchedValue : '';
+    const trimmedQuery = resolvedValue.trim();
     if (trimmedQuery.length < 2) {
       setTitleSuggestions([]);
       return;
@@ -75,16 +85,17 @@ const TheMovieDatabaseForm = ({
       isCancelled = true;
       window.clearTimeout(timeoutId);
     };
-  }, [mediaType, value]);
+  }, [mediaType, watchedValue]);
 
   const comboboxPlacementClass =
     layout === 'band' ? `band-${bandPlacement}` : 'stack';
 
   return (
     <Combobox
-      value={value}
+      value={typeof watchedValue === 'string' ? watchedValue : ''}
       onChange={(nextValue) => {
-        onFieldChange(field.id, nextValue ?? '');
+        const resolvedValue = nextValue ?? '';
+        queryField.onChange(resolvedValue);
         formRef.current?.requestSubmit();
       }}
       as="div"
@@ -92,8 +103,10 @@ const TheMovieDatabaseForm = ({
     >
       <Combobox.Input
         type="text"
-        value={value}
-        onChange={(event) => onFieldChange(field.id, event.target.value)}
+        value={typeof watchedValue === 'string' ? watchedValue : ''}
+        onChange={(event) => {
+          queryField.onChange(event);
+        }}
         placeholder={field.placeholder}
         aria-label={field.label}
         className="form-input"

@@ -1,15 +1,18 @@
 import { Combobox } from '@headlessui/react';
 import type React from 'react';
 import { useEffect, useState } from 'react';
+import type { Control } from 'react-hook-form';
+import { useController, useWatch } from 'react-hook-form';
 import { FaLink } from 'react-icons/fa';
+import type { MediaSearchValues } from '../../../providers/types';
 import {
   fetchSuggestions,
   normalizeTitleKey,
   parseOpenLibraryAuthorSuggestions,
   parseOpenLibraryBookSuggestions,
   parseOpenLibraryWorksSuggestions,
-  scoreTitleMatch,
   type SuggestionEntry,
+  scoreTitleMatch,
 } from './suggestions';
 
 type AuthorField = {
@@ -29,26 +32,38 @@ type TitleField = {
 type BooksFormProps = {
   authorField: AuthorField;
   titleField: TitleField;
-  authorValue: string;
-  titleValue: string;
   layout: 'band' | 'stack';
   bandPlacement: 'top' | 'bottom';
-  onFieldChange: (fieldId: string, value: string) => void;
   formRef: React.RefObject<HTMLFormElement>;
   onOpenCoverLink?: () => void;
+  control: Control<MediaSearchValues>;
 };
 
 const BooksForm = ({
   authorField,
   titleField,
-  authorValue,
-  titleValue,
   layout,
   bandPlacement,
-  onFieldChange,
   formRef,
   onOpenCoverLink,
+  control,
 }: BooksFormProps) => {
+  const watchedAuthorValue = useWatch({
+    control,
+    name: authorField.id as keyof MediaSearchValues,
+  });
+  const watchedTitleValue = useWatch({
+    control,
+    name: titleField.id as keyof MediaSearchValues,
+  });
+  const { field: authorController } = useController({
+    name: authorField.id as keyof MediaSearchValues,
+    control,
+  });
+  const { field: titleController } = useController({
+    name: titleField.id as keyof MediaSearchValues,
+    control,
+  });
   const [bookTitleSuggestions, setBookTitleSuggestions] = useState<
     SuggestionEntry[]
   >([]);
@@ -62,14 +77,18 @@ const BooksForm = ({
   const [selectedAuthorKeys, setSelectedAuthorKeys] = useState<string[]>([]);
 
   useEffect(() => {
-    const trimmedTitle = titleValue.trim();
+    const resolvedTitleValue =
+      typeof watchedTitleValue === 'string' ? watchedTitleValue : '';
+    const resolvedAuthorValue =
+      typeof watchedAuthorValue === 'string' ? watchedAuthorValue : '';
+    const trimmedTitle = resolvedTitleValue.trim();
     if (trimmedTitle.length < 2) {
       setBookTitleSuggestions([]);
       return;
     }
 
     let isCancelled = false;
-    const trimmedAuthor = authorValue.trim();
+    const trimmedAuthor = resolvedAuthorValue.trim();
     const authorKeySuffix = selectedAuthorKeys.join('|') || trimmedAuthor;
     const requestKey = `books-title|${trimmedTitle}|${authorKeySuffix}`;
     const timeoutId = window.setTimeout(() => {
@@ -152,10 +171,12 @@ const BooksForm = ({
       isCancelled = true;
       window.clearTimeout(timeoutId);
     };
-  }, [authorValue, selectedAuthorKeys, titleValue]);
+  }, [watchedAuthorValue, selectedAuthorKeys, watchedTitleValue]);
 
   useEffect(() => {
-    const trimmedAuthor = authorValue.trim();
+    const resolvedAuthorValue =
+      typeof watchedAuthorValue === 'string' ? watchedAuthorValue : '';
+    const trimmedAuthor = resolvedAuthorValue.trim();
     if (trimmedAuthor.length < 2) {
       setAuthorSuggestions([]);
       setSelectedAuthorKeys([]);
@@ -190,7 +211,7 @@ const BooksForm = ({
       isCancelled = true;
       window.clearTimeout(timeoutId);
     };
-  }, [authorValue]);
+  }, [watchedAuthorValue]);
 
   const comboboxPlacementClass =
     layout === 'band' ? `band-${bandPlacement}` : 'stack';
@@ -198,10 +219,10 @@ const BooksForm = ({
   return (
     <>
       <Combobox
-        value={authorValue}
+        value={typeof watchedAuthorValue === 'string' ? watchedAuthorValue : ''}
         onChange={(nextValue) => {
           const resolvedValue = nextValue ?? '';
-          onFieldChange(authorField.id, resolvedValue);
+          authorController.onChange(resolvedValue);
           if (!resolvedValue) {
             setSelectedAuthorKeys([]);
             setBookTitleSuggestions([]);
@@ -224,9 +245,11 @@ const BooksForm = ({
       >
         <Combobox.Input
           type="text"
-          value={authorValue}
+          value={
+            typeof watchedAuthorValue === 'string' ? watchedAuthorValue : ''
+          }
           onChange={(event) => {
-            onFieldChange(authorField.id, event.target.value);
+            authorController.onChange(event);
             setSelectedAuthorKeys([]);
             setBookTitleSuggestions([]);
           }}
@@ -262,9 +285,10 @@ const BooksForm = ({
 
       <div className="input-with-button">
         <Combobox
-          value={titleValue}
+          value={typeof watchedTitleValue === 'string' ? watchedTitleValue : ''}
           onChange={(nextValue) => {
-            onFieldChange(titleField.id, nextValue ?? '');
+            const resolvedValue = nextValue ?? '';
+            titleController.onChange(resolvedValue);
             window.setTimeout(() => {
               formRef.current?.requestSubmit();
             }, 0);
@@ -274,10 +298,12 @@ const BooksForm = ({
         >
           <Combobox.Input
             type="text"
-            value={titleValue}
-            onChange={(event) =>
-              onFieldChange(titleField.id, event.target.value)
+            value={
+              typeof watchedTitleValue === 'string' ? watchedTitleValue : ''
             }
+            onChange={(event) => {
+              titleController.onChange(event);
+            }}
             placeholder={titleField.placeholder}
             aria-label={titleField.label}
             className="form-input"

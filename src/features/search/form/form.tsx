@@ -1,21 +1,20 @@
 import type React from 'react';
 import { useRef } from 'react';
+import type { UseFormReturn } from 'react-hook-form';
 import { RiPhoneFindLine } from 'react-icons/ri';
 import type { MediaSearchValues, MediaType } from '../../../providers/types';
 import Dropdown from '../suggestion/list';
 import { BooksForm } from './books';
 import { CustomSearchForm } from './custom';
-import { MusicForm } from './music';
 import { TheGamesDatabaseForm } from './games';
+import { MusicForm } from './music';
 import { TheMovieDatabaseForm } from './tmdb';
 import './form.css';
 
 interface MediaFormProps {
   mediaType: MediaType;
   onMediaTypeChange: (type: MediaType) => void;
-  searchValues: MediaSearchValues;
-  onFieldChange: (fieldId: string, value: string) => void;
-  onSubmit: (e: React.FormEvent) => void | Promise<void>;
+  onSubmit: (values: MediaSearchValues) => void | Promise<void>;
   isLoading: boolean;
   provider: {
     label: string;
@@ -29,29 +28,22 @@ interface MediaFormProps {
   layout: 'band' | 'stack';
   bandPlacement?: 'top' | 'bottom';
   onOpenCoverLink?: () => void;
+  formMethods: UseFormReturn<MediaSearchValues>;
 }
 
 export const MediaForm: React.FC<MediaFormProps> = ({
   mediaType,
   onMediaTypeChange,
-  searchValues,
-  onFieldChange,
   onSubmit,
   isLoading,
   provider,
   layout,
   bandPlacement = 'top',
   onOpenCoverLink,
+  formMethods,
 }) => {
   const formRef = useRef<HTMLFormElement>(null);
-  const queryValue = String(searchValues.query ?? '');
-  const artistValue = String(searchValues.artist ?? '');
-  const authorValue = String(searchValues.author ?? '');
-  const albumValue = String(searchValues.album ?? '');
-  const bookTitleValue = String(searchValues.title ?? '');
-  const platformValue = String(searchValues.platform ?? '').trim();
-  const coverValue = String(searchValues.cover ?? '');
-
+  const { control, setValue, register, handleSubmit } = formMethods;
   const fieldByIdentifier = new Map(
     provider.searchFields.map((field) => [field.id, field]),
   );
@@ -64,10 +56,7 @@ export const MediaForm: React.FC<MediaFormProps> = ({
     return field;
   };
 
-  const handleFormSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSubmit(e);
-  };
+  const handleFormSubmit = handleSubmit((values) => onSubmit(values));
 
   const layoutClass = layout === 'band' ? 'band' : 'stack';
   const bandPlacementClass = layout === 'band' ? `band-${bandPlacement}` : '';
@@ -80,13 +69,11 @@ export const MediaForm: React.FC<MediaFormProps> = ({
       <BooksForm
         authorField={authorField}
         titleField={titleField}
-        authorValue={authorValue}
-        titleValue={bookTitleValue}
         layout={layout}
         bandPlacement={bandPlacement}
-        onFieldChange={onFieldChange}
         formRef={formRef}
         onOpenCoverLink={onOpenCoverLink}
+        control={control}
       />
     );
   } else if (mediaType === 'music') {
@@ -96,13 +83,12 @@ export const MediaForm: React.FC<MediaFormProps> = ({
       <MusicForm
         artistField={artistField}
         albumField={albumField}
-        artistValue={artistValue}
-        albumValue={albumValue}
         layout={layout}
         bandPlacement={bandPlacement}
-        onFieldChange={onFieldChange}
         formRef={formRef}
         onOpenCoverLink={onOpenCoverLink}
+        control={control}
+        setValue={setValue}
       />
     );
   } else if (mediaType === 'games') {
@@ -112,12 +98,10 @@ export const MediaForm: React.FC<MediaFormProps> = ({
       <TheGamesDatabaseForm
         queryField={queryField}
         platformField={platformField}
-        queryValue={queryValue}
-        platformValue={platformValue}
         layout={layout}
         bandPlacement={bandPlacement}
-        onFieldChange={onFieldChange}
         formRef={formRef}
+        control={control}
       />
     );
   } else if (mediaType === 'movies' || mediaType === 'tv') {
@@ -126,11 +110,10 @@ export const MediaForm: React.FC<MediaFormProps> = ({
       <TheMovieDatabaseForm
         mediaType={mediaType}
         field={queryField}
-        value={queryValue}
         layout={layout}
         bandPlacement={bandPlacement}
-        onFieldChange={onFieldChange}
         formRef={formRef}
+        control={control}
       />
     );
   } else if (mediaType === 'custom') {
@@ -140,25 +123,26 @@ export const MediaForm: React.FC<MediaFormProps> = ({
       <CustomSearchForm
         queryField={queryField}
         coverField={coverField}
-        queryValue={queryValue}
-        coverValue={coverValue}
-        onFieldChange={onFieldChange}
+        control={control}
       />
     );
   } else {
-    formFields = provider.searchFields.map((field) => (
-      <input
-        key={field.id}
-        type="text"
-        value={searchValues[field.id] ?? ''}
-        onChange={(event) => onFieldChange(field.id, event.target.value)}
-        placeholder={field.placeholder}
-        aria-label={field.label}
-        className="form-input"
-        required={field.required}
-        data-testid={`search-field-${field.id}`}
-      />
-    ));
+    formFields = provider.searchFields.map((field) => {
+      const fieldName = field.id as keyof MediaSearchValues;
+      const registered = register(fieldName);
+      return (
+        <input
+          key={field.id}
+          type="text"
+          placeholder={field.placeholder}
+          aria-label={field.label}
+          className="form-input"
+          required={field.required}
+          data-testid={`search-field-${field.id}`}
+          {...registered}
+        />
+      );
+    });
   }
 
   return (

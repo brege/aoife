@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import logger from '../../lib/logger';
 import { MEDIA_TYPE_STORAGE_KEY } from '../../lib/state/storage';
-import { getMediaService } from '../../providers/factory';
 import { getMediaProvider } from '../../providers';
+import { getMediaService } from '../../providers/factory';
 import type {
   MediaItem,
   MediaSearchValues,
@@ -21,7 +21,6 @@ type UseSearchStateOptions = {
 
 export type UseSearchStateReturn = {
   selectedMediaType: MediaType;
-  searchValues: MediaSearchValues;
   searchResults: MediaItem[];
   brokenSearchResultIds: Record<string | number, true>;
   searchResultAspectRatios: Record<string | number, number>;
@@ -33,7 +32,6 @@ export type UseSearchStateReturn = {
     values: Partial<MediaSearchValues>,
     mediaTypeOverride?: MediaType,
   ) => Promise<MediaItem[]>;
-  handleFieldChange: (fieldId: string, value: string) => void;
   handleSearchResultImageLoad: (
     resultId: string | number,
     event: React.SyntheticEvent<HTMLImageElement>,
@@ -43,11 +41,6 @@ export type UseSearchStateReturn = {
   provider: ReturnType<typeof getMediaProvider>;
   searchInputRef: React.RefObject<HTMLInputElement>;
   setSearchResults: (results: MediaItem[]) => void;
-  setSearchValues: (
-    values:
-      | MediaSearchValues
-      | ((prev: MediaSearchValues) => MediaSearchValues),
-  ) => void;
 };
 
 export const useSearchState = (
@@ -76,9 +69,6 @@ export const useSearchState = (
   const provider = useMemo(
     () => getMediaProvider(selectedMediaType),
     [selectedMediaType],
-  );
-  const [searchValues, setSearchValues] = useState<MediaSearchValues>(
-    provider.defaultSearchValues,
   );
   const [searchResults, setSearchResults] = useState<MediaItem[]>([]);
   const [brokenSearchResultIds, setBrokenSearchResultIds] = useState<
@@ -156,7 +146,6 @@ export const useSearchState = (
           setSelectedMediaType(mediaTypeOverride);
         }
 
-        setSearchValues(mergedValues);
         setSearchResults(results);
         setLastSearchSummary(
           formatSearchSummary(mergedValues, activeProvider.searchFields),
@@ -192,13 +181,6 @@ export const useSearchState = (
       formatSearchSummary,
     ],
   );
-
-  const handleFieldChange = useCallback((fieldId: string, value: string) => {
-    setSearchValues((prev) => ({
-      ...prev,
-      [fieldId]: value,
-    }));
-  }, []);
 
   const handleSearchResultImageLoad = useCallback(
     (
@@ -245,10 +227,9 @@ export const useSearchState = (
   }, []);
 
   useEffect(() => {
-    setSearchValues(provider.defaultSearchValues);
     setSearchResults([]);
     setLastSearchSummary('');
-  }, [provider]);
+  }, []);
 
   useEffect(() => {
     localStorage.setItem(MEDIA_TYPE_STORAGE_KEY, selectedMediaType);
@@ -262,7 +243,6 @@ export const useSearchState = (
 
   return {
     selectedMediaType,
-    searchValues,
     searchResults,
     brokenSearchResultIds,
     searchResultAspectRatios,
@@ -271,13 +251,11 @@ export const useSearchState = (
     error,
     setSelectedMediaType,
     runSearch,
-    handleFieldChange,
     handleSearchResultImageLoad,
     handleSearchResultImageError,
     closeSearchResults,
     provider,
     searchInputRef,
     setSearchResults,
-    setSearchValues,
   };
 };

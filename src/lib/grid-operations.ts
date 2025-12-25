@@ -1,7 +1,11 @@
 import { useCallback } from 'react';
-import { getMediaService } from '../providers/factory';
 import type { getMediaProvider } from '../providers';
-import type { MediaItem, MediaSearchValues, MediaType } from '../providers/types';
+import { getMediaService } from '../providers/factory';
+import type {
+  MediaItem,
+  MediaSearchValues,
+  MediaType,
+} from '../providers/types';
 import { TMDB_IMAGE_BASE } from '../providers/types';
 import logger from './logger';
 
@@ -19,11 +23,7 @@ type GridOperationSetters = {
     items: MediaItem[] | ((current: MediaItem[]) => MediaItem[]),
   ) => void;
   setSearchResults: (results: MediaItem[]) => void;
-  setSearchValues: (
-    values:
-      | MediaSearchValues
-      | ((prev: MediaSearchValues) => MediaSearchValues),
-  ) => void;
+  resetSearchValues: (values: MediaSearchValues) => void;
   setAlternateCoverUrls: (urls: string[]) => void;
   setShowPosterGrid: (show: boolean) => void;
   setActivePosterItemId: (id: string | number | null) => void;
@@ -103,7 +103,7 @@ export const useGridOperations = (
   const {
     setGridItems,
     setSearchResults,
-    setSearchValues,
+    resetSearchValues,
     setAlternateCoverUrls,
     setShowPosterGrid,
     setActivePosterItemId,
@@ -169,7 +169,7 @@ export const useGridOperations = (
         return updatedGrid;
       });
       setSearchResults([]);
-      setSearchValues(provider.defaultSearchValues);
+      resetSearchValues(provider.defaultSearchValues);
     },
     [
       provider.defaultSearchValues,
@@ -178,7 +178,7 @@ export const useGridOperations = (
       searchValues,
       setGridItems,
       setSearchResults,
-      setSearchValues,
+      resetSearchValues,
     ],
   );
 

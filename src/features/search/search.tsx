@@ -1,5 +1,6 @@
 import type React from 'react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useForm, useWatch } from 'react-hook-form';
 import '../../app/app.css';
 import './search.css';
 import { useGridOperations } from '../../lib/grid-operations';
@@ -8,7 +9,11 @@ import { useModalClosed, useModalManager } from '../../lib/modalmanager';
 import { useLayoutState } from '../../lib/state/layout';
 import { useShareState } from '../../lib/state/share';
 import { DEFAULT_TITLE, TITLE_STORAGE_KEY } from '../../lib/state/storage';
-import type { MediaItem, MediaType } from '../../providers/types';
+import type {
+  MediaItem,
+  MediaSearchValues,
+  MediaType,
+} from '../../providers/types';
 import AppHeader from '../../ui/header';
 import Grid from '../grid/grid';
 import { useSearchBridges } from './bridge';
@@ -59,7 +64,6 @@ const MediaSearch: React.FC = () => {
 
   const {
     selectedMediaType,
-    searchValues,
     searchResults,
     brokenSearchResultIds,
     searchResultAspectRatios,
@@ -68,14 +72,28 @@ const MediaSearch: React.FC = () => {
     error: searchError,
     setSelectedMediaType,
     runSearch,
-    handleFieldChange,
     handleSearchResultImageLoad,
     handleSearchResultImageError,
     closeSearchResults,
     provider,
     setSearchResults,
-    setSearchValues,
   } = useSearchState({ showSearch });
+  const formMethods = useForm<MediaSearchValues>({
+    defaultValues: provider.defaultSearchValues,
+    mode: 'onChange',
+  });
+  const watchedValues = useWatch({ control: formMethods.control });
+  const searchValues = useMemo(
+    () => ({
+      ...provider.defaultSearchValues,
+      ...(watchedValues ?? {}),
+    }),
+    [provider.defaultSearchValues, watchedValues],
+  );
+
+  useEffect(() => {
+    formMethods.reset(provider.defaultSearchValues);
+  }, [formMethods, provider.defaultSearchValues]);
 
   const [isIndexedDbHydrated, setIsIndexedDbHydrated] = useState(false);
 
@@ -173,7 +191,7 @@ const MediaSearch: React.FC = () => {
     {
       setGridItems,
       setSearchResults,
-      setSearchValues,
+      resetSearchValues: formMethods.reset,
       setAlternateCoverUrls,
       setShowPosterGrid,
       setActivePosterItemId,
@@ -229,12 +247,11 @@ const MediaSearch: React.FC = () => {
   useModalClosed('searchResults', closeSearchResults);
 
   const handleFormSubmit = useCallback(
-    async (e: React.FormEvent) => {
-      e.preventDefault();
-      const results = await runSearch(searchValues);
+    async (values: MediaSearchValues) => {
+      const results = await runSearch(values);
       const hasDirectCover =
         (selectedMediaType === 'books' || selectedMediaType === 'music') &&
-        Boolean(searchValues.coverUrl?.trim());
+        Boolean(values.coverUrl?.trim());
       if (
         (selectedMediaType === 'custom' || hasDirectCover) &&
         results.length > 0
@@ -242,7 +259,7 @@ const MediaSearch: React.FC = () => {
         handleAddMedia(results[0], results);
       }
     },
-    [runSearch, searchValues, selectedMediaType, handleAddMedia],
+    [runSearch, selectedMediaType, handleAddMedia],
   );
 
   const handleTitleChange = useCallback((nextTitle: string) => {
@@ -343,36 +360,27 @@ const MediaSearch: React.FC = () => {
   const handleCoverLinkSave = useCallback(
     async (value: string) => {
       const trimmed = value.trim();
-      setSearchValues((current) => ({
-        ...current,
-        coverUrl: trimmed,
-      }));
+      formMethods.setValue('coverUrl', trimmed);
       setShowCoverLinkModal(false);
       if (!trimmed) {
         return;
       }
+      const nextValues = formMethods.getValues();
       const results = await runSearch({
-        ...searchValues,
+        ...nextValues,
         coverUrl: trimmed,
       });
       if (results.length > 0) {
         handleAddMedia(results[0], results);
       }
     },
-    [setSearchValues, runSearch, searchValues, handleAddMedia],
+    [formMethods, runSearch, handleAddMedia],
   );
 
   const handleCoverLinkClear = useCallback(() => {
-    setSearchValues((current) => {
-      if (!current.coverUrl) {
-        return current;
-      }
-      const next = { ...current };
-      delete next.coverUrl;
-      return next;
-    });
+    formMethods.setValue('coverUrl', '');
     setShowCoverLinkModal(false);
-  }, [setSearchValues]);
+  }, [formMethods]);
 
   const visibleResults = searchResults.slice(0, visibleResultsCount);
   const showMoreCount = Math.min(
@@ -440,14 +448,13 @@ const MediaSearch: React.FC = () => {
         <MediaForm
           mediaType={selectedMediaType}
           onMediaTypeChange={handleMediaTypeChange}
-          searchValues={searchValues}
-          onFieldChange={handleFieldChange}
           onSubmit={handleFormSubmit}
           isLoading={searchIsLoading}
           provider={provider}
           layout="band"
           bandPlacement={bandPlacement}
           onOpenCoverLink={handleCoverLinkOpen}
+          formMethods={formMethods}
         />
       )}
 
@@ -498,14 +505,13 @@ const MediaSearch: React.FC = () => {
               <MediaForm
                 mediaType={selectedMediaType}
                 onMediaTypeChange={handleMediaTypeChange}
-                searchValues={searchValues}
-                onFieldChange={handleFieldChange}
                 onSubmit={handleFormSubmit}
                 isLoading={searchIsLoading}
                 provider={provider}
                 layout="stack"
                 bandPlacement={bandPlacement}
                 onOpenCoverLink={handleCoverLinkOpen}
+                formMethods={formMethods}
               />
             )}
           </div>

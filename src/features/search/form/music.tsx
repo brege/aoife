@@ -1,15 +1,18 @@
 import { Combobox } from '@headlessui/react';
 import type React from 'react';
 import { useEffect, useState } from 'react';
+import type { Control, UseFormSetValue } from 'react-hook-form';
+import { useController, useWatch } from 'react-hook-form';
 import { FaLink } from 'react-icons/fa';
+import type { MediaSearchValues } from '../../../providers/types';
 import {
   fetchArtistReleaseGroups,
   fetchSuggestions,
   normalizeTitleKey,
   parseMusicBrainzArtistSuggestions,
-  scoreTitleMatch,
   type ReleaseGroupEntry,
   type SuggestionEntry,
+  scoreTitleMatch,
 } from './suggestions';
 
 type ArtistField = {
@@ -29,26 +32,40 @@ type AlbumField = {
 type MusicFormProps = {
   artistField: ArtistField;
   albumField: AlbumField;
-  artistValue: string;
-  albumValue: string;
   layout: 'band' | 'stack';
   bandPlacement: 'top' | 'bottom';
-  onFieldChange: (fieldId: string, value: string) => void;
   formRef: React.RefObject<HTMLFormElement>;
   onOpenCoverLink?: () => void;
+  control: Control<MediaSearchValues>;
+  setValue: UseFormSetValue<MediaSearchValues>;
 };
 
 const MusicForm = ({
   artistField,
   albumField,
-  artistValue,
-  albumValue,
   layout,
   bandPlacement,
-  onFieldChange,
   formRef,
   onOpenCoverLink,
+  control,
+  setValue,
 }: MusicFormProps) => {
+  const watchedArtistValue = useWatch({
+    control,
+    name: artistField.id as keyof MediaSearchValues,
+  });
+  const watchedAlbumValue = useWatch({
+    control,
+    name: albumField.id as keyof MediaSearchValues,
+  });
+  const { field: artistController } = useController({
+    name: artistField.id as keyof MediaSearchValues,
+    control,
+  });
+  const { field: albumController } = useController({
+    name: albumField.id as keyof MediaSearchValues,
+    control,
+  });
   const [artistSuggestions, setArtistSuggestions] = useState<SuggestionEntry[]>(
     [],
   );
@@ -70,7 +87,9 @@ const MusicForm = ({
   >(null);
 
   useEffect(() => {
-    const trimmedArtist = artistValue.trim();
+    const resolvedArtistValue =
+      typeof watchedArtistValue === 'string' ? watchedArtistValue : '';
+    const trimmedArtist = resolvedArtistValue.trim();
     if (trimmedArtist.length < 2) {
       setArtistSuggestions([]);
       setSelectedArtistIdentifier(null);
@@ -107,7 +126,7 @@ const MusicForm = ({
       isCancelled = true;
       window.clearTimeout(timeoutId);
     };
-  }, [artistValue]);
+  }, [watchedArtistValue]);
 
   useEffect(() => {
     if (!selectedArtistIdentifier) {
@@ -140,7 +159,9 @@ const MusicForm = ({
   }, [selectedArtistIdentifier]);
 
   useEffect(() => {
-    const trimmedAlbum = albumValue.trim();
+    const resolvedAlbumValue =
+      typeof watchedAlbumValue === 'string' ? watchedAlbumValue : '';
+    const trimmedAlbum = resolvedAlbumValue.trim();
     if (!selectedArtistIdentifier || trimmedAlbum.length < 2) {
       setAlbumSuggestions([]);
       setIsLoadingAlbumSuggestions(false);
@@ -216,7 +237,7 @@ const MusicForm = ({
       window.clearTimeout(timeoutId);
     };
   }, [
-    albumValue,
+    watchedAlbumValue,
     artistReleaseGroups,
     isLoadingArtistReleaseGroups,
     selectedArtistIdentifier,
@@ -228,16 +249,16 @@ const MusicForm = ({
   return (
     <>
       <Combobox
-        value={artistValue}
+        value={typeof watchedArtistValue === 'string' ? watchedArtistValue : ''}
         onChange={(nextValue) => {
           const resolvedValue = nextValue ?? '';
-          onFieldChange(artistField.id, resolvedValue);
+          artistController.onChange(resolvedValue);
           if (!resolvedValue) {
             setSelectedArtistIdentifier(null);
             setAlbumSuggestions([]);
             setArtistReleaseGroups(null);
             setIsLoadingAlbumSuggestions(false);
-            onFieldChange('releaseGroupId', '');
+            setValue('releaseGroupId', '');
             return;
           }
           const matchingSuggestion = artistSuggestions.find(
@@ -253,20 +274,22 @@ const MusicForm = ({
           setAlbumSuggestions([]);
           setArtistReleaseGroups(null);
           setIsLoadingAlbumSuggestions(false);
-          onFieldChange('releaseGroupId', '');
+          setValue('releaseGroupId', '');
         }}
         as="div"
         className={`combobox ${comboboxPlacementClass}`.trim()}
       >
         <Combobox.Input
           type="text"
-          value={artistValue}
+          value={
+            typeof watchedArtistValue === 'string' ? watchedArtistValue : ''
+          }
           onChange={(event) => {
-            onFieldChange(artistField.id, event.target.value);
+            artistController.onChange(event);
             setSelectedArtistIdentifier(null);
             setAlbumSuggestions([]);
             setIsLoadingAlbumSuggestions(false);
-            onFieldChange('releaseGroupId', '');
+            setValue('releaseGroupId', '');
           }}
           placeholder={artistField.placeholder}
           aria-label={artistField.label}
@@ -300,20 +323,23 @@ const MusicForm = ({
 
       <div className="input-with-button">
         <Combobox
-          value={albumValue}
+          value={typeof watchedAlbumValue === 'string' ? watchedAlbumValue : ''}
           onChange={(nextValue) => {
             const resolvedValue = nextValue ?? '';
-            onFieldChange(albumField.id, resolvedValue);
+            albumController.onChange(resolvedValue);
             if (!resolvedValue) {
-              onFieldChange('releaseGroupId', '');
+              setValue('releaseGroupId', '');
             } else {
               const matchingSuggestion = albumSuggestions.find(
                 (suggestion) => suggestion.value === resolvedValue,
               );
-              if (matchingSuggestion && typeof matchingSuggestion.id === 'string') {
-                onFieldChange('releaseGroupId', matchingSuggestion.id);
+              if (
+                matchingSuggestion &&
+                typeof matchingSuggestion.id === 'string'
+              ) {
+                setValue('releaseGroupId', matchingSuggestion.id);
               } else {
-                onFieldChange('releaseGroupId', '');
+                setValue('releaseGroupId', '');
               }
             }
             window.setTimeout(() => {
@@ -325,10 +351,12 @@ const MusicForm = ({
         >
           <Combobox.Input
             type="text"
-            value={albumValue}
+            value={
+              typeof watchedAlbumValue === 'string' ? watchedAlbumValue : ''
+            }
             onChange={(event) => {
-              onFieldChange(albumField.id, event.target.value);
-              onFieldChange('releaseGroupId', '');
+              albumController.onChange(event);
+              setValue('releaseGroupId', '');
             }}
             placeholder={albumField.placeholder}
             aria-label={albumField.label}
