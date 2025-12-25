@@ -1,6 +1,6 @@
 import { MdClose } from 'react-icons/md';
 import { isPlaceholderCover } from '../../../lib/coverdetect';
-import type { MediaItem, MediaType } from '../../../media/types';
+import type { MediaItem, MediaType } from '../../../providers/types';
 import { CandidateCard } from './card';
 import { getExternalLinks } from './links';
 

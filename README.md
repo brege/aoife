@@ -1,6 +1,6 @@
 # <div align=center> aoife | [demo](https://aoife.brege.org) </div>
 
-A multi-media poster matrix for creating personal collages of movie and TV show posters, books and music album cover art, video games box art, or any collection of third-party images.
+A multi-media poster matrix for creating personal collages of movie and TV show posters, books and music album cover art, video game box art, or any collection of external images.
 
 **Play with [the prototype](https://aoife.brege.org)!**
 

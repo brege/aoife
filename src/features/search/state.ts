@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import logger from '../../lib/logger';
 import { MEDIA_TYPE_STORAGE_KEY } from '../../lib/state/storage';
-import { getMediaService } from '../../media/factory';
-import { getMediaProvider } from '../../media/providers';
+import { getMediaService } from '../../providers/factory';
+import { getMediaProvider } from '../../providers';
 import type {
   MediaItem,
   MediaSearchValues,
   MediaType,
-} from '../../media/types';
+} from '../../providers/types';
 
 const constrainAspectRatio = (aspectRatio: number): number => {
   const minimumRatio = 0.5;

@@ -60,8 +60,8 @@ export const createApiMiddleware = (env: Record<string, string>) => {
 
       (async () => {
         try {
-          const { getMediaService } = await import('../media/factory');
-          const { getMediaProvider } = await import('../media/providers');
+          const { getMediaService } = await import('../providers/factory');
+          const { getMediaProvider } = await import('../providers');
           const service = getMediaService(
             mediaType as unknown as Parameters<typeof getMediaService>[0],
           );

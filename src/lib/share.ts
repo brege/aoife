@@ -1,4 +1,4 @@
-import type { MediaItem } from '../media/types';
+import type { MediaItem } from '../providers/types';
 import { getState, storeState } from './indexeddb';
 
 type ShareCreateResponse = {

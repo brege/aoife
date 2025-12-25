@@ -1,7 +1,7 @@
 import { FaStar } from 'react-icons/fa';
 import { MdClose } from 'react-icons/md';
 import { isPlaceholderCover } from '../../../lib/coverdetect';
-import type { MediaItem, MediaType } from '../../../media/types';
+import type { MediaItem, MediaType } from '../../../providers/types';
 import { CandidateCard } from '../results/card';
 import { getExternalLinks } from '../results/links';
 import Carousel from './carousel';

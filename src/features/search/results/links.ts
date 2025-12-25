@@ -1,4 +1,4 @@
-import type { MediaItem, MediaType } from '../../../media/types';
+import type { MediaItem, MediaType } from '../../../providers/types';
 
 export type ExternalLink = {
   href: string;

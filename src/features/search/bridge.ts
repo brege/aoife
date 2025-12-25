@@ -4,7 +4,7 @@ import type {
   MediaItem,
   MediaSearchValues,
   MediaType,
-} from '../../media/types';
+} from '../../providers/types';
 
 type LayoutDimension = 'width' | 'height';
 

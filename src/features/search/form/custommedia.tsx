@@ -2,7 +2,7 @@ import type React from 'react';
 import { useState } from 'react';
 import './custommedia.css';
 import logger from '../../../lib/logger';
-import type { MediaType } from '../../../media/types';
+import type { MediaType } from '../../../providers/types';
 
 interface CustomMediaFormProps {
   mediaType: MediaType;

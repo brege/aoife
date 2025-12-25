@@ -8,7 +8,7 @@ import { useModalClosed, useModalManager } from '../../lib/modalmanager';
 import { useLayoutState } from '../../lib/state/layout';
 import { useShareState } from '../../lib/state/share';
 import { DEFAULT_TITLE, TITLE_STORAGE_KEY } from '../../lib/state/storage';
-import type { MediaItem, MediaType } from '../../media/types';
+import type { MediaItem, MediaType } from '../../providers/types';
 import AppHeader from '../../ui/header';
 import Grid from '../grid/grid';
 import { useSearchBridges } from './bridge';

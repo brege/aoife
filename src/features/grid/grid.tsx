@@ -4,7 +4,7 @@ import './grid.css';
 import { MdClose, MdDragHandle } from 'react-icons/md';
 import { isPlaceholderCover } from '../../lib/coverdetect';
 import logger from '../../lib/logger';
-import type { MediaItem, MediaType } from '../../media/types';
+import type { MediaItem, MediaType } from '../../providers/types';
 import { CustomImage } from '../../ui/customimage';
 import { getExternalLinks } from '../search/results/links';
 import { MEDIA_TYPE_ICONS } from '../search/suggestion/list';

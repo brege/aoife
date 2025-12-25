@@ -1,8 +1,8 @@
 import { useCallback } from 'react';
-import { getMediaService } from '../media/factory';
-import type { getMediaProvider } from '../media/providers';
-import type { MediaItem, MediaSearchValues, MediaType } from '../media/types';
-import { TMDB_IMAGE_BASE } from '../media/types';
+import { getMediaService } from '../providers/factory';
+import type { getMediaProvider } from '../providers';
+import type { MediaItem, MediaSearchValues, MediaType } from '../providers/types';
+import { TMDB_IMAGE_BASE } from '../providers/types';
 import logger from './logger';
 
 type GridOperationDeps = {

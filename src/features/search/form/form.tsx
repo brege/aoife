@@ -1,7 +1,7 @@
 import type React from 'react';
 import { useRef } from 'react';
 import { RiPhoneFindLine } from 'react-icons/ri';
-import type { MediaSearchValues, MediaType } from '../../../media/types';
+import type { MediaSearchValues, MediaType } from '../../../providers/types';
 import Dropdown from '../suggestion/list';
 import { BooksForm } from './books';
 import { CustomSearchForm } from './custom';

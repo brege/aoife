@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { MediaItem } from '../../media/types';
+import type { MediaItem } from '../../providers/types';
 import { storeState } from '../indexeddb';
 import logger from '../logger';
 import {
