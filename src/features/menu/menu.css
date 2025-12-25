@@ -1,5 +1,3 @@
-/* Hamburger Menu Component */
-
 .hamburger-menu-container {
   position: relative;
   display: flex;
@@ -86,7 +84,6 @@
   transform-origin: center;
 }
 
-/* Menu Dropdown */
 .menu-dropdown {
   position: absolute;
   top: 100%;
@@ -332,7 +329,6 @@
   margin-left: auto;
 }
 
-/* Grid Configuration Specific Styles */
 .menu-grid-config-section {
   padding: var(--spacing-xl);
   border-bottom: 1px solid var(--border-color);
@@ -733,7 +729,6 @@
   left: 23px;
 }
 
-/* Responsive Design */
 @media (max-width: 480px) {
   .menu-dropdown {
     right: 0;

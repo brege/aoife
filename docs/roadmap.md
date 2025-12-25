@@ -7,13 +7,5 @@
 
 ### Next Features
 
-#### UX
-
-**Layout** - add total-width method to make the span of all rows the same
-**HQ Poster Consumer** - sort/front-load posters that have highest qualities
-
-#### Providers
-
-- **Letterboxd Lists**
-  - support bulk imports from friendly services
-
+- **Layout** - add total-width method to make the span of all rows the same
+- **Bulk Import** - support bulk imports from friendly services

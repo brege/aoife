@@ -194,11 +194,11 @@
 }
 
 .search-results {
-  position: fixed; /* Changed from absolute to fixed for better control */
+  position: fixed;
   top: auto;
-  bottom: 10px; /* Position from bottom instead of top to avoid clipping */
+  bottom: 10px;
   left: 50%;
-  transform: translateX(-50%); /* Center horizontally */
+  transform: translateX(-50%);
   padding: 20px;
   width: calc(100% - 40px);
   max-width: 800px;
