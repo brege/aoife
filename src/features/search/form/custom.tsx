@@ -1,7 +1,6 @@
 import type React from 'react';
 import { useCallback, useRef } from 'react';
-import type { Control } from 'react-hook-form';
-import { useController, useWatch } from 'react-hook-form';
+import { useFormContext, useWatch } from 'react-hook-form';
 import { MdDriveFolderUpload } from 'react-icons/md';
 import { storeImage } from '../../../lib/indexeddb';
 import type { MediaSearchValues } from '../../../providers/types';
@@ -23,31 +22,22 @@ type CoverField = {
 type CustomSearchFormProps = {
   queryField: QueryField;
   coverField: CoverField;
-  control: Control<MediaSearchValues>;
 };
 
-const CustomSearchForm = ({
-  queryField,
-  coverField,
-  control,
-}: CustomSearchFormProps) => {
+const CustomSearchForm = ({ queryField, coverField }: CustomSearchFormProps) => {
   const coverInputRef = useRef<HTMLInputElement>(null);
+  const { control, register, setValue } =
+    useFormContext<MediaSearchValues>();
   const watchedQueryValue = useWatch({
     control,
     name: queryField.id as keyof MediaSearchValues,
   });
-  const watchedCoverValue = useWatch({
-    control,
-    name: coverField.id as keyof MediaSearchValues,
-  });
-  const { field: queryController } = useController({
-    name: queryField.id as keyof MediaSearchValues,
-    control,
-  });
-  const { field: coverController } = useController({
-    name: coverField.id as keyof MediaSearchValues,
-    control,
-  });
+  const queryRegistration = register(
+    queryField.id as keyof MediaSearchValues,
+  );
+  const coverRegistration = register(
+    coverField.id as keyof MediaSearchValues,
+  );
 
   const handleCoverImageUpload = useCallback(
     async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -55,44 +45,38 @@ const CustomSearchForm = ({
       if (file) {
         const imageId = `img-${Date.now()}-${file.name}`;
         await storeImage(imageId, file);
-        coverController.onChange(imageId);
+        setValue(coverField.id as keyof MediaSearchValues, imageId);
         const resolvedQueryValue =
           typeof watchedQueryValue === 'string' ? watchedQueryValue : '';
         if (!resolvedQueryValue) {
           const nameWithoutExtension = file.name.replace(/\.[^/.]+$/, '');
-          queryController.onChange(nameWithoutExtension);
+          setValue(queryField.id as keyof MediaSearchValues, nameWithoutExtension);
         }
       }
     },
-    [coverController, queryController, watchedQueryValue],
+    [coverField.id, queryField.id, setValue, watchedQueryValue],
   );
 
   return (
     <>
       <input
         type="text"
-        value={typeof watchedQueryValue === 'string' ? watchedQueryValue : ''}
-        onChange={(event) => {
-          queryController.onChange(event);
-        }}
         placeholder={queryField.placeholder}
         aria-label={queryField.label}
         className="form-input"
         required={queryField.required}
         data-testid={`search-field-${queryField.id}`}
+        {...queryRegistration}
       />
       <div className="input-with-button">
         <input
           type="text"
-          value={typeof watchedCoverValue === 'string' ? watchedCoverValue : ''}
-          onChange={(event) => {
-            coverController.onChange(event);
-          }}
           placeholder={coverField.placeholder}
           aria-label={coverField.label}
           className="form-input"
           required={coverField.required}
           data-testid="search-field-cover"
+          {...coverRegistration}
         />
         <input
           type="file"

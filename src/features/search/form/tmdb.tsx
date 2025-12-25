@@ -1,9 +1,8 @@
-import { Combobox } from '@headlessui/react';
 import type React from 'react';
 import { useEffect, useState } from 'react';
-import type { Control } from 'react-hook-form';
-import { useController, useWatch } from 'react-hook-form';
+import { useFormContext, useWatch } from 'react-hook-form';
 import type { MediaSearchValues } from '../../../providers/types';
+import { ControlledCombobox } from './combobox';
 import {
   fetchSuggestions,
   parseTmdbSuggestions,
@@ -23,7 +22,6 @@ type TheMovieDatabaseFormProps = {
   layout: 'band' | 'stack';
   bandPlacement: 'top' | 'bottom';
   formRef: React.RefObject<HTMLFormElement>;
-  control: Control<MediaSearchValues>;
 };
 
 const TheMovieDatabaseForm = ({
@@ -32,15 +30,11 @@ const TheMovieDatabaseForm = ({
   layout,
   bandPlacement,
   formRef,
-  control,
 }: TheMovieDatabaseFormProps) => {
+  const { control } = useFormContext<MediaSearchValues>();
   const watchedValue = useWatch({
     control,
     name: field.id as keyof MediaSearchValues,
-  });
-  const { field: queryField } = useController({
-    name: field.id as keyof MediaSearchValues,
-    control,
   });
   const [titleSuggestions, setTitleSuggestions] = useState<SuggestionEntry[]>(
     [],
@@ -87,55 +81,21 @@ const TheMovieDatabaseForm = ({
     };
   }, [mediaType, watchedValue]);
 
-  const comboboxPlacementClass =
-    layout === 'band' ? `band-${bandPlacement}` : 'stack';
-
   return (
-    <Combobox
-      value={typeof watchedValue === 'string' ? watchedValue : ''}
-      onChange={(nextValue) => {
-        const resolvedValue = nextValue ?? '';
-        queryField.onChange(resolvedValue);
+    <ControlledCombobox
+      name={field.id as keyof MediaSearchValues}
+      label={field.label}
+      placeholder={field.placeholder}
+      required={field.required}
+      layout={layout}
+      bandPlacement={bandPlacement}
+      suggestions={titleSuggestions}
+      isLoading={isLoadingTitleSuggestions}
+      dataTestId={`search-field-${field.id}`}
+      onSubmit={() => {
         formRef.current?.requestSubmit();
       }}
-      as="div"
-      className={`combobox ${comboboxPlacementClass}`.trim()}
-    >
-      <Combobox.Input
-        type="text"
-        value={typeof watchedValue === 'string' ? watchedValue : ''}
-        onChange={(event) => {
-          queryField.onChange(event);
-        }}
-        placeholder={field.placeholder}
-        aria-label={field.label}
-        className="form-input"
-        required={field.required}
-        data-testid={`search-field-${field.id}`}
-      />
-      {titleSuggestions.length > 0 && (
-        <Combobox.Options className="combobox-options">
-          {titleSuggestions.map((suggestion) => {
-            return (
-              <Combobox.Option
-                key={suggestion.id}
-                value={suggestion.value}
-                className={({ active }) =>
-                  `combobox-option${active ? ' active' : ''}`
-                }
-              >
-                <span className="combobox-option-label">
-                  {suggestion.label}
-                </span>
-              </Combobox.Option>
-            );
-          })}
-        </Combobox.Options>
-      )}
-      {isLoadingTitleSuggestions && titleSuggestions.length === 0 && (
-        <div className="combobox-loading">Searching...</div>
-      )}
-    </Combobox>
+    />
   );
 };
 

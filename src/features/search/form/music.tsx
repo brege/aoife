@@ -1,10 +1,9 @@
-import { Combobox } from '@headlessui/react';
 import type React from 'react';
 import { useEffect, useState } from 'react';
-import type { Control, UseFormSetValue } from 'react-hook-form';
-import { useController, useWatch } from 'react-hook-form';
+import { useFormContext, useWatch } from 'react-hook-form';
 import { FaLink } from 'react-icons/fa';
 import type { MediaSearchValues } from '../../../providers/types';
+import { ControlledCombobox } from './combobox';
 import {
   fetchArtistReleaseGroups,
   fetchSuggestions,
@@ -36,8 +35,6 @@ type MusicFormProps = {
   bandPlacement: 'top' | 'bottom';
   formRef: React.RefObject<HTMLFormElement>;
   onOpenCoverLink?: () => void;
-  control: Control<MediaSearchValues>;
-  setValue: UseFormSetValue<MediaSearchValues>;
 };
 
 const MusicForm = ({
@@ -47,9 +44,8 @@ const MusicForm = ({
   bandPlacement,
   formRef,
   onOpenCoverLink,
-  control,
-  setValue,
 }: MusicFormProps) => {
+  const { control, setValue } = useFormContext<MediaSearchValues>();
   const watchedArtistValue = useWatch({
     control,
     name: artistField.id as keyof MediaSearchValues,
@@ -57,14 +53,6 @@ const MusicForm = ({
   const watchedAlbumValue = useWatch({
     control,
     name: albumField.id as keyof MediaSearchValues,
-  });
-  const { field: artistController } = useController({
-    name: artistField.id as keyof MediaSearchValues,
-    control,
-  });
-  const { field: albumController } = useController({
-    name: albumField.id as keyof MediaSearchValues,
-    control,
   });
   const [artistSuggestions, setArtistSuggestions] = useState<SuggestionEntry[]>(
     [],
@@ -243,16 +231,25 @@ const MusicForm = ({
     selectedArtistIdentifier,
   ]);
 
-  const comboboxPlacementClass =
-    layout === 'band' ? `band-${bandPlacement}` : 'stack';
-
   return (
     <>
-      <Combobox
-        value={typeof watchedArtistValue === 'string' ? watchedArtistValue : ''}
-        onChange={(nextValue) => {
-          const resolvedValue = nextValue ?? '';
-          artistController.onChange(resolvedValue);
+      <ControlledCombobox
+        name={artistField.id as keyof MediaSearchValues}
+        label={artistField.label}
+        placeholder={artistField.placeholder}
+        required={artistField.required}
+        layout={layout}
+        bandPlacement={bandPlacement}
+        suggestions={artistSuggestions}
+        isLoading={isLoadingArtistSuggestions}
+        dataTestId={`search-field-${artistField.id}`}
+        onInputChange={() => {
+          setSelectedArtistIdentifier(null);
+          setAlbumSuggestions([]);
+          setIsLoadingAlbumSuggestions(false);
+          setValue('releaseGroupId', '');
+        }}
+        onSelect={(resolvedValue) => {
           if (!resolvedValue) {
             setSelectedArtistIdentifier(null);
             setAlbumSuggestions([]);
@@ -276,117 +273,42 @@ const MusicForm = ({
           setIsLoadingAlbumSuggestions(false);
           setValue('releaseGroupId', '');
         }}
-        as="div"
-        className={`combobox ${comboboxPlacementClass}`.trim()}
-      >
-        <Combobox.Input
-          type="text"
-          value={
-            typeof watchedArtistValue === 'string' ? watchedArtistValue : ''
-          }
-          onChange={(event) => {
-            artistController.onChange(event);
-            setSelectedArtistIdentifier(null);
-            setAlbumSuggestions([]);
-            setIsLoadingAlbumSuggestions(false);
-            setValue('releaseGroupId', '');
-          }}
-          placeholder={artistField.placeholder}
-          aria-label={artistField.label}
-          className="form-input"
-          required={artistField.required}
-          data-testid={`search-field-${artistField.id}`}
-        />
-        {artistSuggestions.length > 0 && (
-          <Combobox.Options className="combobox-options">
-            {artistSuggestions.map((suggestion) => {
-              return (
-                <Combobox.Option
-                  key={suggestion.id}
-                  value={suggestion.value}
-                  className={({ active }) =>
-                    `combobox-option${active ? ' active' : ''}`
-                  }
-                >
-                  <span className="combobox-option-label">
-                    {suggestion.label}
-                  </span>
-                </Combobox.Option>
-              );
-            })}
-          </Combobox.Options>
-        )}
-        {isLoadingArtistSuggestions && artistSuggestions.length === 0 && (
-          <div className="combobox-loading">Searching...</div>
-        )}
-      </Combobox>
+      />
 
       <div className="input-with-button">
-        <Combobox
-          value={typeof watchedAlbumValue === 'string' ? watchedAlbumValue : ''}
-          onChange={(nextValue) => {
-            const resolvedValue = nextValue ?? '';
-            albumController.onChange(resolvedValue);
+        <ControlledCombobox
+          name={albumField.id as keyof MediaSearchValues}
+          label={albumField.label}
+          placeholder={albumField.placeholder}
+          required={albumField.required}
+          layout={layout}
+          bandPlacement={bandPlacement}
+          suggestions={albumSuggestions}
+          isLoading={isLoadingAlbumSuggestions}
+          dataTestId={`search-field-${albumField.id}`}
+          onInputChange={() => {
+            setValue('releaseGroupId', '');
+          }}
+          onSelect={(resolvedValue) => {
             if (!resolvedValue) {
               setValue('releaseGroupId', '');
-            } else {
-              const matchingSuggestion = albumSuggestions.find(
-                (suggestion) => suggestion.value === resolvedValue,
-              );
-              if (
-                matchingSuggestion &&
-                typeof matchingSuggestion.id === 'string'
-              ) {
-                setValue('releaseGroupId', matchingSuggestion.id);
-              } else {
-                setValue('releaseGroupId', '');
-              }
+              return;
             }
+            const matchingSuggestion = albumSuggestions.find(
+              (suggestion) => suggestion.value === resolvedValue,
+            );
+            if (matchingSuggestion && typeof matchingSuggestion.id === 'string') {
+              setValue('releaseGroupId', matchingSuggestion.id);
+            } else {
+              setValue('releaseGroupId', '');
+            }
+          }}
+          onSubmit={() => {
             window.setTimeout(() => {
               formRef.current?.requestSubmit();
             }, 0);
           }}
-          as="div"
-          className={`combobox ${comboboxPlacementClass}`.trim()}
-        >
-          <Combobox.Input
-            type="text"
-            value={
-              typeof watchedAlbumValue === 'string' ? watchedAlbumValue : ''
-            }
-            onChange={(event) => {
-              albumController.onChange(event);
-              setValue('releaseGroupId', '');
-            }}
-            placeholder={albumField.placeholder}
-            aria-label={albumField.label}
-            className="form-input"
-            required={albumField.required}
-            data-testid={`search-field-${albumField.id}`}
-          />
-          {albumSuggestions.length > 0 && (
-            <Combobox.Options className="combobox-options">
-              {albumSuggestions.map((suggestion) => {
-                return (
-                  <Combobox.Option
-                    key={suggestion.id}
-                    value={suggestion.value}
-                    className={({ active }) =>
-                      `combobox-option${active ? ' active' : ''}`
-                    }
-                  >
-                    <span className="combobox-option-label">
-                      {suggestion.label}
-                    </span>
-                  </Combobox.Option>
-                );
-              })}
-            </Combobox.Options>
-          )}
-          {isLoadingAlbumSuggestions && albumSuggestions.length === 0 && (
-            <div className="combobox-loading">Searching...</div>
-          )}
-        </Combobox>
+        />
         {onOpenCoverLink && (
           <button
             type="button"

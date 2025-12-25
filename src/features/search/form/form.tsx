@@ -1,6 +1,6 @@
 import type React from 'react';
 import { useRef } from 'react';
-import type { UseFormReturn } from 'react-hook-form';
+import { FormProvider, type UseFormReturn } from 'react-hook-form';
 import { RiPhoneFindLine } from 'react-icons/ri';
 import type { MediaSearchValues, MediaType } from '../../../providers/types';
 import Dropdown from '../suggestion/list';
@@ -43,7 +43,7 @@ export const MediaForm: React.FC<MediaFormProps> = ({
   formMethods,
 }) => {
   const formRef = useRef<HTMLFormElement>(null);
-  const { control, setValue, register, handleSubmit } = formMethods;
+  const { register, handleSubmit } = formMethods;
   const fieldByIdentifier = new Map(
     provider.searchFields.map((field) => [field.id, field]),
   );
@@ -73,7 +73,6 @@ export const MediaForm: React.FC<MediaFormProps> = ({
         bandPlacement={bandPlacement}
         formRef={formRef}
         onOpenCoverLink={onOpenCoverLink}
-        control={control}
       />
     );
   } else if (mediaType === 'music') {
@@ -87,8 +86,6 @@ export const MediaForm: React.FC<MediaFormProps> = ({
         bandPlacement={bandPlacement}
         formRef={formRef}
         onOpenCoverLink={onOpenCoverLink}
-        control={control}
-        setValue={setValue}
       />
     );
   } else if (mediaType === 'games') {
@@ -101,7 +98,6 @@ export const MediaForm: React.FC<MediaFormProps> = ({
         layout={layout}
         bandPlacement={bandPlacement}
         formRef={formRef}
-        control={control}
       />
     );
   } else if (mediaType === 'movies' || mediaType === 'tv') {
@@ -113,18 +109,13 @@ export const MediaForm: React.FC<MediaFormProps> = ({
         layout={layout}
         bandPlacement={bandPlacement}
         formRef={formRef}
-        control={control}
       />
     );
   } else if (mediaType === 'custom') {
     const queryField = getField('query');
     const coverField = getField('cover');
     formFields = (
-      <CustomSearchForm
-        queryField={queryField}
-        coverField={coverField}
-        control={control}
-      />
+      <CustomSearchForm queryField={queryField} coverField={coverField} />
     );
   } else {
     formFields = provider.searchFields.map((field) => {
@@ -146,55 +137,57 @@ export const MediaForm: React.FC<MediaFormProps> = ({
   }
 
   return (
-    <form
-      className={`media-search-form ${layoutClass} ${bandPlacementClass}`}
-      onSubmit={handleFormSubmit}
-      data-testid={`media-search-form-${layout}`}
-      ref={formRef}
-    >
-      {layout === 'stack' && (
-        <Dropdown value={mediaType} onChange={onMediaTypeChange} />
-      )}
-
-      {layout === 'band' && (
-        <Dropdown value={mediaType} onChange={onMediaTypeChange} />
-      )}
-
-      <div className="form-fields">{formFields}</div>
-
-      <button
-        type="submit"
-        className="form-submit-button"
-        disabled={isLoading}
-        data-testid="search-submit"
+    <FormProvider {...formMethods}>
+      <form
+        className={`media-search-form ${layoutClass} ${bandPlacementClass}`}
+        onSubmit={handleFormSubmit}
+        data-testid={`media-search-form-${layout}`}
+        ref={formRef}
       >
-        {mediaType === 'custom' ? (
-          isLoading ? (
-            'Uploading...'
-          ) : (
-            'Add image'
-          )
-        ) : isLoading ? (
-          'Searching...'
-        ) : (
-          <>
-            <RiPhoneFindLine className="form-submit-icon" aria-hidden="true" />
-            <span>
-              {mediaType === 'music'
-                ? 'Cover art'
-                : mediaType === 'movies'
-                  ? 'Poster'
-                  : mediaType === 'tv'
-                    ? 'Poster'
-                    : mediaType === 'books'
-                      ? 'Cover art'
-                      : mediaType === 'games'
-                        ? 'Box art'
-                        : provider.label}
-            </span>
-          </>
+        {layout === 'stack' && (
+          <Dropdown value={mediaType} onChange={onMediaTypeChange} />
         )}
-      </button>
-    </form>
+
+        {layout === 'band' && (
+          <Dropdown value={mediaType} onChange={onMediaTypeChange} />
+        )}
+
+        <div className="form-fields">{formFields}</div>
+
+        <button
+          type="submit"
+          className="form-submit-button"
+          disabled={isLoading}
+          data-testid="search-submit"
+        >
+          {mediaType === 'custom' ? (
+            isLoading ? (
+              'Uploading...'
+            ) : (
+              'Add image'
+            )
+          ) : isLoading ? (
+            'Searching...'
+          ) : (
+            <>
+              <RiPhoneFindLine className="form-submit-icon" aria-hidden="true" />
+              <span>
+                {mediaType === 'music'
+                  ? 'Cover art'
+                  : mediaType === 'movies'
+                    ? 'Poster'
+                    : mediaType === 'tv'
+                      ? 'Poster'
+                      : mediaType === 'books'
+                        ? 'Cover art'
+                        : mediaType === 'games'
+                          ? 'Box art'
+                          : provider.label}
+              </span>
+            </>
+          )}
+        </button>
+      </form>
+    </FormProvider>
   );
 };

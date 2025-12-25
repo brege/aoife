@@ -1,9 +1,8 @@
-import { Combobox } from '@headlessui/react';
 import type React from 'react';
 import { useEffect, useState } from 'react';
-import type { Control } from 'react-hook-form';
-import { useController, useWatch } from 'react-hook-form';
+import { useFormContext, useWatch } from 'react-hook-form';
 import type { MediaSearchValues } from '../../../providers/types';
+import { ControlledCombobox } from './combobox';
 import { Platform } from './platform';
 import {
   fetchSuggestions,
@@ -31,7 +30,6 @@ type TheGamesDatabaseFormProps = {
   layout: 'band' | 'stack';
   bandPlacement: 'top' | 'bottom';
   formRef: React.RefObject<HTMLFormElement>;
-  control: Control<MediaSearchValues>;
 };
 
 const TheGamesDatabaseForm = ({
@@ -40,8 +38,8 @@ const TheGamesDatabaseForm = ({
   layout,
   bandPlacement,
   formRef,
-  control,
 }: TheGamesDatabaseFormProps) => {
+  const { control, setValue } = useFormContext<MediaSearchValues>();
   const watchedQueryValue = useWatch({
     control,
     name: queryField.id as keyof MediaSearchValues,
@@ -49,14 +47,6 @@ const TheGamesDatabaseForm = ({
   const watchedPlatformValue = useWatch({
     control,
     name: platformField.id as keyof MediaSearchValues,
-  });
-  const { field: queryController } = useController({
-    name: queryField.id as keyof MediaSearchValues,
-    control,
-  });
-  const { field: platformController } = useController({
-    name: platformField.id as keyof MediaSearchValues,
-    control,
   });
   const [titleSuggestions, setTitleSuggestions] = useState<SuggestionEntry[]>(
     [],
@@ -107,62 +97,28 @@ const TheGamesDatabaseForm = ({
     };
   }, [watchedPlatformValue, watchedQueryValue]);
 
-  const comboboxPlacementClass =
-    layout === 'band' ? `band-${bandPlacement}` : 'stack';
-
   return (
     <>
-      <Combobox
-        value={typeof watchedQueryValue === 'string' ? watchedQueryValue : ''}
-        onChange={(nextValue) => {
-          const resolvedValue = nextValue ?? '';
-          queryController.onChange(resolvedValue);
+      <ControlledCombobox
+        name={queryField.id as keyof MediaSearchValues}
+        label={queryField.label}
+        placeholder={queryField.placeholder}
+        required={queryField.required}
+        layout={layout}
+        bandPlacement={bandPlacement}
+        suggestions={titleSuggestions}
+        isLoading={isLoadingTitleSuggestions}
+        dataTestId={`search-field-${queryField.id}`}
+        onSubmit={() => {
           formRef.current?.requestSubmit();
         }}
-        as="div"
-        className={`combobox ${comboboxPlacementClass}`.trim()}
-      >
-        <Combobox.Input
-          type="text"
-          value={typeof watchedQueryValue === 'string' ? watchedQueryValue : ''}
-          onChange={(event) => {
-            queryController.onChange(event);
-          }}
-          placeholder={queryField.placeholder}
-          aria-label={queryField.label}
-          className="form-input"
-          required={queryField.required}
-          data-testid={`search-field-${queryField.id}`}
-        />
-        {titleSuggestions.length > 0 && (
-          <Combobox.Options className="combobox-options">
-            {titleSuggestions.map((suggestion) => {
-              return (
-                <Combobox.Option
-                  key={suggestion.id}
-                  value={suggestion.value}
-                  className={({ active }) =>
-                    `combobox-option${active ? ' active' : ''}`
-                  }
-                >
-                  <span className="combobox-option-label">
-                    {suggestion.label}
-                  </span>
-                </Combobox.Option>
-              );
-            })}
-          </Combobox.Options>
-        )}
-        {isLoadingTitleSuggestions && titleSuggestions.length === 0 && (
-          <div className="combobox-loading">Searching...</div>
-        )}
-      </Combobox>
+      />
       <Platform
         value={
           typeof watchedPlatformValue === 'string' ? watchedPlatformValue : ''
         }
         onChange={(nextValue) => {
-          platformController.onChange(nextValue);
+          setValue(platformField.id, nextValue);
         }}
         placeholder={platformField.placeholder}
         ariaLabel={platformField.label}

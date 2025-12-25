@@ -1,10 +1,9 @@
-import { Combobox } from '@headlessui/react';
 import type React from 'react';
 import { useEffect, useState } from 'react';
-import type { Control } from 'react-hook-form';
-import { useController, useWatch } from 'react-hook-form';
+import { useFormContext, useWatch } from 'react-hook-form';
 import { FaLink } from 'react-icons/fa';
 import type { MediaSearchValues } from '../../../providers/types';
+import { ControlledCombobox } from './combobox';
 import {
   fetchSuggestions,
   normalizeTitleKey,
@@ -36,7 +35,6 @@ type BooksFormProps = {
   bandPlacement: 'top' | 'bottom';
   formRef: React.RefObject<HTMLFormElement>;
   onOpenCoverLink?: () => void;
-  control: Control<MediaSearchValues>;
 };
 
 const BooksForm = ({
@@ -46,8 +44,8 @@ const BooksForm = ({
   bandPlacement,
   formRef,
   onOpenCoverLink,
-  control,
 }: BooksFormProps) => {
+  const { control } = useFormContext<MediaSearchValues>();
   const watchedAuthorValue = useWatch({
     control,
     name: authorField.id as keyof MediaSearchValues,
@@ -55,14 +53,6 @@ const BooksForm = ({
   const watchedTitleValue = useWatch({
     control,
     name: titleField.id as keyof MediaSearchValues,
-  });
-  const { field: authorController } = useController({
-    name: authorField.id as keyof MediaSearchValues,
-    control,
-  });
-  const { field: titleController } = useController({
-    name: titleField.id as keyof MediaSearchValues,
-    control,
   });
   const [bookTitleSuggestions, setBookTitleSuggestions] = useState<
     SuggestionEntry[]
@@ -213,16 +203,23 @@ const BooksForm = ({
     };
   }, [watchedAuthorValue]);
 
-  const comboboxPlacementClass =
-    layout === 'band' ? `band-${bandPlacement}` : 'stack';
-
   return (
     <>
-      <Combobox
-        value={typeof watchedAuthorValue === 'string' ? watchedAuthorValue : ''}
-        onChange={(nextValue) => {
-          const resolvedValue = nextValue ?? '';
-          authorController.onChange(resolvedValue);
+      <ControlledCombobox
+        name={authorField.id as keyof MediaSearchValues}
+        label={authorField.label}
+        placeholder={authorField.placeholder}
+        required={authorField.required}
+        layout={layout}
+        bandPlacement={bandPlacement}
+        suggestions={authorSuggestions}
+        isLoading={isLoadingAuthorSuggestions}
+        dataTestId={`search-field-${authorField.id}`}
+        onInputChange={() => {
+          setSelectedAuthorKeys([]);
+          setBookTitleSuggestions([]);
+        }}
+        onSelect={(resolvedValue) => {
           if (!resolvedValue) {
             setSelectedAuthorKeys([]);
             setBookTitleSuggestions([]);
@@ -240,100 +237,25 @@ const BooksForm = ({
           }
           setSelectedAuthorKeys(matchingSuggestion.authorKeys);
         }}
-        as="div"
-        className={`combobox ${comboboxPlacementClass}`.trim()}
-      >
-        <Combobox.Input
-          type="text"
-          value={
-            typeof watchedAuthorValue === 'string' ? watchedAuthorValue : ''
-          }
-          onChange={(event) => {
-            authorController.onChange(event);
-            setSelectedAuthorKeys([]);
-            setBookTitleSuggestions([]);
-          }}
-          placeholder={authorField.placeholder}
-          aria-label={authorField.label}
-          className="form-input"
-          required={authorField.required}
-          data-testid={`search-field-${authorField.id}`}
-        />
-        {authorSuggestions.length > 0 && (
-          <Combobox.Options className="combobox-options">
-            {authorSuggestions.map((suggestion) => {
-              return (
-                <Combobox.Option
-                  key={suggestion.id}
-                  value={suggestion.value}
-                  className={({ active }) =>
-                    `combobox-option${active ? ' active' : ''}`
-                  }
-                >
-                  <span className="combobox-option-label">
-                    {suggestion.label}
-                  </span>
-                </Combobox.Option>
-              );
-            })}
-          </Combobox.Options>
-        )}
-        {isLoadingAuthorSuggestions && authorSuggestions.length === 0 && (
-          <div className="combobox-loading">Searching...</div>
-        )}
-      </Combobox>
+      />
 
       <div className="input-with-button">
-        <Combobox
-          value={typeof watchedTitleValue === 'string' ? watchedTitleValue : ''}
-          onChange={(nextValue) => {
-            const resolvedValue = nextValue ?? '';
-            titleController.onChange(resolvedValue);
+        <ControlledCombobox
+          name={titleField.id as keyof MediaSearchValues}
+          label={titleField.label}
+          placeholder={titleField.placeholder}
+          required={titleField.required}
+          layout={layout}
+          bandPlacement={bandPlacement}
+          suggestions={bookTitleSuggestions}
+          isLoading={isLoadingBookTitleSuggestions}
+          dataTestId={`search-field-${titleField.id}`}
+          onSubmit={() => {
             window.setTimeout(() => {
               formRef.current?.requestSubmit();
             }, 0);
           }}
-          as="div"
-          className={`combobox ${comboboxPlacementClass}`.trim()}
-        >
-          <Combobox.Input
-            type="text"
-            value={
-              typeof watchedTitleValue === 'string' ? watchedTitleValue : ''
-            }
-            onChange={(event) => {
-              titleController.onChange(event);
-            }}
-            placeholder={titleField.placeholder}
-            aria-label={titleField.label}
-            className="form-input"
-            required={titleField.required}
-            data-testid={`search-field-${titleField.id}`}
-          />
-          {bookTitleSuggestions.length > 0 && (
-            <Combobox.Options className="combobox-options">
-              {bookTitleSuggestions.map((suggestion) => {
-                return (
-                  <Combobox.Option
-                    key={suggestion.id}
-                    value={suggestion.value}
-                    className={({ active }) =>
-                      `combobox-option${active ? ' active' : ''}`
-                    }
-                  >
-                    <span className="combobox-option-label">
-                      {suggestion.label}
-                    </span>
-                  </Combobox.Option>
-                );
-              })}
-            </Combobox.Options>
-          )}
-          {isLoadingBookTitleSuggestions &&
-            bookTitleSuggestions.length === 0 && (
-              <div className="combobox-loading">Searching...</div>
-            )}
-        </Combobox>
+        />
         {onOpenCoverLink && (
           <button
             type="button"
