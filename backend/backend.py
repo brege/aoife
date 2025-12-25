@@ -514,13 +514,6 @@ def proxy_googlebooks_image():
         return ("Not found", 404)
 
 
-# Logging endpoint (optional telemetry)
-@app.route("/api/log", methods=["POST"])
-@limiter.limit(RATE_LIMIT_LOG_EVENT)
-def log_event():
-    return jsonify({"status": "ok"}), 200
-
-
 @app.route("/api/share", methods=["POST"])
 @limiter.limit(RATE_LIMIT_SHARE_CREATE)
 def create_share():

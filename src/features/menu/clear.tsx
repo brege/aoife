@@ -14,10 +14,13 @@ const MenuClear: React.FC<MenuClearProps> = ({ onClearGrid, onMenuClose }) => {
     }
     onClearGrid();
     onMenuClose();
-    logger.info('Grid cleared via menu clear component', {
-      context: 'MenuClearGrid.handleClear',
-      action: 'clear_grid_component',
-    });
+    logger.info(
+      {
+        context: 'MenuClearGrid.handleClear',
+        action: 'clear_grid_component',
+      },
+      'Grid cleared via menu clear component',
+    );
   };
 
   return (

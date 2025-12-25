@@ -57,52 +57,64 @@ const MenuConfig: React.FC<MenuConfigProps> = ({
   const handleColumnsDecrement = () => {
     if (columns <= MIN_COLUMNS) return;
     const nextValue = columns - 1;
-    logger.info(`MENU: Columns decreased to ${nextValue}`, {
-      context: 'MenuConfig.handleColumnsDecrement',
-      action: 'columns_change',
-      previousValue: columns,
-      newValue: nextValue,
-      timestamp: Date.now(),
-    });
+    logger.info(
+      {
+        context: 'MenuConfig.handleColumnsDecrement',
+        action: 'columns_change',
+        previousValue: columns,
+        newValue: nextValue,
+        timestamp: Date.now(),
+      },
+      `MENU: Columns decreased to ${nextValue}`,
+    );
     onColumnsChange(nextValue);
   };
 
   const handleColumnsIncrement = () => {
     if (columns >= MAX_COLUMNS) return;
     const nextValue = columns + 1;
-    logger.info(`MENU: Columns increased to ${nextValue}`, {
-      context: 'MenuConfig.handleColumnsIncrement',
-      action: 'columns_change',
-      previousValue: columns,
-      newValue: nextValue,
-      timestamp: Date.now(),
-    });
+    logger.info(
+      {
+        context: 'MenuConfig.handleColumnsIncrement',
+        action: 'columns_change',
+        previousValue: columns,
+        newValue: nextValue,
+        timestamp: Date.now(),
+      },
+      `MENU: Columns increased to ${nextValue}`,
+    );
     onColumnsChange(nextValue);
   };
 
   const handleRowsDecrement = () => {
     if (minRows <= MIN_ROWS_VALUE) return;
     const nextValue = minRows - 1;
-    logger.info(`MENU: Min rows decreased to ${nextValue}`, {
-      context: 'MenuConfig.handleRowsDecrement',
-      action: 'min_rows_change',
-      previousValue: minRows,
-      newValue: nextValue,
-      timestamp: Date.now(),
-    });
+    logger.info(
+      {
+        context: 'MenuConfig.handleRowsDecrement',
+        action: 'min_rows_change',
+        previousValue: minRows,
+        newValue: nextValue,
+        timestamp: Date.now(),
+      },
+      `MENU: Min rows decreased to ${nextValue}`,
+    );
     onMinRowsChange(nextValue);
   };
 
   const handleRowsIncrement = () => {
     if (minRows >= MAX_ROWS_VALUE) return;
     const nextValue = minRows + 1;
-    logger.info(`MENU: Min rows increased to ${nextValue}`, {
-      context: 'MenuConfig.handleRowsIncrement',
-      action: 'min_rows_change',
-      previousValue: minRows,
-      newValue: nextValue,
-      timestamp: Date.now(),
-    });
+    logger.info(
+      {
+        context: 'MenuConfig.handleRowsIncrement',
+        action: 'min_rows_change',
+        previousValue: minRows,
+        newValue: nextValue,
+        timestamp: Date.now(),
+      },
+      `MENU: Min rows increased to ${nextValue}`,
+    );
     onMinRowsChange(nextValue);
   };
 
@@ -203,12 +215,15 @@ const MenuConfig: React.FC<MenuConfigProps> = ({
             onChange={(checked) => {
               const newMode = checked ? 'carousel' : 'grid';
               onCoverViewModeChange?.(newMode);
-              logger.info(`MENU: Swipe mode changed to ${newMode}`, {
-                context: 'MenuConfig.swipeMode',
-                action: 'swipe_mode_change',
-                newMode,
-                timestamp: Date.now(),
-              });
+              logger.info(
+                {
+                  context: 'MenuConfig.swipeMode',
+                  action: 'swipe_mode_change',
+                  newMode,
+                  timestamp: Date.now(),
+                },
+                `MENU: Swipe mode changed to ${newMode}`,
+              );
             }}
             className="cover-view-toggle"
           />

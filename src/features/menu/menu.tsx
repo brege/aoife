@@ -125,11 +125,14 @@ const Menu: React.FC<MenuProps> = ({
     const newState = !isOpen;
     setIsOpen(newState);
 
-    logger.info(`MENU: ${newState ? 'Opened' : 'Closed'} hamburger menu`, {
-      context: 'HamburgerMenu.toggleMenu',
-      action: 'menu_toggle',
-      timestamp: Date.now(),
-    });
+    logger.info(
+      {
+        context: 'HamburgerMenu.toggleMenu',
+        action: 'menu_toggle',
+        timestamp: Date.now(),
+      },
+      `MENU: ${newState ? 'Opened' : 'Closed'} hamburger menu`,
+    );
   };
 
   const closeMenu = () => {
@@ -331,11 +334,14 @@ const Menu: React.FC<MenuProps> = ({
                     onClick={() => {
                       onClearGrid();
                       setShowResetConfirm(false);
-                      logger.info('MENU: Grid cleared', {
-                        context: 'Menu.handleResetConfirm',
-                        action: 'grid_clear',
-                        timestamp: Date.now(),
-                      });
+                      logger.info(
+                        {
+                          context: 'Menu.handleResetConfirm',
+                          action: 'grid_clear',
+                          timestamp: Date.now(),
+                        },
+                        'MENU: Grid cleared',
+                      );
                     }}
                   >
                     yes

@@ -1391,10 +1391,10 @@ export const MediaForm: React.FC<MediaFormProps> = ({
                       })}
                     </Combobox.Options>
                   )}
-                {isLoadingAlbumSuggestions &&
-                  albumSuggestions.length === 0 && (
-                    <div className="combobox-loading">Searching...</div>
-                  )}
+                  {isLoadingAlbumSuggestions &&
+                    albumSuggestions.length === 0 && (
+                      <div className="combobox-loading">Searching...</div>
+                    )}
                 </Combobox>
                 <button
                   type="button"
@@ -1478,10 +1478,7 @@ export const MediaForm: React.FC<MediaFormProps> = ({
           'Searching...'
         ) : (
           <>
-            <RiPhoneFindLine
-              className="form-submit-icon"
-              aria-hidden="true"
-            />
+            <RiPhoneFindLine className="form-submit-icon" aria-hidden="true" />
             <span>
               {mediaType === 'music'
                 ? 'Cover art'

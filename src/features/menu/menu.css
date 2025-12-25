@@ -34,9 +34,7 @@
 .hamburger-button.open {
   background: var(--bg-tertiary);
   border-color: var(--border-color);
-  box-shadow:
-    var(--shadow-inset),
-    var(--shadow-highlight);
+  box-shadow: var(--shadow-inset), var(--shadow-highlight);
   transform: translateY(1px);
 }
 
@@ -45,18 +43,14 @@
 }
 
 .hamburger-button.open:active {
-  box-shadow:
-    var(--shadow-inset),
-    var(--shadow-highlight);
+  box-shadow: var(--shadow-inset), var(--shadow-highlight);
   transform: translateY(2px);
 }
 
 .hamburger-button:active:not(.open) {
   background: var(--bg-tertiary);
   border-color: var(--border-color);
-  box-shadow:
-    var(--shadow-inset),
-    var(--shadow-highlight);
+  box-shadow: var(--shadow-inset), var(--shadow-highlight);
   transform: translateY(1px);
 }
 

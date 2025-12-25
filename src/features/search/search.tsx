@@ -43,10 +43,13 @@ const getEmptyStateLabel = (mediaType: MediaType): string => {
 
 const MediaSearch: React.FC = () => {
   useEffect(() => {
-    logger.setDebugMode(true);
-    logger.info('MediaSearch component initialized', {
-      context: 'MediaSearch',
-    });
+    logger.level = 'debug';
+    logger.info(
+      {
+        context: 'MediaSearch',
+      },
+      'MediaSearch component initialized',
+    );
   }, []);
 
   const [showSearch, setShowSearch] = useState(true);
@@ -191,15 +194,18 @@ const MediaSearch: React.FC = () => {
         const next = [...current];
         const [moved] = next.splice(sourceIndex, 1);
         next.splice(targetIndex, 0, moved);
-        logger.info('GRID: Reordered media', {
-          context: 'MediaSearch.handleReorderMedia',
-          action: 'grid_reorder',
-          sourceId,
-          targetId,
-          sourceIndex,
-          targetIndex,
-          timestamp: Date.now(),
-        });
+        logger.info(
+          {
+            context: 'MediaSearch.handleReorderMedia',
+            action: 'grid_reorder',
+            sourceId,
+            targetId,
+            sourceIndex,
+            targetIndex,
+            timestamp: Date.now(),
+          },
+          'GRID: Reordered media',
+        );
         return next;
       });
     },
@@ -248,11 +254,14 @@ const MediaSearch: React.FC = () => {
       clearGrid();
       setSelectedMediaType('movies');
       resetShareContext();
-      logger.info(source, {
-        context: 'MediaSearch.clearGridAndPersist',
-        action: 'grid_cleared',
-        timestamp: Date.now(),
-      });
+      logger.info(
+        {
+          context: 'MediaSearch.clearGridAndPersist',
+          action: 'grid_cleared',
+          timestamp: Date.now(),
+        },
+        source,
+      );
     },
     [clearGrid, resetShareContext, setSelectedMediaType],
   );
@@ -302,12 +311,15 @@ const MediaSearch: React.FC = () => {
 
   const handleShowSearchToggle = useCallback((enabled: boolean) => {
     setShowSearch(enabled);
-    logger.info(`SEARCH: ${enabled ? 'Showing' : 'Hiding'} search`, {
-      context: 'MediaSearch.handleShowSearchToggle',
-      action: 'search_toggle',
-      showSearch: enabled,
-      timestamp: Date.now(),
-    });
+    logger.info(
+      {
+        context: 'MediaSearch.handleShowSearchToggle',
+        action: 'search_toggle',
+        showSearch: enabled,
+        timestamp: Date.now(),
+      },
+      `SEARCH: ${enabled ? 'Showing' : 'Hiding'} search`,
+    );
   }, []);
 
   const handleClearGrid = useCallback(() => {
@@ -447,13 +459,13 @@ const MediaSearch: React.FC = () => {
               onRemoveMedia={handleRemoveMedia}
               onPosterClick={(item) => {
                 logger.info(
-                  `GRID: Opening alternate poster grid for "${item.title}"`,
                   {
                     context: 'MediaSearch.Grid.onPosterClick',
                     action: 'poster_grid_open',
                     media: { id: item.id, title: item.title, type: item.type },
                     timestamp: Date.now(),
                   },
+                  `GRID: Opening alternate poster grid for "${item.title}"`,
                 );
                 setActivePosterItemId(item.id);
                 setBrokenAlternateCoverUrls({});
@@ -518,22 +530,28 @@ const MediaSearch: React.FC = () => {
               }}
               onClose={handleClosePosterGrid}
               onSelectCarouselCover={(url) => {
-                logger.info(`POSTER: Selected alternate poster from carousel`, {
-                  context: 'Carousel',
-                  action: 'poster_change',
-                  posterPath: url,
-                  timestamp: Date.now(),
-                });
+                logger.info(
+                  {
+                    context: 'Carousel',
+                    action: 'poster_change',
+                    posterPath: url,
+                    timestamp: Date.now(),
+                  },
+                  'POSTER: Selected alternate poster from carousel',
+                );
                 handleSelectAlternatePoster(url);
               }}
               onSelectGridCover={(url, index) => {
-                logger.info(`POSTER: Selected alternate poster ${index + 1}`, {
-                  context: 'Grid.onSelectAlternatePoster',
-                  action: 'poster_change',
-                  posterIndex: index + 1,
-                  posterPath: url,
-                  timestamp: Date.now(),
-                });
+                logger.info(
+                  {
+                    context: 'Grid.onSelectAlternatePoster',
+                    action: 'poster_change',
+                    posterIndex: index + 1,
+                    posterPath: url,
+                    timestamp: Date.now(),
+                  },
+                  `POSTER: Selected alternate poster ${index + 1}`,
+                );
                 handleSelectAlternatePoster(url);
               }}
             />

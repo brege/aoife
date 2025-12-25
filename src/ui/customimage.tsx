@@ -38,11 +38,14 @@ export const CustomImage = ({
           setImageSrc(blobUrl);
         }
       } catch (error) {
-        logger.error('Failed to load image from IndexedDB', {
-          context: 'CustomImage.loadBlob',
-          error: error instanceof Error ? error.message : String(error),
-          imageId: src,
-        });
+        logger.error(
+          {
+            context: 'CustomImage.loadBlob',
+            error: error instanceof Error ? error.message : String(error),
+            imageId: src,
+          },
+          'Failed to load image from IndexedDB',
+        );
         if (isActive) {
           setImageSrc(undefined);
         }

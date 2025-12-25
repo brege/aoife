@@ -218,12 +218,15 @@ const Grid: React.FC<GridProps> = ({
   ) => {
     const img = event.target as HTMLImageElement;
     if (media.type === 'books' && isPlaceholderCover(img)) {
-      logger.info(`GRID: Removed placeholder cover for "${media.title}"`, {
-        context: 'Grid.posterLoad',
-        action: 'poster_placeholder',
-        media: { id: media.id, title: media.title },
-        timestamp: Date.now(),
-      });
+      logger.info(
+        {
+          context: 'Grid.posterLoad',
+          action: 'poster_placeholder',
+          media: { id: media.id, title: media.title },
+          timestamp: Date.now(),
+        },
+        `GRID: Removed placeholder cover for "${media.title}"`,
+      );
       onRemoveMedia(media.id);
       return;
     }
@@ -234,7 +237,6 @@ const Grid: React.FC<GridProps> = ({
     }
 
     logger.info(
-      `GRID: Poster loaded - ${img.naturalWidth}x${img.naturalHeight} (${naturalAspectRatio.toFixed(2)})`,
       {
         context: 'Grid.posterLoad',
         action: 'poster_dimensions',
@@ -242,6 +244,7 @@ const Grid: React.FC<GridProps> = ({
         naturalAspectRatio,
         timestamp: Date.now(),
       },
+      `GRID: Poster loaded - ${img.naturalWidth}x${img.naturalHeight} (${naturalAspectRatio.toFixed(2)})`,
     );
   };
 
@@ -258,7 +261,10 @@ const Grid: React.FC<GridProps> = ({
       ) {
         return;
       }
-      if (event.pointerType !== 'touch' && !target?.closest('.grid-drag-handle')) {
+      if (
+        event.pointerType !== 'touch' &&
+        !target?.closest('.grid-drag-handle')
+      ) {
         return;
       }
       dragStateRef.current = {
@@ -276,7 +282,10 @@ const Grid: React.FC<GridProps> = ({
   const handlePointerMove = useCallback(
     (event: React.PointerEvent<HTMLDivElement>) => {
       const dragState = dragStateRef.current;
-      if (dragState.pointerId !== event.pointerId || dragState.sourceId == null) {
+      if (
+        dragState.pointerId !== event.pointerId ||
+        dragState.sourceId == null
+      ) {
         return;
       }
       const distance = Math.hypot(
@@ -324,7 +333,11 @@ const Grid: React.FC<GridProps> = ({
 
   const handlePointerUp = useCallback(() => {
     const dragState = dragStateRef.current;
-    if (dragState.isDragging && dragState.sourceId != null && dragOverId != null) {
+    if (
+      dragState.isDragging &&
+      dragState.sourceId != null &&
+      dragOverId != null
+    ) {
       onReorderMedia(dragState.sourceId, dragOverId);
     }
     dragStateRef.current = {
@@ -407,7 +420,9 @@ const Grid: React.FC<GridProps> = ({
                       width,
                       height: layoutDimension === 'width' ? 'auto' : row.height,
                     }}
-                    onPointerDown={(event) => handlePointerDown(media.id, event)}
+                    onPointerDown={(event) =>
+                      handlePointerDown(media.id, event)
+                    }
                     onPointerMove={handlePointerMove}
                     onPointerUp={handlePointerUp}
                     onPointerCancel={handlePointerCancel}

@@ -53,9 +53,7 @@
 .header-add-button:active {
   background: var(--bg-tertiary);
   border-color: var(--border-color);
-  box-shadow:
-    var(--shadow-inset),
-    var(--shadow-highlight);
+  box-shadow: var(--shadow-inset), var(--shadow-highlight);
   transform: translateY(1px);
 }
 
@@ -67,9 +65,7 @@
 .header-add-button.active {
   background: var(--bg-tertiary);
   border-color: var(--border-color);
-  box-shadow:
-    var(--shadow-inset),
-    var(--shadow-highlight);
+  box-shadow: var(--shadow-inset), var(--shadow-highlight);
   transform: translateY(1px);
 }
 
@@ -78,9 +74,7 @@
 }
 
 .header-add-button.active:active {
-  box-shadow:
-    var(--shadow-inset-light),
-    var(--shadow-highlight);
+  box-shadow: var(--shadow-inset-light), var(--shadow-highlight);
   transform: translateY(2px);
 }
 

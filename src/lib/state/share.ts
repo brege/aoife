@@ -130,20 +130,26 @@ export const useShareState = (
       try {
         const result = await loadShare(slug, DEFAULT_TITLE);
         applySharedState(result.state, result.slug, result.title);
-        logger.info('SHARE: Loaded shared grid', {
-          context: 'useShareState.handleLoadShare',
-          action: 'share_load',
-          slug,
-          timestamp: Date.now(),
-        });
+        logger.info(
+          {
+            context: 'useShareState.handleLoadShare',
+            action: 'share_load',
+            slug,
+            timestamp: Date.now(),
+          },
+          'SHARE: Loaded shared grid',
+        );
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
         setShareError(message);
-        logger.error('SHARE: Failed to load shared grid', {
-          context: 'useShareState.handleLoadShare',
-          slug,
-          error: message,
-        });
+        logger.error(
+          {
+            context: 'useShareState.handleLoadShare',
+            slug,
+            error: message,
+          },
+          'SHARE: Failed to load shared grid',
+        );
       } finally {
         setIsLoadingShare(false);
       }
@@ -170,13 +176,16 @@ export const useShareState = (
             hasLocalGrid = true;
           }
         } catch (storageError) {
-          logger.error('Failed to parse stored grid items', {
-            context: 'useShareState.storageLoad',
-            error:
-              storageError instanceof Error
-                ? storageError.message
-                : String(storageError),
-          });
+          logger.error(
+            {
+              context: 'useShareState.storageLoad',
+              error:
+                storageError instanceof Error
+                  ? storageError.message
+                  : String(storageError),
+            },
+            'Failed to parse stored grid items',
+          );
         }
       }
 
@@ -214,13 +223,16 @@ export const useShareState = (
             setGridItems(parsedGrid);
           }
         } catch (storageError) {
-          logger.error('Failed to parse indexedDB grid items', {
-            context: 'useShareState.indexedDbLoad',
-            error:
-              storageError instanceof Error
-                ? storageError.message
-                : String(storageError),
-          });
+          logger.error(
+            {
+              context: 'useShareState.indexedDbLoad',
+              error:
+                storageError instanceof Error
+                  ? storageError.message
+                  : String(storageError),
+            },
+            'Failed to parse indexedDB grid items',
+          );
         }
       }
     })().finally(() => {
@@ -320,24 +332,30 @@ export const useShareState = (
       window.history.replaceState(null, '', url.toString());
       setShareUrl(url.toString());
 
-      logger.info('SHARE: Created share link', {
-        context: 'useShareState.handleCreateShare',
-        action: 'share_created',
-        slug: response.slug,
-        gridCount: gridItems.length,
-        columns,
-        minRows,
-        layoutDimension,
-        timestamp: Date.now(),
-      });
+      logger.info(
+        {
+          context: 'useShareState.handleCreateShare',
+          action: 'share_created',
+          slug: response.slug,
+          gridCount: gridItems.length,
+          columns,
+          minRows,
+          layoutDimension,
+          timestamp: Date.now(),
+        },
+        'SHARE: Created share link',
+      );
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       setShareError(message);
-      logger.error('SHARE: Failed to create share link', {
-        context: 'useShareState.handleCreateShare',
-        action: 'share_create_failed',
-        error: message,
-      });
+      logger.error(
+        {
+          context: 'useShareState.handleCreateShare',
+          action: 'share_create_failed',
+          error: message,
+        },
+        'SHARE: Failed to create share link',
+      );
     } finally {
       setIsSharing(false);
     }

@@ -148,7 +148,6 @@ export const useGridOperations = (
         const updatedGrid = [...current, mediaWithCovers];
 
         logger.info(
-          `GRID: Added "${media.title}" to position ${current.length}`,
           {
             context: 'GridOperations.handleAddMedia',
             action: 'grid_media_added',
@@ -164,6 +163,7 @@ export const useGridOperations = (
             ),
             timestamp: Date.now(),
           },
+          `GRID: Added "${media.title}" to position ${current.length}`,
         );
 
         return updatedGrid;
@@ -190,7 +190,6 @@ export const useGridOperations = (
         const updatedGrid = current.filter((media) => media.id !== mediaId);
 
         logger.info(
-          `GRID: Removed "${mediaToRemove?.title || 'unknown'}" from position ${removedPosition}`,
           {
             context: 'GridOperations.handleRemoveMedia',
             action: 'grid_media_removed',
@@ -199,6 +198,7 @@ export const useGridOperations = (
             gridCount: updatedGrid.length,
             timestamp: Date.now(),
           },
+          `GRID: Removed "${mediaToRemove?.title || 'unknown'}" from position ${removedPosition}`,
         );
 
         return updatedGrid;
@@ -259,14 +259,17 @@ export const useGridOperations = (
         (item) => item.id === activePosterItemId,
       );
 
-      logger.info('POSTER: Applied alternate cover', {
-        context: 'GridOperations.handleSelectAlternatePoster',
-        action: 'poster_applied',
-        media: updatedItem
-          ? { id: updatedItem.id, title: updatedItem.title }
-          : null,
-        url,
-      });
+      logger.info(
+        {
+          context: 'GridOperations.handleSelectAlternatePoster',
+          action: 'poster_applied',
+          media: updatedItem
+            ? { id: updatedItem.id, title: updatedItem.title }
+            : null,
+          url,
+        },
+        'POSTER: Applied alternate cover',
+      );
 
       setGridItems(updatedGrid);
       setShowPosterGrid(false);
@@ -282,11 +285,14 @@ export const useGridOperations = (
   );
 
   const handleClosePosterGrid = useCallback(() => {
-    logger.info('POSTER: Closing alternate poster grid', {
-      context: 'GridOperations.handleClosePosterGrid',
-      action: 'poster_grid_close',
-      timestamp: Date.now(),
-    });
+    logger.info(
+      {
+        context: 'GridOperations.handleClosePosterGrid',
+        action: 'poster_grid_close',
+        timestamp: Date.now(),
+      },
+      'POSTER: Closing alternate poster grid',
+    );
     setShowPosterGrid(false);
     setActivePosterItemId(null);
     setAlternateCoverUrls([]);
@@ -310,12 +316,15 @@ export const useGridOperations = (
           return;
         }
       } catch (err) {
-        logger.error('Failed to fetch alternate covers from API', {
-          context: 'GridOperations.fetchAlternateCovers',
-          mediaId,
-          mediaType,
-          error: err instanceof Error ? err.message : String(err),
-        });
+        logger.error(
+          {
+            context: 'GridOperations.fetchAlternateCovers',
+            mediaId,
+            mediaType,
+            error: err instanceof Error ? err.message : String(err),
+          },
+          'Failed to fetch alternate covers from API',
+        );
       }
 
       if (storedCovers && storedCovers.length > 0) {
@@ -323,9 +332,7 @@ export const useGridOperations = (
           mergeSelectedCover(storedCovers, selectedCoverUrl),
         );
       } else {
-        setAlternateCoverUrls(
-          selectedCoverUrl ? [selectedCoverUrl] : [],
-        );
+        setAlternateCoverUrls(selectedCoverUrl ? [selectedCoverUrl] : []);
       }
     },
     [gridItems, setAlternateCoverUrls],

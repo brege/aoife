@@ -96,7 +96,10 @@ const normalizeCoverArtUrl = (value: string): string => {
 class CoverArtArchiveSource implements CoverArtSource {
   name = 'CoverArtArchive';
   priority = 1;
-  private metadataCache = new Map<string, CoverArtArchiveMetadataResponse | null>();
+  private metadataCache = new Map<
+    string,
+    CoverArtArchiveMetadataResponse | null
+  >();
   private metadataInFlight = new Map<
     string,
     Promise<CoverArtArchiveMetadataResponse | null>

@@ -39,12 +39,15 @@ const EditableTitle: React.FC<EditableTitleProps> = ({
   const handleTitleBlur = () => {
     setIsEditing(false);
     onTitleChange(draftTitle);
-    logger.info(`TITLE: Title changed to "${draftTitle}"`, {
-      context: 'EditableTitle.handleTitleBlur',
-      action: 'title_change',
-      newTitle: draftTitle,
-      timestamp: Date.now(),
-    });
+    logger.info(
+      {
+        context: 'EditableTitle.handleTitleBlur',
+        action: 'title_change',
+        newTitle: draftTitle,
+        timestamp: Date.now(),
+      },
+      `TITLE: Title changed to "${draftTitle}"`,
+    );
   };
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {

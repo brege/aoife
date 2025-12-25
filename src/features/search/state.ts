@@ -140,14 +140,17 @@ export const useSearchState = (
         const service = getMediaService(activeMediaType);
         const results = await service.search(mergedValues);
 
-        logger.info(`SEARCH: Found ${results.length} results`, {
-          context: 'useSearchState.runSearch',
-          action: 'search_results',
-          mediaType: activeMediaType,
-          values: mergedValues,
-          resultsCount: results.length,
-          timestamp: Date.now(),
-        });
+        logger.info(
+          {
+            context: 'useSearchState.runSearch',
+            action: 'search_results',
+            mediaType: activeMediaType,
+            values: mergedValues,
+            resultsCount: results.length,
+            timestamp: Date.now(),
+          },
+          `SEARCH: Found ${results.length} results`,
+        );
 
         if (mediaTypeOverride && mediaTypeOverride !== selectedMediaType) {
           setSelectedMediaType(mediaTypeOverride);
@@ -168,12 +171,15 @@ export const useSearchState = (
         setError(friendly);
         setSearchResults([]);
 
-        logger.error('Search request failed', {
-          context: 'useSearchState.runSearch',
-          mediaType: activeMediaType,
-          values: mergedValues,
-          error: message,
-        });
+        logger.error(
+          {
+            context: 'useSearchState.runSearch',
+            mediaType: activeMediaType,
+            values: mergedValues,
+            error: message,
+          },
+          'Search request failed',
+        );
         return [];
       } finally {
         setIsLoading(false);
@@ -228,9 +234,12 @@ export const useSearchState = (
   );
 
   const closeSearchResults = useCallback(() => {
-    logger.debug('Closing search results', {
-      context: 'useSearchState.closeSearchResults',
-    });
+    logger.debug(
+      {
+        context: 'useSearchState.closeSearchResults',
+      },
+      'Closing search results',
+    );
     setSearchResults([]);
     setSearchResultAspectRatios({});
   }, []);

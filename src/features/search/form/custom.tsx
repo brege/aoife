@@ -53,17 +53,20 @@ const CustomMediaForm: React.FC<CustomMediaFormProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    logger.info(`CUSTOM: Adding custom ${mediaType.slice(0, -1)}`, {
-      context: 'CustomMediaForm.handleSubmit',
-      action: 'custom_media_add',
-      mediaType,
-      media: {
-        title,
-        year,
-        coverUrl,
+    logger.info(
+      {
+        context: 'CustomMediaForm.handleSubmit',
+        action: 'custom_media_add',
+        mediaType,
+        media: {
+          title,
+          year,
+          coverUrl,
+        },
+        timestamp: Date.now(),
       },
-      timestamp: Date.now(),
-    });
+      `CUSTOM: Adding custom ${mediaType.slice(0, -1)}`,
+    );
 
     onAddCustomMedia({ title, year, coverUrl });
     setTitle('');
