@@ -1,111 +1,101 @@
 import type React from 'react';
-import { useState } from 'react';
-import './custom.css';
-import logger from '../../../lib/logger';
-import type { MediaType } from '../../../media/types';
+import { useCallback, useRef } from 'react';
+import { MdDriveFolderUpload } from 'react-icons/md';
+import { storeImage } from '../../../lib/indexeddb';
 
-interface CustomMediaFormProps {
-  mediaType: MediaType;
-  onAddCustomMedia: (media: {
-    title: string;
-    year: string;
-    coverUrl: string;
-  }) => void;
-  onCancel: () => void;
-}
+type QueryField = {
+  id: string;
+  label: string;
+  placeholder: string;
+  required?: boolean;
+};
 
-const CustomMediaForm: React.FC<CustomMediaFormProps> = ({
-  mediaType,
-  onAddCustomMedia,
-  onCancel,
-}) => {
-  const [title, setTitle] = useState('');
-  const [year, setYear] = useState('');
-  const [coverUrl, setCoverUrl] = useState('');
+type CoverField = {
+  id: string;
+  label: string;
+  placeholder: string;
+  required?: boolean;
+};
 
-  const getMediaTypeLabels = () => {
-    switch (mediaType) {
-      case 'movies':
-        return {
-          singular: 'Movie',
-          coverLabel: 'Poster URL',
-          yearLabel: 'Year',
-        };
-      case 'music':
-        return {
-          singular: 'Album',
-          coverLabel: 'Cover URL',
-          yearLabel: 'Year',
-        };
-      case 'books':
-        return { singular: 'Book', coverLabel: 'Cover URL', yearLabel: 'Year' };
-      default:
-        return {
-          singular: 'Media',
-          coverLabel: 'Cover URL',
-          yearLabel: 'Year',
-        };
-    }
-  };
+type CustomSearchFormProps = {
+  queryField: QueryField;
+  coverField: CoverField;
+  queryValue: string;
+  coverValue: string;
+  onFieldChange: (fieldId: string, value: string) => void;
+};
 
-  const labels = getMediaTypeLabels();
+const CustomSearchForm = ({
+  queryField,
+  coverField,
+  queryValue,
+  coverValue,
+  onFieldChange,
+}: CustomSearchFormProps) => {
+  const coverInputRef = useRef<HTMLInputElement>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-
-    logger.info(
-      {
-        context: 'CustomMediaForm.handleSubmit',
-        action: 'custom_media_add',
-        mediaType,
-        media: {
-          title,
-          year,
-          coverUrl,
-        },
-        timestamp: Date.now(),
-      },
-      `CUSTOM: Adding custom ${mediaType.slice(0, -1)}`,
-    );
-
-    onAddCustomMedia({ title, year, coverUrl });
-    setTitle('');
-    setYear('');
-    setCoverUrl('');
-  };
+  const handleCoverImageUpload = useCallback(
+    async (event: React.ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0];
+      if (file) {
+        const imageId = `img-${Date.now()}-${file.name}`;
+        await storeImage(imageId, file);
+        onFieldChange(coverField.id, imageId);
+        if (!queryValue) {
+          const nameWithoutExtension = file.name.replace(/\.[^/.]+$/, '');
+          onFieldChange(queryField.id, nameWithoutExtension);
+        }
+      }
+    },
+    [coverField.id, onFieldChange, queryField.id, queryValue],
+  );
 
   return (
-    <form className="custom-media-form" onSubmit={handleSubmit}>
-      <h3>Add Custom {labels.singular}</h3>
+    <>
       <input
         type="text"
-        placeholder="Title"
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-        required
+        value={queryValue}
+        onChange={(event) => onFieldChange(queryField.id, event.target.value)}
+        placeholder={queryField.placeholder}
+        aria-label={queryField.label}
+        className="form-input"
+        required={queryField.required}
+        data-testid={`search-field-${queryField.id}`}
       />
-      <input
-        type="text"
-        placeholder={labels.yearLabel}
-        value={year}
-        onChange={(e) => setYear(e.target.value)}
-        required
-      />
-      <input
-        type="url"
-        placeholder={labels.coverLabel}
-        value={coverUrl}
-        onChange={(e) => setCoverUrl(e.target.value)}
-        required
-      />
-      <div className="form-buttons">
-        <button type="submit">Add Custom {labels.singular}</button>
-        <button type="button" onClick={onCancel}>
-          Cancel
+      <div className="input-with-button">
+        <input
+          type="text"
+          value={coverValue}
+          onChange={(event) => onFieldChange(coverField.id, event.target.value)}
+          placeholder={coverField.placeholder}
+          aria-label={coverField.label}
+          className="form-input"
+          required={coverField.required}
+          data-testid="search-field-cover"
+        />
+        <input
+          type="file"
+          accept="image/*"
+          onChange={handleCoverImageUpload}
+          style={{ display: 'none' }}
+          id="cover-file-input"
+          ref={coverInputRef}
+          aria-label="Upload cover image"
+          data-testid="cover-file-input"
+        />
+        <button
+          type="button"
+          onClick={() => coverInputRef.current?.click()}
+          className="icon-button"
+          aria-label="Upload image"
+          title="Upload image"
+          data-testid="cover-upload-trigger"
+        >
+          <MdDriveFolderUpload size={20} />
         </button>
       </div>
-    </form>
+    </>
   );
 };
 
-export default CustomMediaForm;
+export { CustomSearchForm };
