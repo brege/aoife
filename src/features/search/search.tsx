@@ -320,7 +320,11 @@ const MediaSearch: React.FC = () => {
 
   const searchSummary = lastSearchSummary || provider.label;
   const bandPlacement =
-    bandPlacementMode === 'adaptive' && gridItems.length > 0 ? 'bottom' : 'top';
+    bandPlacementMode === 'adaptive' &&
+    gridItems.length > 0 &&
+    searchResults.length === 0
+      ? 'bottom'
+      : 'top';
 
   const handleMediaTypeChange = (type: MediaType) => {
     setSelectedMediaType(type);
