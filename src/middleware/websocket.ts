@@ -1,4 +1,5 @@
 import { type WebSocket, WebSocketServer } from 'ws';
+import logger from './logger';
 
 let reactClient: WebSocket | null = null;
 type GlobalWithWebSocketServer = typeof globalThis & {
@@ -24,24 +25,39 @@ export const setupWebSocket = (): void => {
         ? (error as NodeJS.ErrnoException).code
         : undefined;
     if (errorCode === 'EADDRINUSE') {
-      console.warn(`[WS] Port ${wsPort} already in use`);
+      logger.warn(
+        {
+          port: wsPort,
+        },
+        'WebSocket port already in use',
+      );
       globalScope.__aoifeWebSocketServer = undefined;
       return;
     }
-    console.error('[WS] Server error', error);
+    logger.error(
+      {
+        err: error,
+      },
+      'WebSocket server error',
+    );
   });
 
   wss.on('connection', (ws) => {
-    console.log('[WS] React client connected');
+    logger.info('WebSocket React client connected');
     reactClient = ws;
 
     ws.on('message', (data) => {
       const message = JSON.parse(data.toString());
-      console.log('[WS] Message from React:', message.type);
+      logger.info(
+        {
+          messageType: message.type,
+        },
+        'WebSocket message from React',
+      );
     });
 
     ws.on('close', () => {
-      console.log('[WS] React client disconnected');
+      logger.info('WebSocket React client disconnected');
       reactClient = null;
     });
   });

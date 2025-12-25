@@ -1,6 +1,7 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import https from 'node:https';
 import { URL } from 'node:url';
+import logger from './logger';
 import {
   generateSlug,
   loadShareStore,
@@ -36,12 +37,16 @@ export const createApiMiddleware = (env: Record<string, string>) => {
     if (path.startsWith('/api/')) {
       path = path.replace(/^\/api/, '');
     }
-    const shouldLog =
-      !path.startsWith('/coverart/') &&
-      path !== '/log' &&
-      path !== '/openlibrary';
+    const shouldLog = !path.startsWith('/coverart/') && path !== '/openlibrary';
     if (shouldLog) {
-      console.log(`[API] ${req.method} ${req.url}`);
+      logger.info(
+        {
+          method: req.method,
+          url: req.url,
+          path,
+        },
+        'API request',
+      );
     }
 
     if (path === '/search' && req.method === 'GET') {
@@ -343,9 +348,12 @@ export const createApiMiddleware = (env: Record<string, string>) => {
         try {
           const mediaItem = JSON.parse(body);
           gridState.push(mediaItem);
-          console.log(
-            `[API] Added item to grid:`,
-            mediaItem.title || mediaItem.id,
+          logger.info(
+            {
+              itemId: mediaItem.id,
+              title: mediaItem.title,
+            },
+            'API grid item added',
           );
           res.writeHead(200, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ status: 'added', item: mediaItem }));
@@ -358,18 +366,24 @@ export const createApiMiddleware = (env: Record<string, string>) => {
       const query = path.replace('/add-first/', '');
       const reactClient = getReactClient();
       if (reactClient) {
-        console.log(`[API] Adding first search result for: "${query}"`);
+        const decodedQuery = decodeURIComponent(query);
+        logger.info(
+          {
+            query: decodedQuery,
+          },
+          'API add first search result',
+        );
         reactClient.send(
           JSON.stringify({
             type: 'ADD_FIRST_RESULT',
-            query: decodeURIComponent(query),
+            query: decodedQuery,
           }),
         );
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(
           JSON.stringify({
             status: 'sent',
-            query: decodeURIComponent(query),
+            query: decodedQuery,
           }),
         );
       } else {
@@ -383,17 +397,22 @@ export const createApiMiddleware = (env: Record<string, string>) => {
       );
       if (index >= 0) {
         const removed = gridState.splice(index, 1)[0];
-        console.log(
-          `[API] Removed item from grid:`,
-          removed.title || removed.id,
+        logger.info(
+          {
+            itemId: removed.id,
+            title: removed.title,
+          },
+          'API grid item removed',
         );
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ status: 'removed', id, item: removed }));
       } else {
-        console.log(
-          `[API] Remove miss for id ${id}. Grid contains: ${gridState
-            .map((item) => item.id)
-            .join(', ')}`,
+        logger.info(
+          {
+            missingId: id,
+            gridItemIds: gridState.map((item) => item.id),
+          },
+          'API grid remove miss',
         );
         res.writeHead(404, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ error: 'Item not found' }));
@@ -404,7 +423,7 @@ export const createApiMiddleware = (env: Record<string, string>) => {
     } else if (path === '/clear' && req.method === 'DELETE') {
       const reactClient = getReactClient();
       if (reactClient) {
-        console.log(`[API] Clearing grid via React`);
+        logger.info('API clearing grid via React');
         reactClient.send(JSON.stringify({ type: 'CLEAR_GRID' }));
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(
@@ -420,7 +439,7 @@ export const createApiMiddleware = (env: Record<string, string>) => {
     } else if (path === '/menu' && req.method === 'GET') {
       const reactClient = getReactClient();
       if (reactClient) {
-        console.log(`[API] Requesting menu state from React`);
+        logger.info('API requesting menu state from React');
         reactClient.send(JSON.stringify({ type: 'GET_MENU_STATE' }));
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(
@@ -436,7 +455,7 @@ export const createApiMiddleware = (env: Record<string, string>) => {
     } else if (path === '/menu/clear' && req.method === 'POST') {
       const reactClient = getReactClient();
       if (reactClient) {
-        console.log(`[API] Triggering menu clear action`);
+        logger.info('API triggering menu clear action');
         reactClient.send(JSON.stringify({ type: 'MENU_CLEAR_GRID' }));
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(
@@ -452,7 +471,7 @@ export const createApiMiddleware = (env: Record<string, string>) => {
     } else if (path === '/debug' && req.method === 'GET') {
       const reactClient = getReactClient();
       if (reactClient) {
-        console.log(`[API] Requesting debug information from React`);
+        logger.info('API requesting debug information from React');
         reactClient.send(JSON.stringify({ type: 'GET_DEBUG_INFO' }));
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(
@@ -466,8 +485,14 @@ export const createApiMiddleware = (env: Record<string, string>) => {
         res.end(JSON.stringify({ error: 'React app not connected' }));
       }
     } else if (path === '/viewport' && req.method === 'GET') {
-      console.log(
-        `[VIEWPORT] Request from ${req.headers['user-agent']?.includes('Mobile') ? 'mobile' : 'desktop'} device`,
+      const userAgent = req.headers['user-agent'];
+      const deviceType = userAgent?.includes('Mobile') ? 'mobile' : 'desktop';
+      logger.info(
+        {
+          deviceType,
+          userAgent,
+        },
+        'Viewport measurement request',
       );
 
       res.writeHead(200, { 'Content-Type': 'text/html' });
@@ -520,59 +545,29 @@ export const createApiMiddleware = (env: Record<string, string>) => {
           const v = data.viewport;
           const c = data.container;
           const a = data.analysis;
+          const sizeDelta =
+            typeof a?.optimalTwoColumn === 'number' &&
+            typeof a?.actualPosterWidth === 'number'
+              ? a.optimalTwoColumn - a.actualPosterWidth
+              : undefined;
 
-          console.log(`[VIEWPORT ANALYSIS] ${v.userAgent.toUpperCase()}`);
-          console.log(
-            `  Viewport: ${v.width}x${v.height}px (DPR: ${v.devicePixelRatio})`,
-          );
-          console.log(
-            `  Container: ${c?.width || 'N/A'}x${c?.height || 'N/A'}px`,
-          );
-          console.log(`  Grid CSS: ${c?.computedStyle || 'N/A'}`);
-          console.log(`  CSS Classes: ${c?.cssClasses || 'N/A'}`);
-          console.log(`  Optimal 2-col width: ${a.optimalTwoColumn}px`);
-          console.log(`  Actual poster width: ${a.actualPosterWidth}px`);
-          console.log(`  Space efficiency: ${a.efficiency}`);
-          console.log(`  Wasted space: ${a.spacingWaste}px`);
-          console.log(
-            `  PROBLEM: Posters are ${a.optimalTwoColumn - a.actualPosterWidth}px smaller than optimal`,
+          logger.info(
+            {
+              viewport: v,
+              container: c,
+              analysis: a,
+              sizeDelta,
+            },
+            'Viewport analysis',
           );
         } catch {
-          console.log('[VIEWPORT ERROR]', body);
-        }
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ status: 'logged' }));
-      });
-    } else if (path === '/log' && req.method === 'POST') {
-      let body = '';
-      req.setEncoding('utf8');
-      req.on('data', (chunk: string) => {
-        body += chunk;
-      });
-      req.on('end', () => {
-        try {
-          const logData = JSON.parse(body);
-          const timestamp = new Date().toISOString();
-          const level = logData.level || 'INFO';
-          const context = logData.context || 'Unknown';
-          const action = logData.action ? `[${logData.action}]` : '';
-
-          console.log(
-            `${timestamp} [${level}] ${action} [${context}] ${logData.message}`,
+          logger.warn(
+            {
+              body,
+            },
+            'Viewport analysis payload invalid',
           );
-          if (logData.query) console.log(`  Query: "${logData.query}"`);
-          if (logData.resultsCount !== undefined)
-            console.log(`  Results: ${logData.resultsCount}`);
-          if (logData.gridCount !== undefined)
-            console.log(`  Grid Count: ${logData.gridCount}`);
-          if (logData.movie)
-            console.log(
-              `  Movie: ${logData.movie.title} (${logData.movie.year})`,
-            );
-        } catch {
-          console.log('[MALFORMED LOG]', body);
         }
-
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ status: 'logged' }));
       });
@@ -609,7 +604,12 @@ export const createApiMiddleware = (env: Record<string, string>) => {
           });
         })
         .on('error', (err: Error) => {
-          console.error('[GAMES SEARCH ERROR]', err);
+          logger.error(
+            {
+              err,
+            },
+            'Games search failed',
+          );
           res.writeHead(500, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ error: 'Failed to search games' }));
         });
@@ -633,7 +633,12 @@ export const createApiMiddleware = (env: Record<string, string>) => {
           });
         })
         .on('error', (err: Error) => {
-          console.error('[PLATFORMS ERROR]', err);
+          logger.error(
+            {
+              err,
+            },
+            'Platforms request failed',
+          );
           res.writeHead(500, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ error: 'Failed to fetch platforms' }));
         });
@@ -665,7 +670,12 @@ export const createApiMiddleware = (env: Record<string, string>) => {
           });
         })
         .on('error', (err: Error) => {
-          console.error('[GAMES IMAGES ERROR]', err);
+          logger.error(
+            {
+              err,
+            },
+            'Games images request failed',
+          );
           res.writeHead(500, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ error: 'Failed to fetch game images' }));
         });
@@ -716,7 +726,12 @@ export const createApiMiddleware = (env: Record<string, string>) => {
           });
         })
         .on('error', (err: Error) => {
-          console.error('[GAMESDB PROXY ERROR]', err);
+          logger.error(
+            {
+              err,
+            },
+            'GamesDB proxy request failed',
+          );
           res.writeHead(500, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ error: 'Failed to fetch from GamesDB' }));
         });

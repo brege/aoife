@@ -2,6 +2,7 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { URL } from 'node:url';
+import logger from './logger';
 
 export type ShareStoreRecord = {
   payload: string;
@@ -143,9 +144,12 @@ export const validateAndCanonicalizeSharePayload = (
         throw new Error('Uploaded files cannot be shared');
       }
       if (typeof coverUrl !== 'string' || !isAllowedCoverUrl(coverUrl)) {
-        console.error('Share payload coverUrl rejected', {
-          coverUrl,
-        });
+        logger.warn(
+          {
+            coverUrl,
+          },
+          'Share payload coverUrl rejected',
+        );
         throw new Error('Share payload item coverUrl is not allowed');
       }
     }
@@ -162,9 +166,12 @@ export const validateAndCanonicalizeSharePayload = (
         typeof coverThumbnailUrl !== 'string' ||
         !isAllowedCoverUrl(coverThumbnailUrl)
       ) {
-        console.error('Share payload coverThumbnailUrl rejected', {
-          coverThumbnailUrl,
-        });
+        logger.warn(
+          {
+            coverThumbnailUrl,
+          },
+          'Share payload coverThumbnailUrl rejected',
+        );
         throw new Error('Share payload item coverThumbnailUrl is not allowed');
       }
     }
@@ -182,9 +189,12 @@ export const validateAndCanonicalizeSharePayload = (
           throw new Error('Uploaded files cannot be shared');
         }
         if (typeof url !== 'string' || !isAllowedCoverUrl(url)) {
-          console.error('Share payload alternate coverUrl rejected', {
-            coverUrl: url,
-          });
+          logger.warn(
+            {
+              coverUrl: url,
+            },
+            'Share payload alternate coverUrl rejected',
+          );
           throw new Error(
             'Share payload item alternateCoverUrls contains a disallowed URL',
           );

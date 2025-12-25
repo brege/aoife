@@ -1,4 +1,5 @@
 import axios from 'axios';
+import logger from '../lib/logger';
 import { type MediaSearchResult, MediaService } from './service';
 import type { MediaSearchValues } from './types';
 
@@ -187,7 +188,14 @@ export class GamesService extends MediaService {
 
       return results;
     } catch (error) {
-      console.error('Games search error:', error);
+      const errorToLog =
+        error instanceof Error ? error : new Error(String(error));
+      logger.error(
+        {
+          error: errorToLog,
+        },
+        'Games search failed',
+      );
       throw new Error('Failed to search games');
     }
   }

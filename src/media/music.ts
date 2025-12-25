@@ -1,5 +1,6 @@
 import axios from 'axios';
 import packageJson from '../../package.json';
+import logger from '../lib/logger';
 import { type MediaSearchResult, MediaService } from './service';
 import type { MediaSearchValues } from './types';
 
@@ -356,7 +357,14 @@ export class MusicService extends MediaService {
 
       return results;
     } catch (error) {
-      console.error('Music search error:', error);
+      const errorToLog =
+        error instanceof Error ? error : new Error(String(error));
+      logger.error(
+        {
+          error: errorToLog,
+        },
+        'Music search failed',
+      );
       throw new Error('Failed to search music');
     }
   }
@@ -381,7 +389,15 @@ export class MusicService extends MediaService {
       const results = await this.mapReleasesToResults([response.data]);
       return results[0] || null;
     } catch (error) {
-      console.error(`Error fetching release ${mbid}:`, error);
+      const errorToLog =
+        error instanceof Error ? error : new Error(String(error));
+      logger.error(
+        {
+          error: errorToLog,
+          releaseId: mbid,
+        },
+        'MusicBrainz release fetch failed',
+      );
       return null;
     }
   }

@@ -1,4 +1,5 @@
 import axios from 'axios';
+import logger from '../lib/logger';
 import { type MediaSearchResult, MediaService } from './service';
 import { type MediaSearchValues, TMDB_IMAGE_BASE } from './types';
 
@@ -102,7 +103,15 @@ export class TMDBService extends MediaService {
 
       return results;
     } catch (error) {
-      console.error(`TMDB search error for ${this.mediaType}:`, error);
+      const errorToLog =
+        error instanceof Error ? error : new Error(String(error));
+      logger.error(
+        {
+          error: errorToLog,
+          mediaType: this.mediaType,
+        },
+        'TMDB search failed',
+      );
       throw new Error(`Failed to search ${this.mediaType}`);
     }
   }
@@ -133,9 +142,15 @@ export class TMDBService extends MediaService {
         },
       };
     } catch (error) {
-      console.error(
-        `Error fetching details for ${this.mediaType} ${id}:`,
-        error,
+      const errorToLog =
+        error instanceof Error ? error : new Error(String(error));
+      logger.error(
+        {
+          error: errorToLog,
+          mediaType: this.mediaType,
+          id,
+        },
+        'TMDB details fetch failed',
       );
       return null;
     }
@@ -147,9 +162,13 @@ export class TMDBService extends MediaService {
       const response = await axios.get(endpoint);
 
       if (!response.data.posters || !Array.isArray(response.data.posters)) {
-        console.warn(
-          `No posters found for ${this.mediaType} ${id}. Response:`,
-          response.data,
+        logger.warn(
+          {
+            mediaType: this.mediaType,
+            id,
+            response: response.data,
+          },
+          'TMDB posters missing',
         );
         return [];
       }
@@ -160,9 +179,16 @@ export class TMDBService extends MediaService {
         )
         .filter((url: string | null): url is string => Boolean(url));
     } catch (error) {
-      console.error(
-        `Error fetching alternate posters for ${this.mediaType} ${id} from ${this.baseUrl}/3/${this.getImagesEndpoint(id)}:`,
-        error instanceof Error ? error.message : String(error),
+      const errorToLog =
+        error instanceof Error ? error : new Error(String(error));
+      logger.error(
+        {
+          error: errorToLog,
+          mediaType: this.mediaType,
+          id,
+          endpoint: `${this.baseUrl}/3/${this.getImagesEndpoint(id)}`,
+        },
+        'TMDB alternate posters fetch failed',
       );
       return [];
     }

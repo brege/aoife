@@ -1,4 +1,5 @@
 import axios from 'axios';
+import logger from '../lib/logger';
 import { type MediaSearchResult, MediaService } from './service';
 import type { MediaSearchValues } from './types';
 
@@ -767,7 +768,14 @@ export class BooksService extends MediaService {
         },
       };
     } catch (error) {
-      console.error(`Error fetching OpenLibrary work:`, error);
+      const errorToLog =
+        error instanceof Error ? error : new Error(String(error));
+      logger.error(
+        {
+          error: errorToLog,
+        },
+        'OpenLibrary work fetch failed',
+      );
       return null;
     }
   }
@@ -816,7 +824,15 @@ export class BooksService extends MediaService {
         },
       };
     } catch (error) {
-      console.error(`Error fetching GoogleBooks volume:`, error);
+      const errorToLog =
+        error instanceof Error ? error : new Error(String(error));
+      logger.error(
+        {
+          error: errorToLog,
+          volumeId,
+        },
+        'GoogleBooks volume fetch failed',
+      );
       return null;
     }
   }
