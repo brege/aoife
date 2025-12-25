@@ -241,6 +241,56 @@ const MediaSearch: React.FC = () => {
   }, [searchResults.length, openModal, closeModal]);
 
   useEffect(() => {
+    const rootElement = document.documentElement;
+    if (!showSearch) {
+      rootElement.style.removeProperty('--stack-form-height');
+      return;
+    }
+
+    const stackFormElement = document.querySelector('.media-search-form.stack');
+    if (!(stackFormElement instanceof HTMLElement)) {
+      rootElement.style.removeProperty('--stack-form-height');
+      return;
+    }
+
+    const updateStackFormHeight = () => {
+      const height = Math.ceil(stackFormElement.getBoundingClientRect().height);
+      rootElement.style.setProperty('--stack-form-height', `${height}px`);
+    };
+
+    updateStackFormHeight();
+
+    const resizeObserver =
+      typeof ResizeObserver === 'function'
+        ? new ResizeObserver(() => {
+            updateStackFormHeight();
+          })
+        : null;
+
+    if (resizeObserver) {
+      resizeObserver.observe(stackFormElement);
+    }
+
+    const mediaQueryList = window.matchMedia('(max-width: 600px)');
+    const handleMediaQueryChange = () => {
+      if (mediaQueryList.matches) {
+        updateStackFormHeight();
+        return;
+      }
+      rootElement.style.removeProperty('--stack-form-height');
+    };
+
+    mediaQueryList.addEventListener('change', handleMediaQueryChange);
+
+    return () => {
+      mediaQueryList.removeEventListener('change', handleMediaQueryChange);
+      if (resizeObserver) {
+        resizeObserver.disconnect();
+      }
+    };
+  }, [showSearch]);
+
+  useEffect(() => {
     setVisibleResultsCount(Math.min(searchResults.length, visibleResultsStep));
   }, [searchResults]);
 
