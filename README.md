@@ -22,7 +22,7 @@ Ever wanted to share a collage of your favorite albums and shows in one unified 
 
 <table>
   <tr>
-    <td><img src="docs/img/mobile-present.png" width="100%"></td>
+    <td><img src="docs/img/mobile-chimney.png" width="100%"></td>
     <td><img src="docs/img/mobile-single.png" width="100%"></td>
     <td><img src="docs/img/mobile-options.png" width="100%"></td>
   </tr>
@@ -32,7 +32,7 @@ Ever wanted to share a collage of your favorite albums and shows in one unified 
 
 <table>
   <tr>
-    <td><img src="docs/img/desktop-edit.png" width="100%"></td>
+    <td><img src="docs/img/desktop-present.png" width="100%"></td>
     <td><img src="docs/img/desktop-types.png" width="100%"></td>
   </tr>
 </table>

@@ -1,5 +1,5 @@
 # databases
-data/share.json
+data/share.json*
 data/whitelist.txt
 
 # dependencies
