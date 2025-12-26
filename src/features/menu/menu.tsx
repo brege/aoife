@@ -11,6 +11,7 @@ import { VscSourceControl } from 'react-icons/vsc';
 import './menu.css';
 import packageJson from '../../../package.json';
 import { useOutside } from '../../lib/escape';
+import { useLocalStorage } from '../../lib/hooks';
 import logger from '../../lib/logger';
 import { useModalClosed, useModalManager } from '../../lib/modalmanager';
 import MenuConfig from './config';
@@ -62,10 +63,10 @@ const Menu: React.FC<MenuProps> = ({
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
-  const [isStatusSectionOpen, setIsStatusSectionOpen] = useState(() => {
-    const stored = localStorage.getItem('status-section-open');
-    return stored ? stored === 'true' : false;
-  });
+  const [isStatusSectionOpen, setIsStatusSectionOpen] = useLocalStorage(
+    'status-section-open',
+    false,
+  );
   const menuRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const confirmRef = useRef<HTMLDivElement>(null);
@@ -106,10 +107,6 @@ const Menu: React.FC<MenuProps> = ({
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [showResetConfirm]);
-
-  useEffect(() => {
-    localStorage.setItem('status-section-open', String(isStatusSectionOpen));
-  }, [isStatusSectionOpen]);
 
   useEffect(() => {
     if (isOpen) {

@@ -1,7 +1,8 @@
 import type React from 'react';
-import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import './grid.css';
 import { isPlaceholderCover } from '../../lib/coverdetect';
+import { useResizeObserver } from '../../lib/hooks';
 import logger from '../../lib/logger';
 import type { MediaItem } from '../../providers/types';
 import { getAspectRatio } from './index';
@@ -139,15 +140,7 @@ const Grid: React.FC<GridProps> = ({
     setContainerGap(Number.isNaN(gapValue) ? 0 : gapValue);
   }, []);
 
-  useLayoutEffect(() => {
-    updateContainerDimensions();
-    const observer = new ResizeObserver(updateContainerDimensions);
-    const element = wrapperRef.current;
-    if (element) {
-      observer.observe(element);
-    }
-    return () => observer.disconnect();
-  }, [updateContainerDimensions]);
+  useResizeObserver(wrapperRef, updateContainerDimensions);
 
   const rowLayouts = useMemo(() => {
     if (containerWidth === 0 || containerHeight === 0) return [];

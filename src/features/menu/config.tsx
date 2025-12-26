@@ -1,10 +1,8 @@
 import { Switch } from '@headlessui/react';
 import type React from 'react';
-import { useEffect, useState } from 'react';
 import { FaChevronDown, FaChevronRight } from 'react-icons/fa';
+import { useLocalStorage } from '../../lib/hooks';
 import logger from '../../lib/logger';
-
-const LAYOUT_SECTION_OPEN_KEY = 'layout-section-open';
 
 interface MenuConfigProps {
   onMenuClose: () => void;
@@ -45,14 +43,10 @@ const MenuConfig: React.FC<MenuConfigProps> = ({
   coverViewMode = 'grid',
   onCoverViewModeChange,
 }) => {
-  const [isLayoutSectionOpen, setIsLayoutSectionOpen] = useState(() => {
-    const stored = localStorage.getItem(LAYOUT_SECTION_OPEN_KEY);
-    return stored ? stored === 'true' : true;
-  });
-
-  useEffect(() => {
-    localStorage.setItem(LAYOUT_SECTION_OPEN_KEY, String(isLayoutSectionOpen));
-  }, [isLayoutSectionOpen]);
+  const [isLayoutSectionOpen, setIsLayoutSectionOpen] = useLocalStorage(
+    'layout-section-open',
+    true,
+  );
 
   const handleColumnsDecrement = () => {
     if (columns <= MIN_COLUMNS) return;
