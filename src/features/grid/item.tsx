@@ -1,7 +1,7 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import type React from 'react';
-import { MdClose, MdDragHandle } from 'react-icons/md';
+import { MdClose } from 'react-icons/md';
 import type { MediaItem, MediaType } from '../../providers/types';
 import { CustomImage } from '../../ui/customimage';
 import { getExternalLinks } from '../search/results/links';
@@ -105,13 +105,6 @@ const GridItem = ({
             crossOrigin={media.type === 'books' ? 'anonymous' : undefined}
           />
         </button>
-        <button
-          type="button"
-          className="grid-drag-handle"
-          aria-label={`Reorder ${media.title}`}
-        >
-          <MdDragHandle aria-hidden="true" focusable="false" />
-        </button>
         {showCaption && (
           <div className={captionClassName}>
             <div className="grid-caption-title">{captionTitle}</div>
@@ -131,7 +124,8 @@ const GridItem = ({
         <button
           type="button"
           className="media-type-badge"
-          aria-label={`Edit caption for ${media.title}`}
+          aria-label={`edit caption for ${media.title}`}
+          title={`edit caption - ${media.type}`}
           onClick={() => onCaptionEdit(media)}
         >
           {MEDIA_TYPE_ICONS[media.type as MediaType]}
@@ -146,6 +140,7 @@ const GridItem = ({
                 rel="noopener noreferrer"
                 className="grid-source-link"
                 aria-label={link.label}
+                title={link.label}
                 onClick={(event) => event.stopPropagation()}
               >
                 <img
