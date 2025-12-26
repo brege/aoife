@@ -128,6 +128,11 @@ const MediaSearch: React.FC = () => {
     'grid',
     ['grid', 'carousel'],
   );
+  const [themeMode, setThemeMode] = useLocalStorageString(
+    'theme-mode',
+    'auto',
+    ['auto', 'light', 'dark'],
+  );
   const resetBrokenAlternateCoverUrls = useAppStore(
     (state) => state.resetBrokenAlternateCoverUrls,
   );
@@ -196,6 +201,36 @@ const MediaSearch: React.FC = () => {
     });
     return unsubscribe;
   }, [checkShareDivergence]);
+
+  useEffect(() => {
+    const rootElement = document.documentElement;
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: light)');
+
+    const resolveTheme = () => {
+      if (themeMode === 'light') {
+        return 'light';
+      }
+      if (themeMode === 'dark') {
+        return 'dark';
+      }
+      return mediaQuery.matches ? 'light' : 'dark';
+    };
+
+    const applyTheme = () => {
+      rootElement.dataset.theme = resolveTheme();
+    };
+
+    applyTheme();
+
+    if (themeMode !== 'auto') {
+      return undefined;
+    }
+
+    mediaQuery.addEventListener('change', applyTheme);
+    return () => {
+      mediaQuery.removeEventListener('change', applyTheme);
+    };
+  }, [themeMode]);
 
   const runSearch = useCallback(
     async (
@@ -467,6 +502,7 @@ const MediaSearch: React.FC = () => {
       clearGrid();
       setSelectedMediaType('movies');
       setCoverViewMode('grid');
+      setThemeMode('auto');
       resetShareContext();
       logger.info(
         {
@@ -477,7 +513,13 @@ const MediaSearch: React.FC = () => {
         source,
       );
     },
-    [clearGrid, resetShareContext, setSelectedMediaType, setCoverViewMode],
+    [
+      clearGrid,
+      resetShareContext,
+      setSelectedMediaType,
+      setCoverViewMode,
+      setThemeMode,
+    ],
   );
 
   useEffect(() => {
@@ -653,6 +695,8 @@ const MediaSearch: React.FC = () => {
         isLoadingShare={isLoadingShare}
         coverViewMode={coverViewMode}
         onCoverViewModeChange={setCoverViewMode}
+        themeMode={themeMode}
+        onThemeModeChange={setThemeMode}
       />
 
       {showSearch && <MediaForm {...mediaFormProperties} layout="band" />}

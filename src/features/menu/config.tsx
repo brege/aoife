@@ -20,6 +20,8 @@ interface MenuConfigProps {
   onCaptionEditsOnlyChange: (value: boolean) => void;
   coverViewMode: 'grid' | 'carousel';
   onCoverViewModeChange: (mode: 'grid' | 'carousel') => void;
+  themeMode: 'auto' | 'light' | 'dark';
+  onThemeModeChange: (mode: 'auto' | 'light' | 'dark') => void;
 }
 
 const MIN_COLUMNS = 1;
@@ -42,6 +44,8 @@ const MenuConfig: React.FC<MenuConfigProps> = ({
   onCaptionEditsOnlyChange,
   coverViewMode,
   onCoverViewModeChange,
+  themeMode,
+  onThemeModeChange,
 }) => {
   const [isLayoutSectionOpen, setIsLayoutSectionOpen] = useLocalStorage(
     'layout-section-open',
@@ -252,6 +256,81 @@ const MenuConfig: React.FC<MenuConfigProps> = ({
             }}
             className="cover-view-toggle"
           />
+        </div>
+      </div>
+
+      <div className="config-group">
+        <div className="config-group-title">Theme</div>
+        <div className="config-row">
+          <span className="config-label">Color mode</span>
+          <fieldset className="segmented-control" aria-label="Theme mode">
+            <label className="segmented-option">
+              <input
+                type="radio"
+                name="theme-mode"
+                value="auto"
+                checked={themeMode === 'auto'}
+                onChange={() => {
+                  onThemeModeChange('auto');
+                  logger.info(
+                    {
+                      context: 'MenuConfig.themeMode',
+                      action: 'theme_mode_change',
+                      themeMode: 'auto',
+                      timestamp: Date.now(),
+                    },
+                    'MENU: Theme mode set to auto',
+                  );
+                }}
+                className="segmented-input"
+              />
+              <span className="segmented-button">auto</span>
+            </label>
+            <label className="segmented-option">
+              <input
+                type="radio"
+                name="theme-mode"
+                value="light"
+                checked={themeMode === 'light'}
+                onChange={() => {
+                  onThemeModeChange('light');
+                  logger.info(
+                    {
+                      context: 'MenuConfig.themeMode',
+                      action: 'theme_mode_change',
+                      themeMode: 'light',
+                      timestamp: Date.now(),
+                    },
+                    'MENU: Theme mode set to light',
+                  );
+                }}
+                className="segmented-input"
+              />
+              <span className="segmented-button">light</span>
+            </label>
+            <label className="segmented-option">
+              <input
+                type="radio"
+                name="theme-mode"
+                value="dark"
+                checked={themeMode === 'dark'}
+                onChange={() => {
+                  onThemeModeChange('dark');
+                  logger.info(
+                    {
+                      context: 'MenuConfig.themeMode',
+                      action: 'theme_mode_change',
+                      themeMode: 'dark',
+                      timestamp: Date.now(),
+                    },
+                    'MENU: Theme mode set to dark',
+                  );
+                }}
+                className="segmented-input"
+              />
+              <span className="segmented-button">dark</span>
+            </label>
+          </fieldset>
         </div>
       </div>
 

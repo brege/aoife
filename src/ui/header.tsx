@@ -30,6 +30,8 @@ interface AppHeaderProps {
   isLoadingShare: boolean;
   coverViewMode: 'grid' | 'carousel';
   onCoverViewModeChange: (mode: 'grid' | 'carousel') => void;
+  themeMode: 'auto' | 'light' | 'dark';
+  onThemeModeChange: (mode: 'auto' | 'light' | 'dark') => void;
 }
 
 const AppHeader: React.FC<AppHeaderProps> = ({
@@ -57,6 +59,8 @@ const AppHeader: React.FC<AppHeaderProps> = ({
   isLoadingShare,
   coverViewMode,
   onCoverViewModeChange,
+  themeMode,
+  onThemeModeChange,
 }) => {
   const handleAddToggle = () => {
     onShowSearchToggle(!showSearch);
@@ -101,6 +105,8 @@ const AppHeader: React.FC<AppHeaderProps> = ({
           isLoadingShare={isLoadingShare}
           coverViewMode={coverViewMode}
           onCoverViewModeChange={onCoverViewModeChange}
+          themeMode={themeMode}
+          onThemeModeChange={onThemeModeChange}
         />
       </div>
     </div>

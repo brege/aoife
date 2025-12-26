@@ -37,6 +37,8 @@ interface MenuProps {
   isLoadingShare: boolean;
   coverViewMode: 'grid' | 'carousel';
   onCoverViewModeChange: (mode: 'grid' | 'carousel') => void;
+  themeMode: 'auto' | 'light' | 'dark';
+  onThemeModeChange: (mode: 'auto' | 'light' | 'dark') => void;
 }
 
 const Menu: React.FC<MenuProps> = ({
@@ -60,6 +62,8 @@ const Menu: React.FC<MenuProps> = ({
   isLoadingShare,
   coverViewMode,
   onCoverViewModeChange,
+  themeMode,
+  onThemeModeChange,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
@@ -247,6 +251,8 @@ const Menu: React.FC<MenuProps> = ({
             onCaptionEditsOnlyChange={onCaptionEditsOnlyChange}
             coverViewMode={coverViewMode}
             onCoverViewModeChange={onCoverViewModeChange}
+            themeMode={themeMode}
+            onThemeModeChange={onThemeModeChange}
           />
 
           <details
