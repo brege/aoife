@@ -17,6 +17,8 @@ export type SharedState = {
   columns: number;
   minRows: number;
   layoutDimension: 'height' | 'chimney';
+  captionMode: 'hidden' | 'top' | 'bottom';
+  captionEditsOnly: boolean;
 };
 
 type ShareCacheRecord = {
@@ -107,6 +109,13 @@ export const validateSharedState = (state: unknown): state is SharedState => {
     return false;
   if (obj.layoutDimension !== 'height' && obj.layoutDimension !== 'chimney')
     return false;
+  if (
+    obj.captionMode !== 'hidden' &&
+    obj.captionMode !== 'top' &&
+    obj.captionMode !== 'bottom'
+  )
+    return false;
+  if (typeof obj.captionEditsOnly !== 'boolean') return false;
 
   return true;
 };

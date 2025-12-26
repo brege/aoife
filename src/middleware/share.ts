@@ -29,6 +29,8 @@ export type SharedStatePayload = {
   columns: number;
   minRows: number;
   layoutDimension: 'height' | 'chimney';
+  captionMode: 'hidden' | 'top' | 'bottom';
+  captionEditsOnly: boolean;
 };
 
 const DATA_DIRECTORY_PATH = path.join(process.cwd(), 'data');
@@ -95,6 +97,8 @@ export const validateAndCanonicalizeSharePayload = (
   const columns = raw.columns;
   const minRows = raw.minRows;
   const layoutDimension = raw.layoutDimension;
+  const captionMode = raw.captionMode;
+  const captionEditsOnly = raw.captionEditsOnly;
   if (
     typeof columns !== 'number' ||
     !Number.isInteger(columns) ||
@@ -113,6 +117,16 @@ export const validateAndCanonicalizeSharePayload = (
   }
   if (layoutDimension !== 'height' && layoutDimension !== 'chimney') {
     throw new Error('Share payload layoutDimension is invalid');
+  }
+  if (
+    captionMode !== 'hidden' &&
+    captionMode !== 'top' &&
+    captionMode !== 'bottom'
+  ) {
+    throw new Error('Share payload captionMode is invalid');
+  }
+  if (typeof captionEditsOnly !== 'boolean') {
+    throw new Error('Share payload captionEditsOnly is invalid');
   }
 
   const canonicalItems: SharedStateItem[] = [];
@@ -246,6 +260,8 @@ export const validateAndCanonicalizeSharePayload = (
     columns,
     minRows,
     layoutDimension,
+    captionMode,
+    captionEditsOnly,
   };
 
   return JSON.stringify(canonicalPayload);

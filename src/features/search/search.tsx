@@ -466,6 +466,7 @@ const MediaSearch: React.FC = () => {
     (source: string) => {
       clearGrid();
       setSelectedMediaType('movies');
+      setCoverViewMode('grid');
       resetShareContext();
       logger.info(
         {
@@ -476,7 +477,7 @@ const MediaSearch: React.FC = () => {
         source,
       );
     },
-    [clearGrid, resetShareContext, setSelectedMediaType],
+    [clearGrid, resetShareContext, setSelectedMediaType, setCoverViewMode],
   );
 
   useEffect(() => {

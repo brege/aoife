@@ -132,6 +132,8 @@ const buildShareSnapshot = (state: {
   columns: number;
   minRows: number;
   layoutDimension: 'height' | 'chimney';
+  captionMode: 'hidden' | 'top' | 'bottom';
+  captionEditsOnly: boolean;
   title: string;
 }): string => {
   return JSON.stringify({
@@ -139,6 +141,8 @@ const buildShareSnapshot = (state: {
     columns: state.columns,
     minRows: state.minRows,
     layoutDimension: state.layoutDimension,
+    captionMode: state.captionMode,
+    captionEditsOnly: state.captionEditsOnly,
     title: state.title,
   });
 };
@@ -236,7 +240,16 @@ export const useAppStore = create<AppStore>()(
         set({ title: normalized });
       },
       clearGrid: () => {
-        set({ gridItems: [], title: DEFAULT_TITLE });
+        set({
+          gridItems: [],
+          title: DEFAULT_TITLE,
+          columns: 4,
+          minRows: 2,
+          layoutDimension: 'height',
+          bandPlacementMode: 'adaptive',
+          captionMode: 'top',
+          captionEditsOnly: false,
+        });
         localStorage.removeItem('layout-section-open');
         localStorage.removeItem('status-section-open');
       },
@@ -279,6 +292,8 @@ export const useAppStore = create<AppStore>()(
             columns: state.columns,
             minRows: state.minRows,
             layoutDimension: state.layoutDimension,
+            captionMode: state.captionMode,
+            captionEditsOnly: state.captionEditsOnly,
           };
           const payload = buildSharePayload(shareState);
           const response = await createShare(payload, state.title);
@@ -291,6 +306,8 @@ export const useAppStore = create<AppStore>()(
             columns: state.columns,
             minRows: state.minRows,
             layoutDimension: state.layoutDimension,
+            captionMode: state.captionMode,
+            captionEditsOnly: state.captionEditsOnly,
             title: state.title,
           });
           const url = new URL(window.location.href);
@@ -305,12 +322,14 @@ export const useAppStore = create<AppStore>()(
               slug: response.slug,
               gridCount: state.gridItems.length,
               columns: state.columns,
-              minRows: state.minRows,
-              layoutDimension: state.layoutDimension,
-              timestamp: Date.now(),
-            },
-            'SHARE: Created share link',
-          );
+            minRows: state.minRows,
+            layoutDimension: state.layoutDimension,
+            captionMode: state.captionMode,
+            captionEditsOnly: state.captionEditsOnly,
+            timestamp: Date.now(),
+          },
+          'SHARE: Created share link',
+        );
         } catch (err) {
           const message = err instanceof Error ? err.message : String(err);
           set({ shareError: message });
@@ -337,6 +356,8 @@ export const useAppStore = create<AppStore>()(
             columns: result.state.columns,
             minRows: result.state.minRows,
             layoutDimension: result.state.layoutDimension,
+            captionMode: result.state.captionMode,
+            captionEditsOnly: result.state.captionEditsOnly,
             gridItems: result.state.gridItems,
             title: nextTitle,
           });
@@ -350,6 +371,8 @@ export const useAppStore = create<AppStore>()(
             columns: result.state.columns,
             minRows: result.state.minRows,
             layoutDimension: result.state.layoutDimension,
+            captionMode: result.state.captionMode,
+            captionEditsOnly: result.state.captionEditsOnly,
             title: nextTitle,
           });
           set({ shareUrl: url.toString(), shareSnapshot: snapshot });
@@ -401,6 +424,8 @@ export const useAppStore = create<AppStore>()(
           columns: state.columns,
           minRows: state.minRows,
           layoutDimension: state.layoutDimension,
+          captionMode: state.captionMode,
+          captionEditsOnly: state.captionEditsOnly,
           title: state.title,
         });
         if (currentSnapshot !== state.shareSnapshot) {

@@ -221,13 +221,19 @@ def validate_and_canonicalize_share_payload(payload: str) -> str:
     columns = data.get("columns")
     min_rows = data.get("minRows")
     layout_dimension = data.get("layoutDimension")
+    caption_mode = data.get("captionMode")
+    caption_edits_only = data.get("captionEditsOnly")
 
     if not isinstance(columns, int) or columns < 1 or columns > 8:
         raise ValueError("Share payload columns is invalid")
     if not isinstance(min_rows, int) or min_rows < 1 or min_rows > 12:
         raise ValueError("Share payload minRows is invalid")
-    if layout_dimension not in ("width", "height"):
+    if layout_dimension not in ("height", "chimney"):
         raise ValueError("Share payload layoutDimension is invalid")
+    if caption_mode not in ("hidden", "top", "bottom"):
+        raise ValueError("Share payload captionMode is invalid")
+    if not isinstance(caption_edits_only, bool):
+        raise ValueError("Share payload captionEditsOnly is invalid")
 
     canonical_items: list[dict] = []
 
@@ -319,6 +325,8 @@ def validate_and_canonicalize_share_payload(payload: str) -> str:
         "columns": columns,
         "minRows": min_rows,
         "layoutDimension": layout_dimension,
+        "captionMode": caption_mode,
+        "captionEditsOnly": caption_edits_only,
     }
 
     return json.dumps(canonical_payload, separators=(",", ":"))
