@@ -469,6 +469,17 @@ const MediaSearch: React.FC = () => {
   const searchSectionClassName = `search-section ${showSearch ? 'show-search' : 'hide-search'}`;
   const searchModuleClassName = `search-module ${showSearch ? 'show-search' : 'hide-search'}`;
 
+  const mediaFormProperties = {
+    mediaType: selectedMediaType,
+    onMediaTypeChange: handleMediaTypeChange,
+    onSubmit: handleFormSubmit,
+    isLoading: searchIsLoading,
+    provider,
+    bandPlacement,
+    onOpenCoverLink: handleCoverLinkOpen,
+    formMethods,
+  };
+
   return (
     <div className="container">
       <AppHeader
@@ -499,17 +510,7 @@ const MediaSearch: React.FC = () => {
       />
 
       {showSearch && (
-        <MediaForm
-          mediaType={selectedMediaType}
-          onMediaTypeChange={handleMediaTypeChange}
-          onSubmit={handleFormSubmit}
-          isLoading={searchIsLoading}
-          provider={provider}
-          layout="band"
-          bandPlacement={bandPlacement}
-          onOpenCoverLink={handleCoverLinkOpen}
-          formMethods={formMethods}
-        />
+        <MediaForm {...mediaFormProperties} layout="band" />
       )}
 
       <div className={searchSectionClassName}>
@@ -556,17 +557,7 @@ const MediaSearch: React.FC = () => {
               layoutDimension={layoutDimension}
             />
             {showSearch && (
-              <MediaForm
-                mediaType={selectedMediaType}
-                onMediaTypeChange={handleMediaTypeChange}
-                onSubmit={handleFormSubmit}
-                isLoading={searchIsLoading}
-                provider={provider}
-                layout="stack"
-                bandPlacement={bandPlacement}
-                onOpenCoverLink={handleCoverLinkOpen}
-                formMethods={formMethods}
-              />
+              <MediaForm {...mediaFormProperties} layout="stack" />
             )}
           </div>
           {showPosterGrid && activePosterItem && (

@@ -144,13 +144,7 @@ export const MediaForm: React.FC<MediaFormProps> = ({
         data-testid={`media-search-form-${layout}`}
         ref={formRef}
       >
-        {layout === 'stack' && (
-          <Dropdown value={mediaType} onChange={onMediaTypeChange} />
-        )}
-
-        {layout === 'band' && (
-          <Dropdown value={mediaType} onChange={onMediaTypeChange} />
-        )}
+      <Dropdown value={mediaType} onChange={onMediaTypeChange} />
 
         <div className="form-fields">{formFields}</div>
 
