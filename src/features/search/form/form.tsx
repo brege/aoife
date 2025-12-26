@@ -11,6 +11,13 @@ import { MusicForm } from './music';
 import { TheMovieDatabaseForm } from './tmdb';
 import './form.css';
 
+type ProviderField = {
+  id: string;
+  label: string;
+  placeholder: string;
+  required?: boolean;
+};
+
 interface MediaFormProps {
   mediaType: MediaType;
   onMediaTypeChange: (type: MediaType) => void;
@@ -18,18 +25,97 @@ interface MediaFormProps {
   isLoading: boolean;
   provider: {
     label: string;
-    searchFields: {
-      id: string;
-      label: string;
-      placeholder: string;
-      required?: boolean;
-    }[];
+    searchFields: ProviderField[];
   };
   layout: 'band' | 'stack';
   bandPlacement?: 'top' | 'bottom';
   onOpenCoverLink?: () => void;
   formMethods: UseFormReturn<MediaSearchValues>;
 }
+
+type FormFactoryInput = {
+  mediaType: MediaType;
+  layout: 'band' | 'stack';
+  bandPlacement: 'top' | 'bottom';
+  formRef: React.RefObject<HTMLFormElement>;
+  onOpenCoverLink?: () => void;
+  getField: (fieldId: string) => ProviderField;
+};
+
+const formFactories: Partial<
+  Record<MediaType, (input: FormFactoryInput) => React.ReactNode>
+> = {
+  books: (input) => {
+    const authorField = input.getField('author');
+    const titleField = input.getField('title');
+    return (
+      <BooksForm
+        authorField={authorField}
+        titleField={titleField}
+        layout={input.layout}
+        bandPlacement={input.bandPlacement}
+        formRef={input.formRef}
+        onOpenCoverLink={input.onOpenCoverLink}
+      />
+    );
+  },
+  music: (input) => {
+    const artistField = input.getField('artist');
+    const albumField = input.getField('album');
+    return (
+      <MusicForm
+        artistField={artistField}
+        albumField={albumField}
+        layout={input.layout}
+        bandPlacement={input.bandPlacement}
+        formRef={input.formRef}
+        onOpenCoverLink={input.onOpenCoverLink}
+      />
+    );
+  },
+  games: (input) => {
+    const queryField = input.getField('query');
+    const platformField = input.getField('platform');
+    return (
+      <TheGamesDatabaseForm
+        queryField={queryField}
+        platformField={platformField}
+        layout={input.layout}
+        bandPlacement={input.bandPlacement}
+        formRef={input.formRef}
+      />
+    );
+  },
+  movies: (input) => {
+    const queryField = input.getField('query');
+    return (
+      <TheMovieDatabaseForm
+        mediaType="movies"
+        field={queryField}
+        layout={input.layout}
+        bandPlacement={input.bandPlacement}
+        formRef={input.formRef}
+      />
+    );
+  },
+  tv: (input) => {
+    const queryField = input.getField('query');
+    return (
+      <TheMovieDatabaseForm
+        mediaType="tv"
+        field={queryField}
+        layout={input.layout}
+        bandPlacement={input.bandPlacement}
+        formRef={input.formRef}
+      />
+    );
+  },
+  custom: (input) => {
+    const queryField = input.getField('query');
+    const coverField = input.getField('cover');
+    return <CustomSearchForm queryField={queryField} coverField={coverField} />;
+  },
+};
 
 export const MediaForm: React.FC<MediaFormProps> = ({
   mediaType,
@@ -60,81 +146,34 @@ export const MediaForm: React.FC<MediaFormProps> = ({
 
   const layoutClass = layout === 'band' ? 'band' : 'stack';
   const bandPlacementClass = layout === 'band' ? `band-${bandPlacement}` : '';
-  let formFields: React.ReactNode;
+  const formFactory = formFactories[mediaType];
+  const formFactoryInput = {
+    mediaType,
+    layout,
+    bandPlacement,
+    formRef,
+    onOpenCoverLink,
+    getField,
+  };
 
-  if (mediaType === 'books') {
-    const authorField = getField('author');
-    const titleField = getField('title');
-    formFields = (
-      <BooksForm
-        authorField={authorField}
-        titleField={titleField}
-        layout={layout}
-        bandPlacement={bandPlacement}
-        formRef={formRef}
-        onOpenCoverLink={onOpenCoverLink}
-      />
-    );
-  } else if (mediaType === 'music') {
-    const artistField = getField('artist');
-    const albumField = getField('album');
-    formFields = (
-      <MusicForm
-        artistField={artistField}
-        albumField={albumField}
-        layout={layout}
-        bandPlacement={bandPlacement}
-        formRef={formRef}
-        onOpenCoverLink={onOpenCoverLink}
-      />
-    );
-  } else if (mediaType === 'games') {
-    const queryField = getField('query');
-    const platformField = getField('platform');
-    formFields = (
-      <TheGamesDatabaseForm
-        queryField={queryField}
-        platformField={platformField}
-        layout={layout}
-        bandPlacement={bandPlacement}
-        formRef={formRef}
-      />
-    );
-  } else if (mediaType === 'movies' || mediaType === 'tv') {
-    const queryField = getField('query');
-    formFields = (
-      <TheMovieDatabaseForm
-        mediaType={mediaType}
-        field={queryField}
-        layout={layout}
-        bandPlacement={bandPlacement}
-        formRef={formRef}
-      />
-    );
-  } else if (mediaType === 'custom') {
-    const queryField = getField('query');
-    const coverField = getField('cover');
-    formFields = (
-      <CustomSearchForm queryField={queryField} coverField={coverField} />
-    );
-  } else {
-    formFields = provider.searchFields.map((field) => {
-      const fieldName = field.id as keyof MediaSearchValues;
-      const registered = register(fieldName);
-      return (
-        <input
-          key={field.id}
-          type="text"
-          placeholder={field.placeholder}
-          aria-label={field.label}
-          className="form-input"
-          required={field.required}
-          data-testid={`search-field-${field.id}`}
-          {...registered}
-        />
-      );
-    });
-  }
+  const formFields = formFactory
+    ? formFactory(formFactoryInput)
+    : provider.searchFields.map((field) => {
+        const fieldName = field.id as keyof MediaSearchValues;
+        const registered = register(fieldName);
+        return (
+          <input
+            key={field.id}
+            type="text"
+            placeholder={field.placeholder}
+            aria-label={field.label}
+            className="form-input"
+            required={field.required}
+            data-testid={`search-field-${field.id}`}
+            {...registered}
+          />
+        );
+      });
 
   return (
     <FormProvider {...formMethods}>
@@ -144,7 +183,7 @@ export const MediaForm: React.FC<MediaFormProps> = ({
         data-testid={`media-search-form-${layout}`}
         ref={formRef}
       >
-      <Dropdown value={mediaType} onChange={onMediaTypeChange} />
+        <Dropdown value={mediaType} onChange={onMediaTypeChange} />
 
         <div className="form-fields">{formFields}</div>
 
@@ -164,7 +203,10 @@ export const MediaForm: React.FC<MediaFormProps> = ({
             'Searching...'
           ) : (
             <>
-              <RiPhoneFindLine className="form-submit-icon" aria-hidden="true" />
+              <RiPhoneFindLine
+                className="form-submit-icon"
+                aria-hidden="true"
+              />
               <span>
                 {mediaType === 'music'
                   ? 'Cover art'

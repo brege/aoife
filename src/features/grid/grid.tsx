@@ -1,13 +1,16 @@
 import type React from 'react';
 import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import './grid.css';
-import { MdClose, MdDragHandle } from 'react-icons/md';
 import { isPlaceholderCover } from '../../lib/coverdetect';
 import logger from '../../lib/logger';
-import type { MediaItem, MediaType } from '../../providers/types';
-import { CustomImage } from '../../ui/customimage';
-import { getExternalLinks } from '../search/results/links';
-import { MEDIA_TYPE_ICONS } from '../search/suggestion/list';
+import type { MediaItem } from '../../providers/types';
+import {
+  getAspectRatio,
+  getCaptionSubtitle,
+  getCaptionTitle,
+  getCoverSource,
+} from './index';
+import { GridRow, type RowLayout } from './row';
 
 interface GridProps {
   items: MediaItem[];
@@ -27,47 +30,7 @@ interface GridProps {
   captionEditsOnly?: boolean;
 }
 
-const DEFAULT_ASPECT_RATIOS: Record<string, number> = {
-  movies: 2 / 3,
-  books: 2 / 3,
-  music: 1,
-};
-
-const getCoverSrc = (media: MediaItem) =>
-  media.coverUrl || media.coverThumbnailUrl || '';
-
-const getAspectRatio = (media: MediaItem): number => {
-  if (media.aspectRatio) return media.aspectRatio;
-  return DEFAULT_ASPECT_RATIOS[media.type] ?? 2 / 3;
-};
-
-const getCaptionSubtitle = (media: MediaItem): string => {
-  const yearText = media.year ? String(media.year) : '';
-  if (media.subtitle && yearText && media.subtitle !== yearText) {
-    return `${media.subtitle} - ${yearText}`;
-  }
-  if (media.subtitle) {
-    return media.subtitle;
-  }
-  if (yearText) {
-    return yearText;
-  }
-  return '';
-};
-
-const getCaptionTitle = (media: MediaItem): string => {
-  if (typeof media.caption === 'string' && media.caption.trim() !== '') {
-    return media.caption.trim();
-  }
-  return media.title;
-};
-
 const MAXIMUM_GRID_WIDTH = 1600;
-
-interface RowLayout {
-  height: number;
-  items: { media: MediaItem; width: number }[];
-}
 
 const calculateRowLayouts = (
   items: MediaItem[],
@@ -374,146 +337,26 @@ const Grid: React.FC<GridProps> = ({
 
     return (
       <div className="grid-container">
-        {rowLayouts.map((row) => {
-          const rowKey =
-            row.items.map(({ media }) => media.id).join('-') ||
-            `row-${row.height}`;
-          return (
-            <div
-              key={rowKey}
-              className="grid-row"
-              style={{
-                height: layoutDimension === 'width' ? 'auto' : row.height,
-                gap: containerGap,
-              }}
-            >
-              {row.items.map(({ media, width }) => {
-                const captionTitle = getCaptionTitle(media);
-                const captionSubtitle = getCaptionSubtitle(media);
-                const imdbId =
-                  typeof media.metadata?.imdb_id === 'string'
-                    ? media.metadata.imdb_id
-                    : undefined;
-                const externalLinks = getExternalLinks(
-                  media,
-                  media.type as MediaType,
-                  imdbId,
-                );
-                const hasEditedCaption =
-                  typeof media.caption === 'string' &&
-                  media.caption.trim() !== '';
-                const showCaption =
-                  captionMode !== 'hidden' &&
-                  (!captionEditsOnly || hasEditedCaption) &&
-                  (captionTitle.trim() !== '' || captionSubtitle !== '');
-                const captionClassName = `grid-caption grid-caption-${captionMode}`;
-                const isDragging = draggingId === media.id;
-                const isDragOver = dragOverId === media.id;
-                const dragStateClassName = `${isDragging ? ' is-dragging' : ''}${isDragOver ? ' is-drag-over' : ''}`;
-                return (
-                  <div
-                    key={media.id}
-                    className={`grid-item filled${dragStateClassName}`}
-                    data-type={media.type}
-                    data-media-id={String(media.id)}
-                    style={{
-                      width,
-                      height: layoutDimension === 'width' ? 'auto' : row.height,
-                    }}
-                    onPointerDown={(event) =>
-                      handlePointerDown(media.id, event)
-                    }
-                    onPointerMove={handlePointerMove}
-                    onPointerUp={handlePointerUp}
-                    onPointerCancel={handlePointerCancel}
-                  >
-                    <div className="poster-wrapper">
-                      <button
-                        type="button"
-                        className="poster-button"
-                        onClick={() => {
-                          if (draggingId) {
-                            return;
-                          }
-                          onPosterClick(media);
-                        }}
-                        aria-label={`View poster for ${media.title}`}
-                      >
-                        <CustomImage
-                          src={getCoverSrc(media) || ''}
-                          alt={`${media.title} cover`}
-                          className="grid-poster"
-                          onLoad={(e) => handleImageLoad(media, e)}
-                          crossOrigin={
-                            media.type === 'books' ? 'anonymous' : undefined
-                          }
-                        />
-                      </button>
-                      <button
-                        type="button"
-                        className="grid-drag-handle"
-                        aria-label={`Reorder ${media.title}`}
-                        onClick={(event) => event.stopPropagation()}
-                      >
-                        <MdDragHandle aria-hidden="true" focusable="false" />
-                      </button>
-                      {showCaption && (
-                        <div className={captionClassName}>
-                          <div className="grid-caption-title">
-                            {captionTitle}
-                          </div>
-                          {captionSubtitle && (
-                            <div className="grid-caption-subtitle">
-                              {captionSubtitle}
-                            </div>
-                          )}
-                        </div>
-                      )}
-                      <button
-                        type="button"
-                        className="grid-close-button"
-                        onClick={() => onRemoveMedia(media.id)}
-                        aria-label={`Remove ${media.title}`}
-                      >
-                        <MdClose aria-hidden="true" focusable="false" />
-                      </button>
-                      <button
-                        type="button"
-                        className="media-type-badge"
-                        aria-label={`Edit caption for ${media.title}`}
-                        onClick={() => onCaptionEdit(media)}
-                      >
-                        {MEDIA_TYPE_ICONS[media.type as MediaType]}
-                      </button>
-                      {externalLinks.length > 0 && (
-                        <div className="grid-source-badges">
-                          {externalLinks.map((link) => (
-                            <a
-                              key={link.href}
-                              href={link.href}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="grid-source-link"
-                              aria-label={link.label}
-                              onClick={(event) => event.stopPropagation()}
-                            >
-                              <img
-                                src={`https://www.google.com/s2/favicons?sz=32&domain=${link.domain}`}
-                                alt=""
-                                aria-hidden="true"
-                              />
-                              <span className="sr-only">{link.label}</span>
-                            </a>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          );
-        })}
+        {rowLayouts.map((row) => (
+          <GridRow
+            key={row.items.map(({ media }) => media.id).join('-') || row.height}
+            row={row}
+            layoutDimension={layoutDimension}
+            containerGap={containerGap}
+            captionMode={captionMode}
+            captionEditsOnly={captionEditsOnly}
+            draggingId={draggingId}
+            dragOverId={dragOverId}
+            onRemoveMedia={onRemoveMedia}
+            onPosterClick={onPosterClick}
+            onCaptionEdit={onCaptionEdit}
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerUp}
+            onPointerCancel={handlePointerCancel}
+            onImageLoad={handleImageLoad}
+          />
+        ))}
       </div>
     );
   };

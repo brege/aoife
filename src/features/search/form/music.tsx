@@ -297,7 +297,10 @@ const MusicForm = ({
             const matchingSuggestion = albumSuggestions.find(
               (suggestion) => suggestion.value === resolvedValue,
             );
-            if (matchingSuggestion && typeof matchingSuggestion.id === 'string') {
+            if (
+              matchingSuggestion &&
+              typeof matchingSuggestion.id === 'string'
+            ) {
               setValue('releaseGroupId', matchingSuggestion.id);
             } else {
               setValue('releaseGroupId', '');

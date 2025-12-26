@@ -24,20 +24,18 @@ type CustomSearchFormProps = {
   coverField: CoverField;
 };
 
-const CustomSearchForm = ({ queryField, coverField }: CustomSearchFormProps) => {
+const CustomSearchForm = ({
+  queryField,
+  coverField,
+}: CustomSearchFormProps) => {
   const coverInputRef = useRef<HTMLInputElement>(null);
-  const { control, register, setValue } =
-    useFormContext<MediaSearchValues>();
+  const { control, register, setValue } = useFormContext<MediaSearchValues>();
   const watchedQueryValue = useWatch({
     control,
     name: queryField.id as keyof MediaSearchValues,
   });
-  const queryRegistration = register(
-    queryField.id as keyof MediaSearchValues,
-  );
-  const coverRegistration = register(
-    coverField.id as keyof MediaSearchValues,
-  );
+  const queryRegistration = register(queryField.id as keyof MediaSearchValues);
+  const coverRegistration = register(coverField.id as keyof MediaSearchValues);
 
   const handleCoverImageUpload = useCallback(
     async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -50,7 +48,10 @@ const CustomSearchForm = ({ queryField, coverField }: CustomSearchFormProps) => 
           typeof watchedQueryValue === 'string' ? watchedQueryValue : '';
         if (!resolvedQueryValue) {
           const nameWithoutExtension = file.name.replace(/\.[^/.]+$/, '');
-          setValue(queryField.id as keyof MediaSearchValues, nameWithoutExtension);
+          setValue(
+            queryField.id as keyof MediaSearchValues,
+            nameWithoutExtension,
+          );
         }
       }
     },

@@ -509,9 +509,7 @@ const MediaSearch: React.FC = () => {
         onCoverViewModeChange={setCoverViewMode}
       />
 
-      {showSearch && (
-        <MediaForm {...mediaFormProperties} layout="band" />
-      )}
+      {showSearch && <MediaForm {...mediaFormProperties} layout="band" />}
 
       <div className={searchSectionClassName}>
         <div className="search-content">

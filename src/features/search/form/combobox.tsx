@@ -1,5 +1,4 @@
 import { Combobox } from '@headlessui/react';
-import type React from 'react';
 import { useController, useFormContext, useWatch } from 'react-hook-form';
 import type { MediaSearchValues } from '../../../providers/types';
 import type { SuggestionEntry } from './suggestions';

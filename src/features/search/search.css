@@ -216,11 +216,15 @@
 @media (max-width: 600px) {
   .search-results {
     bottom: calc(
-      var(--spacing-md) + env(safe-area-inset-bottom) +
-        var(--stack-form-height, 0px)
+      var(--spacing-md) +
+      env(safe-area-inset-bottom) +
+      var(--stack-form-height, 0px)
     );
     max-height: calc(
-      75vh - var(--header-height) - 100px - var(--stack-form-height, 0px)
+      75vh -
+      var(--header-height) -
+      100px -
+      var(--stack-form-height, 0px)
     );
     padding-bottom: calc(20px + var(--stack-form-height, 0px));
   }
