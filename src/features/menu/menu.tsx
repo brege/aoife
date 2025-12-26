@@ -35,8 +35,8 @@ interface MenuProps {
   shareUrl: string;
   shareError: string;
   isLoadingShare: boolean;
-  coverViewMode?: 'grid' | 'carousel';
-  onCoverViewModeChange?: (mode: 'grid' | 'carousel') => void;
+  coverViewMode: 'grid' | 'carousel';
+  onCoverViewModeChange: (mode: 'grid' | 'carousel') => void;
 }
 
 const Menu: React.FC<MenuProps> = ({

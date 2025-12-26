@@ -18,8 +18,8 @@ interface MenuConfigProps {
   onCaptionModeChange: (mode: 'hidden' | 'top' | 'bottom') => void;
   captionEditsOnly: boolean;
   onCaptionEditsOnlyChange: (value: boolean) => void;
-  coverViewMode?: 'grid' | 'carousel';
-  onCoverViewModeChange?: (mode: 'grid' | 'carousel') => void;
+  coverViewMode: 'grid' | 'carousel';
+  onCoverViewModeChange: (mode: 'grid' | 'carousel') => void;
 }
 
 const MIN_COLUMNS = 1;
@@ -40,7 +40,7 @@ const MenuConfig: React.FC<MenuConfigProps> = ({
   onCaptionModeChange,
   captionEditsOnly,
   onCaptionEditsOnlyChange,
-  coverViewMode = 'grid',
+  coverViewMode,
   onCoverViewModeChange,
 }) => {
   const [isLayoutSectionOpen, setIsLayoutSectionOpen] = useLocalStorage(
@@ -188,10 +188,6 @@ const MenuConfig: React.FC<MenuConfigProps> = ({
             </button>
           </div>
         </div>
-      </div>
-
-      <div className="config-group">
-        <div className="config-group-title">Behavior</div>
         <div className="config-row">
           <span className="config-label">chimney</span>
           <Switch
@@ -202,14 +198,48 @@ const MenuConfig: React.FC<MenuConfigProps> = ({
             className="layout-dimension-toggle"
           />
         </div>
+      </div>
+
+      <div className="config-group">
+        <div className="config-group-title">Content Discovery</div>
+        <div className="config-row">
+          <span className="config-label">Search band</span>
+          <fieldset
+            className="segmented-control"
+            aria-label="Search band placement"
+          >
+            <label className="segmented-option">
+              <input
+                type="radio"
+                name="search-band-placement"
+                value="alwaysTop"
+                checked={bandPlacementMode === 'alwaysTop'}
+                onChange={() => onBandPlacementModeChange('alwaysTop')}
+                className="segmented-input"
+              />
+              <span className="segmented-button">always on top</span>
+            </label>
+            <label className="segmented-option">
+              <input
+                type="radio"
+                name="search-band-placement"
+                value="adaptive"
+                checked={bandPlacementMode === 'adaptive'}
+                onChange={() => onBandPlacementModeChange('adaptive')}
+                className="segmented-input"
+              />
+              <span className="segmented-button">auto</span>
+            </label>
+          </fieldset>
+        </div>
 
         <div className="config-row">
-          <span className="config-label">swipe mode</span>
+          <span className="config-label">Swipe Mode</span>
           <Switch
             checked={coverViewMode === 'carousel'}
             onChange={(checked) => {
               const newMode = checked ? 'carousel' : 'grid';
-              onCoverViewModeChange?.(newMode);
+              onCoverViewModeChange(newMode);
               logger.info(
                 {
                   context: 'MenuConfig.swipeMode',
@@ -276,39 +306,7 @@ const MenuConfig: React.FC<MenuConfigProps> = ({
         </div>
       </div>
 
-      <div className="config-group">
-        <div className="config-group-title">Search band</div>
-        <div className="config-row">
-          <span className="config-label">placement</span>
-          <fieldset
-            className="segmented-control"
-            aria-label="Search band placement"
-          >
-            <label className="segmented-option">
-              <input
-                type="radio"
-                name="search-band-placement"
-                value="alwaysTop"
-                checked={bandPlacementMode === 'alwaysTop'}
-                onChange={() => onBandPlacementModeChange('alwaysTop')}
-                className="segmented-input"
-              />
-              <span className="segmented-button">always on top</span>
-            </label>
-            <label className="segmented-option">
-              <input
-                type="radio"
-                name="search-band-placement"
-                value="adaptive"
-                checked={bandPlacementMode === 'adaptive'}
-                onChange={() => onBandPlacementModeChange('adaptive')}
-                className="segmented-input"
-              />
-              <span className="segmented-button">auto</span>
-            </label>
-          </fieldset>
-        </div>
-      </div>
+
     </details>
   );
 };

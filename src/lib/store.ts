@@ -18,7 +18,6 @@ type LayoutState = {
   columns: number;
   minRows: number;
   layoutDimension: 'height' | 'chimney';
-  coverViewMode: 'grid' | 'carousel';
   bandPlacementMode: 'alwaysTop' | 'adaptive';
   captionMode: 'hidden' | 'top' | 'bottom';
   captionEditsOnly: boolean;
@@ -66,7 +65,6 @@ type LayoutActions = {
   setColumns: (value: number) => void;
   setMinRows: (value: number) => void;
   setLayoutDimension: (value: 'height' | 'chimney') => void;
-  setCoverViewMode: (value: 'grid' | 'carousel') => void;
   setBandPlacementMode: (value: 'alwaysTop' | 'adaptive') => void;
   setCaptionMode: (value: 'hidden' | 'top' | 'bottom') => void;
   setCaptionEditsOnly: (value: boolean) => void;
@@ -163,7 +161,6 @@ export const useAppStore = create<AppStore>()(
       columns: 4,
       minRows: 2,
       layoutDimension: 'height',
-      coverViewMode: 'grid',
       bandPlacementMode: 'adaptive',
       captionMode: 'top',
       captionEditsOnly: false,
@@ -199,7 +196,6 @@ export const useAppStore = create<AppStore>()(
       setColumns: (value) => set({ columns: constrainNumber(value, 1, 8, 4) }),
       setMinRows: (value) => set({ minRows: constrainNumber(value, 1, 6, 2) }),
       setLayoutDimension: (value) => set({ layoutDimension: value }),
-      setCoverViewMode: (value) => set({ coverViewMode: value }),
       setBandPlacementMode: (value) => set({ bandPlacementMode: value }),
       setCaptionMode: (value) => set({ captionMode: value }),
       setCaptionEditsOnly: (value) => set({ captionEditsOnly: value }),
@@ -433,7 +429,6 @@ export const useAppStore = create<AppStore>()(
         columns: state.columns,
         minRows: state.minRows,
         layoutDimension: state.layoutDimension,
-        coverViewMode: state.coverViewMode,
         bandPlacementMode: state.bandPlacementMode,
         captionMode: state.captionMode,
         captionEditsOnly: state.captionEditsOnly,

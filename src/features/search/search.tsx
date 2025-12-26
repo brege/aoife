@@ -4,6 +4,7 @@ import { useForm, useWatch } from 'react-hook-form';
 import '../../app/app.css';
 import './search.css';
 import { useGridOperations } from '../../lib/grid-operations';
+import { useLocalStorageString } from '../../lib/hooks';
 import logger from '../../lib/logger';
 import { useModalClosed, useModalManager } from '../../lib/modalmanager';
 import { useAppStore } from '../../lib/store';
@@ -56,7 +57,6 @@ const MediaSearch: React.FC = () => {
   const columns = useAppStore((state) => state.columns);
   const minRows = useAppStore((state) => state.minRows);
   const layoutDimension = useAppStore((state) => state.layoutDimension);
-  const coverViewMode = useAppStore((state) => state.coverViewMode);
   const bandPlacementMode = useAppStore((state) => state.bandPlacementMode);
   const captionMode = useAppStore((state) => state.captionMode);
   const captionEditsOnly = useAppStore((state) => state.captionEditsOnly);
@@ -91,7 +91,6 @@ const MediaSearch: React.FC = () => {
   const setColumns = useAppStore((state) => state.setColumns);
   const setMinRows = useAppStore((state) => state.setMinRows);
   const setLayoutDimension = useAppStore((state) => state.setLayoutDimension);
-  const setCoverViewMode = useAppStore((state) => state.setCoverViewMode);
   const setBandPlacementMode = useAppStore(
     (state) => state.setBandPlacementMode,
   );
@@ -123,6 +122,11 @@ const MediaSearch: React.FC = () => {
   );
   const setAlternateCoverUrls = useAppStore(
     (state) => state.setAlternateCoverUrls,
+  );
+  const [coverViewMode, setCoverViewMode] = useLocalStorageString(
+    'cover-view-mode',
+    'grid',
+    ['grid', 'carousel'],
   );
   const resetBrokenAlternateCoverUrls = useAppStore(
     (state) => state.resetBrokenAlternateCoverUrls,
