@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import type { getMediaProvider } from '../providers';
-import { getMediaService } from '../providers/factory';
+import { useAlternateCovers } from '../providers/queries';
 import type {
   MediaItem,
   MediaSearchValues,
@@ -108,6 +108,7 @@ export const useGridOperations = (
     setShowPosterGrid,
     setActivePosterItemId,
   } = setters;
+  const alternateCoversQuery = useAlternateCovers();
 
   const handleAddMedia = useCallback(
     (media: MediaItem, availableCovers?: MediaItem[]) => {
@@ -309,8 +310,7 @@ export const useGridOperations = (
         ? resolveCoverUrl(selectedItem)
         : null;
       try {
-        const service = getMediaService(mediaType);
-        const covers = await service.getAlternateCovers(mediaId);
+        const covers = await alternateCoversQuery.fetch(mediaType, mediaId);
         if (covers.length > 0) {
           setAlternateCoverUrls(mergeSelectedCover(covers, selectedCoverUrl));
           return;
@@ -335,7 +335,7 @@ export const useGridOperations = (
         setAlternateCoverUrls(selectedCoverUrl ? [selectedCoverUrl] : []);
       }
     },
-    [gridItems, setAlternateCoverUrls],
+    [alternateCoversQuery, gridItems, setAlternateCoverUrls],
   );
 
   const clearGrid = useCallback(() => {

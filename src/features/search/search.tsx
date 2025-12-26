@@ -83,10 +83,14 @@ const MediaSearch: React.FC = () => {
     mode: 'onChange',
   });
   const watchedValues = useWatch({ control: formMethods.control });
-  const searchValues = useMemo(
+  const searchValues: MediaSearchValues = useMemo(
     () => ({
       ...provider.defaultSearchValues,
-      ...(watchedValues ?? {}),
+      ...Object.fromEntries(
+        Object.entries(watchedValues ?? {}).filter(
+          (entry): entry is [string, string] => entry[1] !== undefined,
+        ),
+      ),
     }),
     [provider.defaultSearchValues, watchedValues],
   );
@@ -369,7 +373,7 @@ const MediaSearch: React.FC = () => {
   useModalClosed('caption', closeCaptionModal);
 
   const searchSummary = lastSearchSummary || provider.label;
-  const bandPlacement =
+  const bandPlacement: 'top' | 'bottom' =
     bandPlacementMode === 'adaptive' &&
     gridItems.length > 0 &&
     searchResults.length === 0

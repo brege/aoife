@@ -4,12 +4,7 @@ import './grid.css';
 import { isPlaceholderCover } from '../../lib/coverdetect';
 import logger from '../../lib/logger';
 import type { MediaItem } from '../../providers/types';
-import {
-  getAspectRatio,
-  getCaptionSubtitle,
-  getCaptionTitle,
-  getCoverSource,
-} from './index';
+import { getAspectRatio } from './index';
 import { GridRow, type RowLayout } from './row';
 
 interface GridProps {

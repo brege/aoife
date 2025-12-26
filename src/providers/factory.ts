@@ -8,10 +8,6 @@ import type { MediaService } from './service';
 import { TMDBService } from './tmdb';
 import type { MediaType } from './types';
 
-type ServiceCache = Partial<Record<MediaType, MediaService>>;
-
-const serviceCache: ServiceCache = {};
-
 function getTmdbKey(): string {
   const metaEnv =
     typeof import.meta !== 'undefined'
@@ -22,41 +18,26 @@ function getTmdbKey(): string {
 }
 
 export function getMediaService(mediaType: MediaType): MediaService {
-  if (serviceCache[mediaType]) {
-    return serviceCache[mediaType] as MediaService;
-  }
-
-  let service: MediaService;
-
   switch (mediaType) {
     case 'movies':
-      service = new TMDBService(getTmdbKey(), 'movies');
-      break;
+      return new TMDBService(getTmdbKey(), 'movies');
 
     case 'tv':
-      service = new TMDBService(getTmdbKey(), 'tv');
-      break;
+      return new TMDBService(getTmdbKey(), 'tv');
 
     case 'books':
-      service = new BooksService();
-      break;
+      return new BooksService();
 
     case 'music':
-      service = new MusicService();
-      break;
+      return new MusicService();
 
     case 'games':
-      service = new GamesService();
-      break;
+      return new GamesService();
 
     case 'custom':
-      service = new CustomMediaService();
-      break;
+      return new CustomMediaService();
 
     default:
       throw new Error(`Unsupported media type: ${mediaType}`);
   }
-
-  serviceCache[mediaType] = service;
-  return service;
 }

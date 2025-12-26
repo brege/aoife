@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import logger from '../../lib/logger';
 import { MEDIA_TYPE_STORAGE_KEY } from '../../lib/state/storage';
 import { getMediaProvider } from '../../providers';
-import { getMediaService } from '../../providers/factory';
+import { useMediaSearch } from '../../providers/queries';
 import type {
   MediaItem,
   MediaSearchValues,
@@ -70,7 +70,7 @@ export const useSearchState = (
     () => getMediaProvider(selectedMediaType),
     [selectedMediaType],
   );
-  const [searchResults, setSearchResults] = useState<MediaItem[]>([]);
+  const mediaSearch = useMediaSearch();
   const [brokenSearchResultIds, setBrokenSearchResultIds] = useState<
     Record<string | number, true>
   >({});
@@ -78,8 +78,7 @@ export const useSearchState = (
     Record<string | number, number>
   >({});
   const [lastSearchSummary, setLastSearchSummary] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [friendlyError, setFriendlyError] = useState('');
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   const resolveProvider = useCallback(
@@ -121,14 +120,12 @@ export const useSearchState = (
       const activeProvider = resolveProvider(activeMediaType);
       const mergedValues = mergeSearchValues(values, activeMediaType);
 
-      setIsLoading(true);
-      setError('');
+      setFriendlyError('');
       setSearchResultAspectRatios({});
       setBrokenSearchResultIds({});
 
       try {
-        const service = getMediaService(activeMediaType);
-        const results = await service.search(mergedValues);
+        const results = await mediaSearch.search(activeMediaType, mergedValues);
 
         logger.info(
           {
@@ -146,7 +143,6 @@ export const useSearchState = (
           setSelectedMediaType(mediaTypeOverride);
         }
 
-        setSearchResults(results);
         setLastSearchSummary(
           formatSearchSummary(mergedValues, activeProvider.searchFields),
         );
@@ -157,8 +153,7 @@ export const useSearchState = (
           ? `${activeProvider.label} search is not configured yet. Wire up its cover API to enable it.`
           : 'An error occurred while searching.';
 
-        setError(friendly);
-        setSearchResults([]);
+        setFriendlyError(friendly);
 
         logger.error(
           {
@@ -170,11 +165,10 @@ export const useSearchState = (
           'Search request failed',
         );
         return [];
-      } finally {
-        setIsLoading(false);
       }
     },
     [
+      mediaSearch,
       mergeSearchValues,
       resolveProvider,
       selectedMediaType,
@@ -222,14 +216,9 @@ export const useSearchState = (
       },
       'Closing search results',
     );
-    setSearchResults([]);
+    mediaSearch.reset();
     setSearchResultAspectRatios({});
-  }, []);
-
-  useEffect(() => {
-    setSearchResults([]);
-    setLastSearchSummary('');
-  }, []);
+  }, [mediaSearch]);
 
   useEffect(() => {
     localStorage.setItem(MEDIA_TYPE_STORAGE_KEY, selectedMediaType);
@@ -241,14 +230,16 @@ export const useSearchState = (
     }
   }, [showSearch]);
 
+  const displayError = friendlyError || mediaSearch.error;
+
   return {
     selectedMediaType,
-    searchResults,
+    searchResults: mediaSearch.data,
     brokenSearchResultIds,
     searchResultAspectRatios,
     lastSearchSummary,
-    isLoading,
-    error,
+    isLoading: mediaSearch.isLoading,
+    error: displayError,
     setSelectedMediaType,
     runSearch,
     handleSearchResultImageLoad,
@@ -256,6 +247,6 @@ export const useSearchState = (
     closeSearchResults,
     provider,
     searchInputRef,
-    setSearchResults,
+    setSearchResults: mediaSearch.setData,
   };
 };
