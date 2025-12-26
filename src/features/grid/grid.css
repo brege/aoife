@@ -371,3 +371,17 @@
     display: none;
   }
 }
+
+.grid-item-overlay {
+  border-radius: var(--border-radius-md);
+  overflow: hidden;
+  box-shadow: var(--shadow-lg);
+  opacity: 0.9;
+  cursor: grabbing;
+}
+
+.grid-item-overlay .grid-poster {
+  width: 120px;
+  height: auto;
+  display: block;
+}

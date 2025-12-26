@@ -13,18 +13,10 @@ type GridRowProps = {
   containerGap: number;
   captionMode: 'hidden' | 'top' | 'bottom';
   captionEditsOnly: boolean;
-  draggingId: string | number | null;
-  dragOverId: string | number | null;
+  activeId: string | number | null;
   onRemoveMedia: (mediaId: string | number) => void;
   onPosterClick: (media: MediaItem) => void;
   onCaptionEdit: (media: MediaItem) => void;
-  onPointerDown: (
-    mediaId: string | number,
-    event: React.PointerEvent<HTMLDivElement>,
-  ) => void;
-  onPointerMove: (event: React.PointerEvent<HTMLDivElement>) => void;
-  onPointerUp: () => void;
-  onPointerCancel: () => void;
   onImageLoad: (
     media: MediaItem,
     event: React.SyntheticEvent<HTMLImageElement>,
@@ -37,15 +29,10 @@ const GridRow = ({
   containerGap,
   captionMode,
   captionEditsOnly,
-  draggingId,
-  dragOverId,
+  activeId,
   onRemoveMedia,
   onPosterClick,
   onCaptionEdit,
-  onPointerDown,
-  onPointerMove,
-  onPointerUp,
-  onPointerCancel,
   onImageLoad,
 }: GridRowProps) => {
   return (
@@ -65,15 +52,10 @@ const GridRow = ({
           layoutDimension={layoutDimension}
           captionMode={captionMode}
           captionEditsOnly={captionEditsOnly}
-          draggingId={draggingId}
-          dragOverId={dragOverId}
+          activeId={activeId}
           onRemoveMedia={onRemoveMedia}
           onPosterClick={onPosterClick}
           onCaptionEdit={onCaptionEdit}
-          onPointerDown={onPointerDown}
-          onPointerMove={onPointerMove}
-          onPointerUp={onPointerUp}
-          onPointerCancel={onPointerCancel}
           onImageLoad={onImageLoad}
         />
       ))}

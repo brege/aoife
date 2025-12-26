@@ -1,7 +1,7 @@
 {
   "name": "aoife",
   "private": true,
-  "version": "0.6.5",
+  "version": "0.6.6",
   "type": "module",
   "scripts": {
     "dev": "vite --host",
@@ -13,6 +13,9 @@
     "test:e2e": "start-server-and-test dev http://localhost:5173 \"mocha --group e2e\""
   },
   "dependencies": {
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/sortable": "^10.0.0",
+    "@dnd-kit/utilities": "^3.2.2",
     "@headlessui/react": "^2.2.9",
     "@tanstack/react-query": "^5.90.12",
     "@types/ws": "^8.18.1",

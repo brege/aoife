@@ -1,3 +1,5 @@
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import type React from 'react';
 import { MdClose, MdDragHandle } from 'react-icons/md';
 import type { MediaItem, MediaType } from '../../providers/types';
@@ -13,18 +15,10 @@ type GridItemProps = {
   layoutDimension: 'width' | 'height';
   captionMode: 'hidden' | 'top' | 'bottom';
   captionEditsOnly: boolean;
-  draggingId: string | number | null;
-  dragOverId: string | number | null;
+  activeId: string | number | null;
   onRemoveMedia: (mediaId: string | number) => void;
   onPosterClick: (media: MediaItem) => void;
   onCaptionEdit: (media: MediaItem) => void;
-  onPointerDown: (
-    mediaId: string | number,
-    event: React.PointerEvent<HTMLDivElement>,
-  ) => void;
-  onPointerMove: (event: React.PointerEvent<HTMLDivElement>) => void;
-  onPointerUp: () => void;
-  onPointerCancel: () => void;
   onImageLoad: (
     media: MediaItem,
     event: React.SyntheticEvent<HTMLImageElement>,
@@ -38,17 +32,28 @@ const GridItem = ({
   layoutDimension,
   captionMode,
   captionEditsOnly,
-  draggingId,
-  dragOverId,
+  activeId,
   onRemoveMedia,
   onPosterClick,
   onCaptionEdit,
-  onPointerDown,
-  onPointerMove,
-  onPointerUp,
-  onPointerCancel,
   onImageLoad,
 }: GridItemProps) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: media.id });
+
+  const style = {
+    width,
+    height: layoutDimension === 'width' ? 'auto' : rowHeight,
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
   const coverSource = getCoverSource(media);
   const captionTitle = getCaptionTitle(media);
   const captionSubtitle = getCaptionSubtitle(media);
@@ -68,30 +73,24 @@ const GridItem = ({
     (!captionEditsOnly || hasEditedCaption) &&
     (captionTitle.trim() !== '' || captionSubtitle !== '');
   const captionClassName = `grid-caption grid-caption-${captionMode}`;
-  const isDragging = draggingId === media.id;
-  const isDragOver = dragOverId === media.id;
-  const dragStateClassName = `${isDragging ? ' is-dragging' : ''}${isDragOver ? ' is-drag-over' : ''}`;
+  const isBeingDragged = isDragging || activeId === media.id;
 
   return (
     <div
-      className={`grid-item filled${dragStateClassName}`}
+      ref={setNodeRef}
+      className={`grid-item filled${isBeingDragged ? ' is-dragging' : ''}`}
       data-type={media.type}
       data-media-id={String(media.id)}
-      style={{
-        width,
-        height: layoutDimension === 'width' ? 'auto' : rowHeight,
-      }}
-      onPointerDown={(event) => onPointerDown(media.id, event)}
-      onPointerMove={onPointerMove}
-      onPointerUp={onPointerUp}
-      onPointerCancel={onPointerCancel}
+      style={style}
+      {...attributes}
+      {...listeners}
     >
       <div className="poster-wrapper">
         <button
           type="button"
           className="poster-button"
           onClick={() => {
-            if (draggingId) {
+            if (isBeingDragged) {
               return;
             }
             onPosterClick(media);
@@ -110,7 +109,6 @@ const GridItem = ({
           type="button"
           className="grid-drag-handle"
           aria-label={`Reorder ${media.title}`}
-          onClick={(event) => event.stopPropagation()}
         >
           <MdDragHandle aria-hidden="true" focusable="false" />
         </button>

@@ -1,3 +1,15 @@
+import {
+  DndContext,
+  DragOverlay,
+  MouseSensor,
+  TouchSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+  type DragStartEvent,
+} from '@dnd-kit/core';
+import { SortableContext, rectSortingStrategy } from '@dnd-kit/sortable';
 import type React from 'react';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import './grid.css';
@@ -103,21 +115,15 @@ const Grid: React.FC<GridProps> = ({
   const [containerWidth, setContainerWidth] = useState(0);
   const [containerHeight, setContainerHeight] = useState(0);
   const [containerGap, setContainerGap] = useState(16);
-  const [draggingId, setDraggingId] = useState<string | number | null>(null);
-  const [dragOverId, setDragOverId] = useState<string | number | null>(null);
-  const dragStateRef = useRef<{
-    pointerId: number | null;
-    sourceId: string | number | null;
-    startX: number;
-    startY: number;
-    isDragging: boolean;
-  }>({
-    pointerId: null,
-    sourceId: null,
-    startX: 0,
-    startY: 0,
-    isDragging: false,
+  const [activeId, setActiveId] = useState<string | number | null>(null);
+
+  const mouseSensor = useSensor(MouseSensor, {
+    activationConstraint: { distance: 6 },
   });
+  const touchSensor = useSensor(TouchSensor, {
+    activationConstraint: { delay: 150, tolerance: 6 },
+  });
+  const sensors = useSensors(mouseSensor, touchSensor);
 
   const updateContainerDimensions = useCallback(() => {
     const element = wrapperRef.current;
@@ -199,120 +205,29 @@ const Grid: React.FC<GridProps> = ({
     );
   };
 
-  const handlePointerDown = useCallback(
-    (mediaId: string | number, event: React.PointerEvent<HTMLDivElement>) => {
-      if (event.button !== 0) {
-        return;
-      }
-      const target = event.target as HTMLElement | null;
-      if (
-        target?.closest(
-          '.grid-close-button, .media-type-badge, .grid-source-link',
-        )
-      ) {
-        return;
-      }
-      if (
-        event.pointerType !== 'touch' &&
-        !target?.closest('.grid-drag-handle')
-      ) {
-        return;
-      }
-      dragStateRef.current = {
-        pointerId: event.pointerId,
-        sourceId: mediaId,
-        startX: event.clientX,
-        startY: event.clientY,
-        isDragging: false,
-      };
-      event.currentTarget.setPointerCapture(event.pointerId);
-    },
-    [],
-  );
-
-  const handlePointerMove = useCallback(
-    (event: React.PointerEvent<HTMLDivElement>) => {
-      const dragState = dragStateRef.current;
-      if (
-        dragState.pointerId !== event.pointerId ||
-        dragState.sourceId == null
-      ) {
-        return;
-      }
-      const distance = Math.hypot(
-        event.clientX - dragState.startX,
-        event.clientY - dragState.startY,
-      );
-      if (!dragState.isDragging) {
-        if (distance < 6) {
-          return;
-        }
-        dragState.isDragging = true;
-        setDraggingId(dragState.sourceId);
-      }
-
-      event.preventDefault();
-
-      const target = document.elementFromPoint(event.clientX, event.clientY);
-      const itemElement = target?.closest('.grid-item[data-media-id]');
-      if (!itemElement) {
-        if (dragOverId !== null) {
-          setDragOverId(null);
-        }
-        return;
-      }
-      const dataId = itemElement.getAttribute('data-media-id');
-      if (!dataId) {
-        return;
-      }
-      const targetItem = items.find((item) => String(item.id) === dataId);
-      if (!targetItem) {
-        return;
-      }
-      if (targetItem.id === dragState.sourceId) {
-        if (dragOverId !== null) {
-          setDragOverId(null);
-        }
-        return;
-      }
-      if (dragOverId !== targetItem.id) {
-        setDragOverId(targetItem.id);
-      }
-    },
-    [dragOverId, items],
-  );
-
-  const handlePointerUp = useCallback(() => {
-    const dragState = dragStateRef.current;
-    if (
-      dragState.isDragging &&
-      dragState.sourceId != null &&
-      dragOverId != null
-    ) {
-      onReorderMedia(dragState.sourceId, dragOverId);
-    }
-    dragStateRef.current = {
-      pointerId: null,
-      sourceId: null,
-      startX: 0,
-      startY: 0,
-      isDragging: false,
-    };
-    setDraggingId(null);
-    setDragOverId(null);
-  }, [dragOverId, onReorderMedia]);
-
-  const handlePointerCancel = useCallback(() => {
-    dragStateRef.current = {
-      pointerId: null,
-      sourceId: null,
-      startX: 0,
-      startY: 0,
-      isDragging: false,
-    };
-    setDraggingId(null);
-    setDragOverId(null);
+  const handleDragStart = useCallback((event: DragStartEvent) => {
+    setActiveId(event.active.id);
   }, []);
+
+  const handleDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      const { active, over } = event;
+      setActiveId(null);
+
+      if (over && active.id !== over.id) {
+        onReorderMedia(active.id, over.id);
+      }
+    },
+    [onReorderMedia],
+  );
+
+  const handleDragCancel = useCallback(() => {
+    setActiveId(null);
+  }, []);
+
+  const activeItem = activeId
+    ? items.find((item) => item.id === activeId)
+    : null;
 
   const renderGrid = () => {
     if (placeholderLabel && items.length === 0) {
@@ -323,29 +238,49 @@ const Grid: React.FC<GridProps> = ({
       );
     }
 
+    const itemIds = items.map((item) => item.id);
+
     return (
-      <div className="grid-container">
-        {rowLayouts.map((row) => (
-          <GridRow
-            key={row.items.map(({ media }) => media.id).join('-') || row.height}
-            row={row}
-            layoutDimension={layoutDimension}
-            containerGap={containerGap}
-            captionMode={captionMode}
-            captionEditsOnly={captionEditsOnly}
-            draggingId={draggingId}
-            dragOverId={dragOverId}
-            onRemoveMedia={onRemoveMedia}
-            onPosterClick={onPosterClick}
-            onCaptionEdit={onCaptionEdit}
-            onPointerDown={handlePointerDown}
-            onPointerMove={handlePointerMove}
-            onPointerUp={handlePointerUp}
-            onPointerCancel={handlePointerCancel}
-            onImageLoad={handleImageLoad}
-          />
-        ))}
-      </div>
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+        onDragCancel={handleDragCancel}
+      >
+        <SortableContext items={itemIds} strategy={rectSortingStrategy}>
+          <div className="grid-container">
+            {rowLayouts.map((row) => (
+              <GridRow
+                key={
+                  row.items.map(({ media }) => media.id).join('-') || row.height
+                }
+                row={row}
+                layoutDimension={layoutDimension}
+                containerGap={containerGap}
+                captionMode={captionMode}
+                captionEditsOnly={captionEditsOnly}
+                activeId={activeId}
+                onRemoveMedia={onRemoveMedia}
+                onPosterClick={onPosterClick}
+                onCaptionEdit={onCaptionEdit}
+                onImageLoad={handleImageLoad}
+              />
+            ))}
+          </div>
+        </SortableContext>
+        <DragOverlay>
+          {activeItem && (
+            <div className="grid-item-overlay">
+              <img
+                src={activeItem.coverUrl || activeItem.coverThumbnailUrl || ''}
+                alt={activeItem.title}
+                className="grid-poster"
+              />
+            </div>
+          )}
+        </DragOverlay>
+      </DndContext>
     );
   };
 
