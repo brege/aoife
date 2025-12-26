@@ -1,5 +1,6 @@
 import type React from 'react';
 import { useEffect, useState } from 'react';
+import { CustomImage } from '../../../ui/customimage';
 
 type CandidateCardProps = {
   className: string;
@@ -65,7 +66,7 @@ export const CandidateCard = ({
     >
       <div className="candidate-image">
         {imageUrl ? (
-          <img
+          <CustomImage
             src={imageUrl}
             alt={imageAlt}
             className={imageClassName}

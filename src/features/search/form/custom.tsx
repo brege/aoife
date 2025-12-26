@@ -1,6 +1,6 @@
 import type React from 'react';
 import { useCallback, useRef } from 'react';
-import { useFormContext, useWatch } from 'react-hook-form';
+import { useController, useFormContext, useWatch } from 'react-hook-form';
 import { MdDriveFolderUpload } from 'react-icons/md';
 import { storeImage } from '../../../lib/indexeddb';
 import type { MediaSearchValues } from '../../../providers/types';
@@ -29,13 +29,23 @@ const CustomSearchForm = ({
   coverField,
 }: CustomSearchFormProps) => {
   const coverInputRef = useRef<HTMLInputElement>(null);
-  const { control, register, setValue } = useFormContext<MediaSearchValues>();
+  const { control, setValue } = useFormContext<MediaSearchValues>();
   const watchedQueryValue = useWatch({
     control,
     name: queryField.id as keyof MediaSearchValues,
   });
-  const queryRegistration = register(queryField.id as keyof MediaSearchValues);
-  const coverRegistration = register(coverField.id as keyof MediaSearchValues);
+  const { field: queryControl } = useController({
+    control,
+    name: queryField.id as keyof MediaSearchValues,
+  });
+  const { field: coverControl } = useController({
+    control,
+    name: coverField.id as keyof MediaSearchValues,
+  });
+  const queryValue =
+    typeof queryControl.value === 'string' ? queryControl.value : '';
+  const coverValue =
+    typeof coverControl.value === 'string' ? coverControl.value : '';
 
   const handleCoverImageUpload = useCallback(
     async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -67,7 +77,8 @@ const CustomSearchForm = ({
         className="form-input"
         required={queryField.required}
         data-testid={`search-field-${queryField.id}`}
-        {...queryRegistration}
+        value={queryValue}
+        onChange={(event) => queryControl.onChange(event.target.value)}
       />
       <div className="input-with-button">
         <input
@@ -77,7 +88,8 @@ const CustomSearchForm = ({
           className="form-input"
           required={coverField.required}
           data-testid="search-field-cover"
-          {...coverRegistration}
+          value={coverValue}
+          onChange={(event) => coverControl.onChange(event.target.value)}
         />
         <input
           type="file"

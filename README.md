@@ -43,7 +43,7 @@ URLs have memorable slugs so it's easier to manually copy between devices.  From
 
 - **Music Albums** [?share=guava-buttermilk-savory](https://aoife.brege.org/?share=guava-buttermilk-savory)
 - **Mixed Media** [?share=chardonnay-horseradish-kiwi](https://aoife.brege.org/?share=chardonnay-horseradish-kiwi)
-- **The above screenshot table** [?share=calvados-radicchio-chowders](https://aoife.brege.org/?share=calvados-radicchio-chowders)
+- **The above screenshot table** [?share=cakes-pomelos-carrots](https://aoife.brege.org/?share=cakes-pomelos-carrots)
 
 ## Running aoife Locally
 

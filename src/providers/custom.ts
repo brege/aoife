@@ -1,4 +1,4 @@
-import { blobToDataUrl, getImage } from '../lib/indexeddb';
+import { getImage } from '../lib/indexeddb';
 import { type MediaSearchResult, MediaService } from './service';
 import type { MediaSearchValues } from './types';
 
@@ -11,13 +11,12 @@ export class CustomMediaService extends MediaService {
       return [];
     }
 
-    let processedCoverUrl = coverUrl;
+    const processedCoverUrl = coverUrl;
     if (coverUrl.startsWith('img-')) {
       const blob = await getImage(coverUrl);
       if (!blob) {
         throw new Error(`Image ${coverUrl} not found in IndexedDB`);
       }
-      processedCoverUrl = await blobToDataUrl(blob);
 
       if (!title) {
         const parts = coverUrl.split('-');
