@@ -35,10 +35,5 @@ const getAspectRatio = (media: MediaItem): number => {
   return DEFAULT_ASPECT_RATIOS[media.type] ?? 2 / 3;
 };
 
-export {
-  getAspectRatio,
-  getCaptionSubtitle,
-  getCaptionTitle,
-  getCoverSource,
-};
+export { getAspectRatio, getCaptionSubtitle, getCaptionTitle, getCoverSource };
 export { default } from './grid';

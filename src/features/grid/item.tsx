@@ -1,14 +1,10 @@
 import type React from 'react';
 import { MdClose, MdDragHandle } from 'react-icons/md';
-import { CustomImage } from '../../ui/customimage';
 import type { MediaItem, MediaType } from '../../providers/types';
+import { CustomImage } from '../../ui/customimage';
 import { getExternalLinks } from '../search/results/links';
 import { MEDIA_TYPE_ICONS } from '../search/suggestion/list';
-import {
-  getCaptionSubtitle,
-  getCaptionTitle,
-  getCoverSource,
-} from './index';
+import { getCaptionSubtitle, getCaptionTitle, getCoverSource } from './index';
 
 type GridItemProps = {
   media: MediaItem;

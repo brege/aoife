@@ -1,10 +1,11 @@
 import { useEffect } from 'react';
-import { GRID_STORAGE_KEY } from '../../lib/state/storage';
 import type {
   MediaItem,
   MediaSearchValues,
   MediaType,
 } from '../../providers/types';
+
+const ZUSTAND_STORAGE_KEY = 'aoife-store';
 
 type LayoutDimension = 'width' | 'height';
 
@@ -87,11 +88,12 @@ export const useSearchBridges = ({
       clearGrid: handleClearGrid,
       getGridItems: () => gridItems.map((item) => ({ ...item })),
       getStoredGridItems: () => {
-        const stored = localStorage.getItem(GRID_STORAGE_KEY);
+        const stored = localStorage.getItem(ZUSTAND_STORAGE_KEY);
         if (!stored) return [];
         try {
-          const parsed = JSON.parse(stored) as MediaItem[];
-          return Array.isArray(parsed) ? parsed : [];
+          const parsed = JSON.parse(stored) as { state?: { gridItems?: MediaItem[] } };
+          const items = parsed?.state?.gridItems;
+          return Array.isArray(items) ? items : [];
         } catch {
           return [];
         }

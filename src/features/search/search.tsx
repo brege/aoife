@@ -1,19 +1,15 @@
 import type React from 'react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import '../../app/app.css';
 import './search.css';
 import { useGridOperations } from '../../lib/grid-operations';
 import logger from '../../lib/logger';
 import { useModalClosed, useModalManager } from '../../lib/modalmanager';
-import { useLayoutState } from '../../lib/state/layout';
-import { useShareState } from '../../lib/state/share';
-import { DEFAULT_TITLE, TITLE_STORAGE_KEY } from '../../lib/state/storage';
-import type {
-  MediaItem,
-  MediaSearchValues,
-  MediaType,
-} from '../../providers/types';
+import { useAppStore } from '../../lib/store';
+import { getMediaProvider } from '../../providers';
+import { useMediaSearch } from '../../providers/queries';
+import type { MediaSearchValues, MediaType } from '../../providers/types';
 import AppHeader from '../../ui/header';
 import Grid from '../grid/grid';
 import { useSearchBridges } from './bridge';
@@ -21,7 +17,9 @@ import { MediaForm } from './form/form';
 import { EditModal } from './modals/edit';
 import { PosterPicker } from './picker/picker';
 import { SearchResults } from './results/results';
-import { useSearchState } from './state';
+
+const DEFAULT_TITLE = 'aoife';
+const VISIBLE_RESULTS_STEP = 12;
 
 const normalizeTitle = (value: string): string => {
   const trimmed = value.trim();
@@ -50,34 +48,115 @@ const MediaSearch: React.FC = () => {
   useEffect(() => {
     logger.level = 'debug';
     logger.info(
-      {
-        context: 'MediaSearch',
-      },
+      { context: 'MediaSearch' },
       'MediaSearch component initialized',
     );
   }, []);
 
-  const [showSearch, setShowSearch] = useState(true);
-  const visibleResultsStep = 12;
-  const [visibleResultsCount, setVisibleResultsCount] =
-    useState(visibleResultsStep);
+  const columns = useAppStore((state) => state.columns);
+  const minRows = useAppStore((state) => state.minRows);
+  const layoutDimension = useAppStore((state) => state.layoutDimension);
+  const coverViewMode = useAppStore((state) => state.coverViewMode);
+  const bandPlacementMode = useAppStore((state) => state.bandPlacementMode);
+  const captionMode = useAppStore((state) => state.captionMode);
+  const captionEditsOnly = useAppStore((state) => state.captionEditsOnly);
+  const selectedMediaType = useAppStore((state) => state.selectedMediaType);
+  const gridItems = useAppStore((state) => state.gridItems);
+  const title = useAppStore((state) => state.title);
+  const showSearch = useAppStore((state) => state.showSearch);
+  const visibleResultsCount = useAppStore((state) => state.visibleResultsCount);
+  const showPosterGrid = useAppStore((state) => state.showPosterGrid);
+  const showCoverLinkModal = useAppStore((state) => state.showCoverLinkModal);
+  const showCaptionModal = useAppStore((state) => state.showCaptionModal);
+  const coverLinkMediaType = useAppStore((state) => state.coverLinkMediaType);
+  const activePosterItemId = useAppStore((state) => state.activePosterItemId);
+  const activeCaptionItemId = useAppStore((state) => state.activeCaptionItemId);
+  const alternateCoverUrls = useAppStore((state) => state.alternateCoverUrls);
+  const brokenAlternateCoverUrls = useAppStore(
+    (state) => state.brokenAlternateCoverUrls,
+  );
+  const shareUrl = useAppStore((state) => state.shareUrl);
+  const shareError = useAppStore((state) => state.shareError);
+  const isSharing = useAppStore((state) => state.isSharing);
+  const isLoadingShare = useAppStore((state) => state.isLoadingShare);
+  const brokenSearchResultIds = useAppStore(
+    (state) => state.brokenSearchResultIds,
+  );
+  const searchResultAspectRatios = useAppStore(
+    (state) => state.searchResultAspectRatios,
+  );
+  const lastSearchSummary = useAppStore((state) => state.lastSearchSummary);
+  const friendlyError = useAppStore((state) => state.friendlyError);
 
-  const {
-    selectedMediaType,
-    searchResults,
-    brokenSearchResultIds,
-    searchResultAspectRatios,
-    lastSearchSummary,
-    isLoading: searchIsLoading,
-    error: searchError,
-    setSelectedMediaType,
-    runSearch,
-    handleSearchResultImageLoad,
-    handleSearchResultImageError,
-    closeSearchResults,
-    provider,
-    setSearchResults,
-  } = useSearchState({ showSearch });
+  const setColumns = useAppStore((state) => state.setColumns);
+  const setMinRows = useAppStore((state) => state.setMinRows);
+  const setLayoutDimension = useAppStore((state) => state.setLayoutDimension);
+  const setCoverViewMode = useAppStore((state) => state.setCoverViewMode);
+  const setBandPlacementMode = useAppStore(
+    (state) => state.setBandPlacementMode,
+  );
+  const setCaptionMode = useAppStore((state) => state.setCaptionMode);
+  const setCaptionEditsOnly = useAppStore((state) => state.setCaptionEditsOnly);
+  const setSelectedMediaType = useAppStore(
+    (state) => state.setSelectedMediaType,
+  );
+  const setGridItems = useAppStore((state) => state.setGridItems);
+  const setTitle = useAppStore((state) => state.setTitle);
+  const clearGrid = useAppStore((state) => state.clearGrid);
+  const setShowSearch = useAppStore((state) => state.setShowSearch);
+  const setVisibleResultsCount = useAppStore(
+    (state) => state.setVisibleResultsCount,
+  );
+  const setShowPosterGrid = useAppStore((state) => state.setShowPosterGrid);
+  const setShowCoverLinkModal = useAppStore(
+    (state) => state.setShowCoverLinkModal,
+  );
+  const setShowCaptionModal = useAppStore((state) => state.setShowCaptionModal);
+  const setCoverLinkMediaType = useAppStore(
+    (state) => state.setCoverLinkMediaType,
+  );
+  const setActivePosterItemId = useAppStore(
+    (state) => state.setActivePosterItemId,
+  );
+  const setActiveCaptionItemId = useAppStore(
+    (state) => state.setActiveCaptionItemId,
+  );
+  const setAlternateCoverUrls = useAppStore(
+    (state) => state.setAlternateCoverUrls,
+  );
+  const resetBrokenAlternateCoverUrls = useAppStore(
+    (state) => state.resetBrokenAlternateCoverUrls,
+  );
+  const setBrokenAlternateCoverUrl = useAppStore(
+    (state) => state.setBrokenAlternateCoverUrl,
+  );
+  const handleCreateShare = useAppStore((state) => state.handleCreateShare);
+  const resetShareContext = useAppStore((state) => state.resetShareContext);
+  const checkShareDivergence = useAppStore(
+    (state) => state.checkShareDivergence,
+  );
+  const setBrokenSearchResultId = useAppStore(
+    (state) => state.setBrokenSearchResultId,
+  );
+  const setSearchResultAspectRatio = useAppStore(
+    (state) => state.setSearchResultAspectRatio,
+  );
+  const setLastSearchSummary = useAppStore(
+    (state) => state.setLastSearchSummary,
+  );
+  const setFriendlyError = useAppStore((state) => state.setFriendlyError);
+  const resetSearchUi = useAppStore((state) => state.resetSearchUi);
+
+  const mediaSearch = useMediaSearch();
+  const searchResults = mediaSearch.data;
+  const searchIsLoading = mediaSearch.isLoading;
+  const searchError = friendlyError || mediaSearch.error;
+
+  const provider = useMemo(
+    () => getMediaProvider(selectedMediaType),
+    [selectedMediaType],
+  );
+
   const formMethods = useForm<MediaSearchValues>({
     defaultValues: provider.defaultSearchValues,
     mode: 'onChange',
@@ -99,45 +178,129 @@ const MediaSearch: React.FC = () => {
     formMethods.reset(provider.defaultSearchValues);
   }, [formMethods, provider.defaultSearchValues]);
 
-  const [isIndexedDbHydrated, setIsIndexedDbHydrated] = useState(false);
+  useEffect(() => {
+    const unsubscribe = useAppStore.subscribe((state, previousState) => {
+      if (
+        state.gridItems !== previousState.gridItems ||
+        state.columns !== previousState.columns ||
+        state.minRows !== previousState.minRows ||
+        state.layoutDimension !== previousState.layoutDimension ||
+        state.title !== previousState.title
+      ) {
+        checkShareDivergence();
+      }
+    });
+    return unsubscribe;
+  }, [checkShareDivergence]);
 
-  const {
-    columns,
-    setColumns,
-    minRows,
-    setMinRows,
-    layoutDimension,
-    setLayoutDimension,
-    coverViewMode,
-    setCoverViewMode,
-    bandPlacementMode,
-    setBandPlacementMode,
-    captionMode,
-    setCaptionMode,
-    captionEditsOnly,
-    setCaptionEditsOnly,
-  } = useLayoutState({ isHydrated: isIndexedDbHydrated });
+  const runSearch = useCallback(
+    async (
+      values: Partial<MediaSearchValues>,
+      mediaTypeOverride?: MediaType,
+    ) => {
+      const activeMediaType = mediaTypeOverride ?? selectedMediaType;
+      const activeProvider =
+        activeMediaType === selectedMediaType
+          ? provider
+          : getMediaProvider(activeMediaType);
+      const mergedValues = {
+        ...activeProvider.defaultSearchValues,
+        ...Object.fromEntries(
+          Object.entries(values).filter(([, v]) => v !== undefined),
+        ),
+      } as MediaSearchValues;
 
-  const [gridItems, setGridItems] = useState<MediaItem[]>([]);
-  const [title, setTitle] = useState<string>(() => {
-    const stored = localStorage.getItem(TITLE_STORAGE_KEY);
-    return stored ? normalizeTitle(stored) : DEFAULT_TITLE;
-  });
-  const [alternateCoverUrls, setAlternateCoverUrls] = useState<string[]>([]);
-  const [brokenAlternateCoverUrls, setBrokenAlternateCoverUrls] = useState<
-    Record<string, true>
-  >({});
-  const [showPosterGrid, setShowPosterGrid] = useState(false);
-  const [showCoverLinkModal, setShowCoverLinkModal] = useState(false);
-  const [showCaptionModal, setShowCaptionModal] = useState(false);
-  const [coverLinkMediaType, setCoverLinkMediaType] =
-    useState<MediaType>('books');
-  const [activePosterItemId, setActivePosterItemId] = useState<
-    string | number | null
-  >(null);
-  const [activeCaptionItemId, setActiveCaptionItemId] = useState<
-    string | number | null
-  >(null);
+      setFriendlyError('');
+      resetSearchUi();
+
+      try {
+        const results = await mediaSearch.search(activeMediaType, mergedValues);
+
+        logger.info(
+          {
+            context: 'MediaSearch.runSearch',
+            action: 'search_results',
+            mediaType: activeMediaType,
+            values: mergedValues,
+            resultsCount: results.length,
+            timestamp: Date.now(),
+          },
+          `SEARCH: Found ${results.length} results`,
+        );
+
+        if (mediaTypeOverride && mediaTypeOverride !== selectedMediaType) {
+          setSelectedMediaType(mediaTypeOverride);
+        }
+
+        const parts = activeProvider.searchFields
+          .map((field) => mergedValues[field.id]?.trim())
+          .filter(Boolean);
+        setLastSearchSummary(parts.join(' • '));
+
+        return results;
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        const friendly = message.includes('not yet implemented')
+          ? `${activeProvider.label} search is not configured yet. Wire up its cover API to enable it.`
+          : 'An error occurred while searching.';
+
+        setFriendlyError(friendly);
+
+        logger.error(
+          {
+            context: 'MediaSearch.runSearch',
+            mediaType: activeMediaType,
+            values: mergedValues,
+            error: message,
+          },
+          'Search request failed',
+        );
+        return [];
+      }
+    },
+    [
+      mediaSearch,
+      provider,
+      selectedMediaType,
+      setFriendlyError,
+      setLastSearchSummary,
+      setSelectedMediaType,
+      resetSearchUi,
+    ],
+  );
+
+  const closeSearchResults = useCallback(() => {
+    logger.debug(
+      { context: 'MediaSearch.closeSearchResults' },
+      'Closing search results',
+    );
+    mediaSearch.reset();
+    resetSearchUi();
+  }, [mediaSearch, resetSearchUi]);
+
+  const handleSearchResultImageLoad = useCallback(
+    (
+      resultId: string | number,
+      event: React.SyntheticEvent<HTMLImageElement>,
+    ) => {
+      const imageElement = event.currentTarget;
+      if (imageElement.naturalWidth > 0 && imageElement.naturalHeight > 0) {
+        const aspectRatio =
+          imageElement.naturalWidth / imageElement.naturalHeight;
+        const constrained = Math.max(0.5, Math.min(2, aspectRatio));
+        setSearchResultAspectRatio(resultId, constrained);
+      }
+    },
+    [setSearchResultAspectRatio],
+  );
+
+  const handleSearchResultImageError = useCallback(
+    (resultId: string | number) => {
+      setBrokenSearchResultId(resultId);
+    },
+    [setBrokenSearchResultId],
+  );
+
   const activePosterItem = useMemo(
     () => gridItems.find((item) => item.id === activePosterItemId) ?? null,
     [gridItems, activePosterItemId],
@@ -153,27 +316,6 @@ const MediaSearch: React.FC = () => {
       ),
     [alternateCoverUrls, brokenAlternateCoverUrls],
   );
-  const {
-    shareUrl,
-    shareError,
-    isSharing,
-    isLoadingShare,
-    handleCreateShare,
-    resetShareContext,
-  } = useShareState({
-    columns,
-    minRows,
-    layoutDimension,
-    gridItems,
-    title,
-    isHydrated: isIndexedDbHydrated,
-    setColumns,
-    setMinRows,
-    setLayoutDimension,
-    setGridItems,
-    setTitle,
-    setIsHydrated: setIsIndexedDbHydrated,
-  });
 
   const {
     handleAddMedia,
@@ -182,7 +324,6 @@ const MediaSearch: React.FC = () => {
     handleSelectAlternatePoster,
     handleClosePosterGrid,
     fetchAlternateCovers,
-    clearGrid,
   } = useGridOperations(
     {
       selectedMediaType,
@@ -194,7 +335,7 @@ const MediaSearch: React.FC = () => {
     },
     {
       setGridItems,
-      setSearchResults,
+      setSearchResults: mediaSearch.setData,
       resetSearchValues: formMethods.reset,
       setAlternateCoverUrls,
       setShowPosterGrid,
@@ -205,14 +346,10 @@ const MediaSearch: React.FC = () => {
   const handleReorderMedia = useCallback(
     (sourceId: string | number, targetId: string | number) => {
       setGridItems((current) => {
-        if (sourceId === targetId) {
-          return current;
-        }
+        if (sourceId === targetId) return current;
         const sourceIndex = current.findIndex((item) => item.id === sourceId);
         const targetIndex = current.findIndex((item) => item.id === targetId);
-        if (sourceIndex === -1 || targetIndex === -1) {
-          return current;
-        }
+        if (sourceIndex === -1 || targetIndex === -1) return current;
         const next = [...current];
         const [moved] = next.splice(sourceIndex, 1);
         next.splice(targetIndex, 0, moved);
@@ -231,7 +368,7 @@ const MediaSearch: React.FC = () => {
         return next;
       });
     },
-    [],
+    [setGridItems],
   );
 
   const { openModal, closeModal } = useModalManager();
@@ -266,9 +403,7 @@ const MediaSearch: React.FC = () => {
 
     const resizeObserver =
       typeof ResizeObserver === 'function'
-        ? new ResizeObserver(() => {
-            updateStackFormHeight();
-          })
+        ? new ResizeObserver(updateStackFormHeight)
         : null;
 
     if (resizeObserver) {
@@ -288,15 +423,15 @@ const MediaSearch: React.FC = () => {
 
     return () => {
       mediaQueryList.removeEventListener('change', handleMediaQueryChange);
-      if (resizeObserver) {
-        resizeObserver.disconnect();
-      }
+      resizeObserver?.disconnect();
     };
   }, [showSearch]);
 
   useEffect(() => {
-    setVisibleResultsCount(Math.min(searchResults.length, visibleResultsStep));
-  }, [searchResults]);
+    setVisibleResultsCount(
+      Math.min(searchResults.length, VISIBLE_RESULTS_STEP),
+    );
+  }, [searchResults.length, setVisibleResultsCount]);
 
   useModalClosed('searchResults', closeSearchResults);
 
@@ -316,9 +451,12 @@ const MediaSearch: React.FC = () => {
     [runSearch, selectedMediaType, handleAddMedia],
   );
 
-  const handleTitleChange = useCallback((nextTitle: string) => {
-    setTitle(normalizeTitle(nextTitle));
-  }, []);
+  const handleTitleChange = useCallback(
+    (nextTitle: string) => {
+      setTitle(normalizeTitle(nextTitle));
+    },
+    [setTitle],
+  );
 
   const clearGridAndPersist = useCallback(
     (source: string) => {
@@ -368,7 +506,7 @@ const MediaSearch: React.FC = () => {
   const closeCaptionModal = useCallback(() => {
     setShowCaptionModal(false);
     setActiveCaptionItemId(null);
-  }, []);
+  }, [setShowCaptionModal, setActiveCaptionItemId]);
 
   useModalClosed('caption', closeCaptionModal);
 
@@ -384,65 +522,64 @@ const MediaSearch: React.FC = () => {
     setSelectedMediaType(type);
   };
 
-  const handleShowSearchToggle = useCallback((enabled: boolean) => {
-    setShowSearch(enabled);
-    logger.info(
-      {
-        context: 'MediaSearch.handleShowSearchToggle',
-        action: 'search_toggle',
-        showSearch: enabled,
-        timestamp: Date.now(),
-      },
-      `SEARCH: ${enabled ? 'Showing' : 'Hiding'} search`,
-    );
-  }, []);
+  const handleShowSearchToggle = useCallback(
+    (enabled: boolean) => {
+      setShowSearch(enabled);
+      logger.info(
+        {
+          context: 'MediaSearch.handleShowSearchToggle',
+          action: 'search_toggle',
+          showSearch: enabled,
+          timestamp: Date.now(),
+        },
+        `SEARCH: ${enabled ? 'Showing' : 'Hiding'} search`,
+      );
+    },
+    [setShowSearch],
+  );
 
   const handleClearGrid = useCallback(() => {
     clearGridAndPersist('CLEAR: Grid cleared via hamburger menu');
   }, [clearGridAndPersist]);
 
   const handleShowMoreResults = useCallback(() => {
-    setVisibleResultsCount((current) =>
-      Math.min(searchResults.length, current + visibleResultsStep),
+    setVisibleResultsCount(
+      Math.min(
+        searchResults.length,
+        visibleResultsCount + VISIBLE_RESULTS_STEP,
+      ),
     );
-  }, [searchResults.length]);
+  }, [searchResults.length, visibleResultsCount, setVisibleResultsCount]);
 
   const handleCoverLinkOpen = useCallback(() => {
-    if (selectedMediaType !== 'books' && selectedMediaType !== 'music') {
-      return;
-    }
+    if (selectedMediaType !== 'books' && selectedMediaType !== 'music') return;
     setCoverLinkMediaType(selectedMediaType);
     setShowCoverLinkModal(true);
-  }, [selectedMediaType]);
+  }, [selectedMediaType, setCoverLinkMediaType, setShowCoverLinkModal]);
 
   const handleCoverLinkSave = useCallback(
     async (value: string) => {
       const trimmed = value.trim();
       formMethods.setValue('coverUrl', trimmed);
       setShowCoverLinkModal(false);
-      if (!trimmed) {
-        return;
-      }
+      if (!trimmed) return;
       const nextValues = formMethods.getValues();
-      const results = await runSearch({
-        ...nextValues,
-        coverUrl: trimmed,
-      });
+      const results = await runSearch({ ...nextValues, coverUrl: trimmed });
       if (results.length > 0) {
         handleAddMedia(results[0], results);
       }
     },
-    [formMethods, runSearch, handleAddMedia],
+    [formMethods, runSearch, handleAddMedia, setShowCoverLinkModal],
   );
 
   const handleCoverLinkClear = useCallback(() => {
     formMethods.setValue('coverUrl', '');
     setShowCoverLinkModal(false);
-  }, [formMethods]);
+  }, [formMethods, setShowCoverLinkModal]);
 
   const visibleResults = searchResults.slice(0, visibleResultsCount);
   const showMoreCount = Math.min(
-    visibleResultsStep,
+    VISIBLE_RESULTS_STEP,
     Math.max(0, searchResults.length - visibleResultsCount),
   );
   const coverLinkPrimaryValue =
@@ -532,8 +669,7 @@ const MediaSearch: React.FC = () => {
                   `GRID: Opening alternate poster grid for "${item.title}"`,
                 );
                 setActivePosterItemId(item.id);
-                setBrokenAlternateCoverUrls({});
-
+                resetBrokenAlternateCoverUrls();
                 fetchAlternateCovers(
                   item.id,
                   item.type as MediaType,
@@ -573,14 +709,7 @@ const MediaSearch: React.FC = () => {
                 activePosterItem.coverUrl || activePosterItem.coverThumbnailUrl
               }
               alternateItems={activePosterItem.alternateCoverItems}
-              onCoverError={(url) => {
-                setBrokenAlternateCoverUrls((current) => {
-                  if (Object.hasOwn(current, url)) {
-                    return current;
-                  }
-                  return { ...current, [url]: true };
-                });
-              }}
+              onCoverError={(url) => setBrokenAlternateCoverUrl(url)}
               onClose={handleClosePosterGrid}
               onSelectCarouselCover={(url) => {
                 logger.info(

@@ -11,7 +11,10 @@ export const mediaQueryKeys = {
 };
 
 type UseMediaSearchReturn = {
-  search: (mediaType: MediaType, values: MediaSearchValues) => Promise<MediaItem[]>;
+  search: (
+    mediaType: MediaType,
+    values: MediaSearchValues,
+  ) => Promise<MediaItem[]>;
   data: MediaItem[];
   setData: (results: MediaItem[]) => void;
   isLoading: boolean;
