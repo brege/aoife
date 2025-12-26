@@ -12,7 +12,6 @@ type GridItemProps = {
   media: MediaItem;
   width: number;
   rowHeight: number;
-  layoutDimension: 'height' | 'chimney';
   captionMode: 'hidden' | 'top' | 'bottom';
   captionEditsOnly: boolean;
   activeId: string | number | null;
@@ -29,7 +28,6 @@ const GridItem = ({
   media,
   width,
   rowHeight,
-  layoutDimension,
   captionMode,
   captionEditsOnly,
   activeId,

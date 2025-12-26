@@ -273,7 +273,6 @@ const Grid: React.FC<GridProps> = ({
                   row.items.map(({ media }) => media.id).join('-') || row.height
                 }
                 row={row}
-                layoutDimension={layoutDimension}
                 containerGap={containerGap}
                 captionMode={captionMode}
                 captionEditsOnly={captionEditsOnly}

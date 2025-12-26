@@ -9,7 +9,6 @@ export type RowLayout = {
 
 type GridRowProps = {
   row: RowLayout;
-  layoutDimension: 'height' | 'chimney';
   containerGap: number;
   captionMode: 'hidden' | 'top' | 'bottom';
   captionEditsOnly: boolean;
@@ -25,7 +24,6 @@ type GridRowProps = {
 
 const GridRow = ({
   row,
-  layoutDimension,
   containerGap,
   captionMode,
   captionEditsOnly,
@@ -49,7 +47,6 @@ const GridRow = ({
           media={media}
           width={width}
           rowHeight={row.height}
-          layoutDimension={layoutDimension}
           captionMode={captionMode}
           captionEditsOnly={captionEditsOnly}
           activeId={activeId}

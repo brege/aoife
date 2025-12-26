@@ -2,12 +2,23 @@
 
 ### 2025-12-26
 
-- Extracted grid rows and grid items into separate reusable components
+AM: React Library Commoditization
+- Separated grid primitives into reusable components
 - Added TanStack Query for cached media searches and alternate covers
 - Migrated app state to Zustand with local storage persistence
 - Adopted Zod schemas to validate provider API responses
 - Added useLocalStorage and useResizeObserver hooks for automatic, clean read/write
 - Replaced grid drag and drop with @dnd-kit to improve accessibility
+
+PM: Usability and Feature Work
+- Compacted mobile form stack with media type + add button in one row
+- Removed desktop drag handle overlay and added source/link hover labels
+- Replaced fixed-width layout toggle with a new Chimney mode
+- Menu groups reorganized for Discovery, Grid Layout, and Captions
+- Split transferable vs local state of localStorage:
+    - captions and grid layout are permalink-transferable
+    - menu panel states, swipe mode, and form placement remain local-only
+    - reset button clears ALL states back to default
 
 ### 2025-12-25
 
