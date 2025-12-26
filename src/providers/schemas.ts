@@ -46,9 +46,9 @@ export type Game = z.infer<typeof GameSchema>;
 export const GameImageSchema = z.object({
   id: z.number(),
   type: z.string(),
-  side: z.string().optional(),
+  side: z.string().nullable().optional(),
   filename: z.string(),
-  resolution: z.string().optional(),
+  resolution: z.string().nullable().optional(),
 });
 
 export type GameImage = z.infer<typeof GameImageSchema>;

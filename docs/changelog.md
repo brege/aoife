@@ -1,5 +1,21 @@
 ## Changelog
 
+### 2025-12-26
+
+- Extracted grid rows and grid items into separate reusable components
+- Added TanStack Query for cached media searches and alternate covers
+- Migrated app state to Zustand with local storage persistence
+- Adopted Zod schemas to validate provider API responses
+- Added useLocalStorage and useResizeObserver hooks for automatic, clean read/write
+- Replaced grid drag and drop with @dnd-kit to improve accessibility
+
+### 2025-12-25
+
+- Replaced handrolled logging with pino in frontend and middleware
+- Split search forms into provider modules and adopted react-hook-form
+- Now keep search band at top while results are open
+- Mobile picker view expands full screen instead of partially
+
 ### 2026-12-24
 
 - Improved music cover-art quality by defaulting to highest quality from CAA
@@ -13,7 +29,7 @@
 
 ### 2026-12-22
 
-- Reprganized component and business-logic topology in src/
+- Reorganized component and business-logic topology in src/
 - Extracted CandidateCards as common component from picker and results
 - Extracted common edit modal from custom cover-urls and captions
 - Added hover links to service providers from main-view posters
