@@ -175,6 +175,42 @@ export const MediaForm: React.FC<MediaFormProps> = ({
         );
       });
 
+  const submitButton = (
+    <button
+      type="submit"
+      className="form-submit-button"
+      disabled={isLoading}
+      data-testid="search-submit"
+    >
+      {mediaType === 'custom' ? (
+        isLoading ? (
+          'Uploading...'
+        ) : (
+          'Add image'
+        )
+      ) : isLoading ? (
+        'Searching...'
+      ) : (
+        <>
+          <RiPhoneFindLine className="form-submit-icon" aria-hidden="true" />
+          <span>
+            {mediaType === 'music'
+              ? 'Cover art'
+              : mediaType === 'movies'
+                ? 'Poster'
+                : mediaType === 'tv'
+                  ? 'Poster'
+                  : mediaType === 'books'
+                    ? 'Cover art'
+                    : mediaType === 'games'
+                      ? 'Box art'
+                      : provider.label}
+          </span>
+        </>
+      )}
+    </button>
+  );
+
   return (
     <FormProvider {...formMethods}>
       <form
@@ -183,46 +219,21 @@ export const MediaForm: React.FC<MediaFormProps> = ({
         data-testid={`media-search-form-${layout}`}
         ref={formRef}
       >
-        <Dropdown value={mediaType} onChange={onMediaTypeChange} />
-
-        <div className="form-fields">{formFields}</div>
-
-        <button
-          type="submit"
-          className="form-submit-button"
-          disabled={isLoading}
-          data-testid="search-submit"
-        >
-          {mediaType === 'custom' ? (
-            isLoading ? (
-              'Uploading...'
-            ) : (
-              'Add image'
-            )
-          ) : isLoading ? (
-            'Searching...'
-          ) : (
-            <>
-              <RiPhoneFindLine
-                className="form-submit-icon"
-                aria-hidden="true"
-              />
-              <span>
-                {mediaType === 'music'
-                  ? 'Cover art'
-                  : mediaType === 'movies'
-                    ? 'Poster'
-                    : mediaType === 'tv'
-                      ? 'Poster'
-                      : mediaType === 'books'
-                        ? 'Cover art'
-                        : mediaType === 'games'
-                          ? 'Box art'
-                          : provider.label}
-              </span>
-            </>
-          )}
-        </button>
+        {layout === 'stack' ? (
+          <>
+            <div className="form-fields">{formFields}</div>
+            <div className="form-toolbar">
+              <Dropdown value={mediaType} onChange={onMediaTypeChange} />
+              {submitButton}
+            </div>
+          </>
+        ) : (
+          <>
+            <Dropdown value={mediaType} onChange={onMediaTypeChange} />
+            <div className="form-fields">{formFields}</div>
+            {submitButton}
+          </>
+        )}
       </form>
     </FormProvider>
   );

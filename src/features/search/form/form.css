@@ -178,6 +178,23 @@
   flex-shrink: 1;
 }
 
+.form-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+}
+
+.media-search-form.stack .form-toolbar .dropdown {
+  flex: 1;
+  width: auto;
+}
+
+.media-search-form.stack .form-toolbar .form-submit-button {
+  width: auto;
+  flex-shrink: 0;
+}
+
 .form-submit-button:hover:not(:disabled) {
   background-color: var(--accent-green);
 }
@@ -277,7 +294,7 @@
   flex-shrink: 0;
 }
 
-.media-search-form.stack > .dropdown {
+.media-search-form.stack .dropdown {
   width: 100%;
 }
 
