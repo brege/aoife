@@ -19,6 +19,8 @@ PM: Usability and Feature Work
     - captions and grid layout are permalink-transferable
     - menu panel states, swipe mode, and form placement remain local-only
     - reset button clears ALL states back to default
+- Remove encoding images to upload as URLs (a mistake)
+- Fixed locked input fields on custom image uploads
 
 ### 2025-12-25
 
