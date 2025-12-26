@@ -10,8 +10,8 @@ interface MenuConfigProps {
   onColumnsChange: (columns: number) => void;
   minRows: number;
   onMinRowsChange: (minRows: number) => void;
-  layoutDimension: 'width' | 'height';
-  onLayoutDimensionChange: (dimension: 'width' | 'height') => void;
+  layoutDimension: 'height' | 'chimney';
+  onLayoutDimensionChange: (dimension: 'height' | 'chimney') => void;
   bandPlacementMode: 'alwaysTop' | 'adaptive';
   onBandPlacementModeChange: (mode: 'alwaysTop' | 'adaptive') => void;
   captionMode: 'hidden' | 'top' | 'bottom';
@@ -47,6 +47,7 @@ const MenuConfig: React.FC<MenuConfigProps> = ({
     'layout-section-open',
     true,
   );
+  const isChimneyMode = layoutDimension === 'chimney';
 
   const handleColumnsDecrement = () => {
     if (columns <= MIN_COLUMNS) return;
@@ -81,7 +82,7 @@ const MenuConfig: React.FC<MenuConfigProps> = ({
   };
 
   const handleRowsDecrement = () => {
-    if (minRows <= MIN_ROWS_VALUE) return;
+    if (minRows <= MIN_ROWS_VALUE || isChimneyMode) return;
     const nextValue = minRows - 1;
     logger.info(
       {
@@ -97,7 +98,7 @@ const MenuConfig: React.FC<MenuConfigProps> = ({
   };
 
   const handleRowsIncrement = () => {
-    if (minRows >= MAX_ROWS_VALUE) return;
+    if (minRows >= MAX_ROWS_VALUE || isChimneyMode) return;
     const nextValue = minRows + 1;
     logger.info(
       {
@@ -170,7 +171,7 @@ const MenuConfig: React.FC<MenuConfigProps> = ({
               type="button"
               className="stepper-button"
               onClick={handleRowsDecrement}
-              disabled={minRows <= MIN_ROWS_VALUE}
+              disabled={minRows <= MIN_ROWS_VALUE || isChimneyMode}
               aria-label="Decrease minimum rows"
             >
               -
@@ -180,7 +181,7 @@ const MenuConfig: React.FC<MenuConfigProps> = ({
               type="button"
               className="stepper-button"
               onClick={handleRowsIncrement}
-              disabled={minRows >= MAX_ROWS_VALUE}
+              disabled={minRows >= MAX_ROWS_VALUE || isChimneyMode}
               aria-label="Increase minimum rows"
             >
               +
@@ -192,11 +193,11 @@ const MenuConfig: React.FC<MenuConfigProps> = ({
       <div className="config-group">
         <div className="config-group-title">Behavior</div>
         <div className="config-row">
-          <span className="config-label">fixed width</span>
+          <span className="config-label">chimney</span>
           <Switch
-            checked={layoutDimension === 'width'}
+            checked={layoutDimension === 'chimney'}
             onChange={(checked) =>
-              onLayoutDimensionChange(checked ? 'width' : 'height')
+              onLayoutDimensionChange(checked ? 'chimney' : 'height')
             }
             className="layout-dimension-toggle"
           />

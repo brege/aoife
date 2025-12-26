@@ -9,7 +9,7 @@ export type RowLayout = {
 
 type GridRowProps = {
   row: RowLayout;
-  layoutDimension: 'width' | 'height';
+  layoutDimension: 'height' | 'chimney';
   containerGap: number;
   captionMode: 'hidden' | 'top' | 'bottom';
   captionEditsOnly: boolean;
@@ -39,7 +39,7 @@ const GridRow = ({
     <div
       className="grid-row"
       style={{
-        height: layoutDimension === 'width' ? 'auto' : row.height,
+        height: row.height,
         gap: containerGap,
       }}
     >

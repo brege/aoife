@@ -143,7 +143,7 @@ workflows:
             type: duration
 
   - name: layout_dimension
-    description: Test layout dimension toggle between fixed width and height
+    description: Test layout dimension toggle between chimney and height
     enabled: true
     level: integration
     scenarios:
@@ -172,11 +172,11 @@ workflows:
             type: duration
 
       - test_id: layout_002
-        description: Switch to fixed width layout
+        description: Switch to chimney layout
         type: operation
         operation: setLayoutDimension
         payload:
-          dimension: width
+          dimension: chimney
         expectations:
           statusCode: 200
         measurements:
@@ -184,7 +184,7 @@ workflows:
             type: duration
 
       - test_id: layout_003
-        description: Verify layout dimension was set
+        description: Switch back to height layout
         type: operation
         operation: setLayoutDimension
         payload:

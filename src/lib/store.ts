@@ -17,7 +17,7 @@ const DEFAULT_TITLE = 'aoife';
 type LayoutState = {
   columns: number;
   minRows: number;
-  layoutDimension: 'width' | 'height';
+  layoutDimension: 'height' | 'chimney';
   coverViewMode: 'grid' | 'carousel';
   bandPlacementMode: 'alwaysTop' | 'adaptive';
   captionMode: 'hidden' | 'top' | 'bottom';
@@ -65,7 +65,7 @@ type HydrationState = {
 type LayoutActions = {
   setColumns: (value: number) => void;
   setMinRows: (value: number) => void;
-  setLayoutDimension: (value: 'width' | 'height') => void;
+  setLayoutDimension: (value: 'height' | 'chimney') => void;
   setCoverViewMode: (value: 'grid' | 'carousel') => void;
   setBandPlacementMode: (value: 'alwaysTop' | 'adaptive') => void;
   setCaptionMode: (value: 'hidden' | 'top' | 'bottom') => void;
@@ -133,7 +133,7 @@ const buildShareSnapshot = (state: {
   gridItems: MediaItem[];
   columns: number;
   minRows: number;
-  layoutDimension: 'width' | 'height';
+  layoutDimension: 'height' | 'chimney';
   title: string;
 }): string => {
   return JSON.stringify({

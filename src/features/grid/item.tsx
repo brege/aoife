@@ -12,7 +12,7 @@ type GridItemProps = {
   media: MediaItem;
   width: number;
   rowHeight: number;
-  layoutDimension: 'width' | 'height';
+  layoutDimension: 'height' | 'chimney';
   captionMode: 'hidden' | 'top' | 'bottom';
   captionEditsOnly: boolean;
   activeId: string | number | null;
@@ -49,7 +49,7 @@ const GridItem = ({
 
   const style = {
     width,
-    height: layoutDimension === 'width' ? 'auto' : rowHeight,
+    height: rowHeight,
     transform: CSS.Transform.toString(transform),
     transition,
   };

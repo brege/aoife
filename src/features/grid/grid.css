@@ -164,10 +164,6 @@
   object-fit: cover;
 }
 
-.grid[data-layout-dimension="width"] .grid-poster {
-  height: auto;
-}
-
 .grid-poster:hover {
   opacity: 0.9;
 }

@@ -33,7 +33,7 @@ interface GridProps {
   minRows: number;
   placeholderLabel?: string;
   onAspectRatioUpdate?: (mediaId: string | number, aspectRatio: number) => void;
-  layoutDimension?: 'width' | 'height';
+  layoutDimension?: 'height' | 'chimney';
   captionMode?: 'hidden' | 'top' | 'bottom';
   captionEditsOnly?: boolean;
 }
@@ -47,30 +47,47 @@ const calculateRowLayouts = (
   availableHeight: number,
   gap: number,
   minRowsVisible: number,
-  layoutDimension: 'width' | 'height' = 'height',
+  layoutDimension: 'height' | 'chimney' = 'height',
 ): RowLayout[] => {
   const rows: RowLayout[] = [];
   const totalRows = Math.ceil(items.length / columns);
 
-  if (layoutDimension === 'width') {
-    const totalGaps = (columns - 1) * gap;
-    const fixedWidth = (availableWidth - totalGaps) / columns;
-
+  if (layoutDimension === 'chimney') {
+    const baseRows: RowLayout[] = [];
     for (let i = 0; i < items.length; i += columns) {
       const rowItems = items.slice(i, i + columns);
-      const heights = rowItems.map(
-        (media) => fixedWidth / getAspectRatio(media),
-      );
-      const height = Math.max(...heights);
+      const aspectRatios = rowItems.map(getAspectRatio);
+      const sumAspectRatios = aspectRatios.reduce((sum, ar) => sum + ar, 0);
+      const totalGaps = (rowItems.length - 1) * gap;
+      const height = (availableWidth - totalGaps) / sumAspectRatios;
 
-      rows.push({
+      baseRows.push({
         height,
-        items: rowItems.map((media) => ({
+        items: rowItems.map((media, index) => ({
           media,
-          width: fixedWidth,
+          width: height * aspectRatios[index],
         })),
       });
     }
+
+    const totalBaseHeight = baseRows.reduce((sum, row) => sum + row.height, 0);
+    const totalGaps = Math.max(baseRows.length - 1, 0) * gap;
+    const availableHeightForRows = Math.max(availableHeight - totalGaps, 0);
+    const scale =
+      totalBaseHeight > 0
+        ? Math.min(1, availableHeightForRows / totalBaseHeight)
+        : 1;
+
+    baseRows.forEach((row) => {
+      const scaledHeight = row.height * scale;
+      rows.push({
+        height: scaledHeight,
+        items: row.items.map((entry) => ({
+          media: entry.media,
+          width: scaledHeight * getAspectRatio(entry.media),
+        })),
+      });
+    });
   } else {
     const effectiveMinRows = Math.max(totalRows, minRowsVisible);
     const maxRowHeight =

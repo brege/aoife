@@ -28,7 +28,7 @@ export type SharedStatePayload = {
   gridItems: SharedStateItem[];
   columns: number;
   minRows: number;
-  layoutDimension: 'width' | 'height';
+  layoutDimension: 'height' | 'chimney';
 };
 
 const DATA_DIRECTORY_PATH = path.join(process.cwd(), 'data');
@@ -111,7 +111,7 @@ export const validateAndCanonicalizeSharePayload = (
   ) {
     throw new Error('Share payload minRows is invalid');
   }
-  if (layoutDimension !== 'width' && layoutDimension !== 'height') {
+  if (layoutDimension !== 'height' && layoutDimension !== 'chimney') {
     throw new Error('Share payload layoutDimension is invalid');
   }
 

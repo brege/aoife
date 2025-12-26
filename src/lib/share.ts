@@ -16,7 +16,7 @@ export type SharedState = {
   gridItems: MediaItem[];
   columns: number;
   minRows: number;
-  layoutDimension: 'width' | 'height';
+  layoutDimension: 'height' | 'chimney';
 };
 
 type ShareCacheRecord = {
@@ -105,7 +105,7 @@ export const validateSharedState = (state: unknown): state is SharedState => {
     return false;
   if (typeof obj.minRows !== 'number' || Number.isNaN(obj.minRows))
     return false;
-  if (obj.layoutDimension !== 'width' && obj.layoutDimension !== 'height')
+  if (obj.layoutDimension !== 'height' && obj.layoutDimension !== 'chimney')
     return false;
 
   return true;

@@ -15,8 +15,8 @@ interface AppHeaderProps {
   onMinRowsChange: (minRows: number) => void;
   showSearch: boolean;
   onShowSearchToggle: (enabled: boolean) => void;
-  layoutDimension: 'width' | 'height';
-  onLayoutDimensionChange: (dimension: 'width' | 'height') => void;
+  layoutDimension: 'height' | 'chimney';
+  onLayoutDimensionChange: (dimension: 'height' | 'chimney') => void;
   bandPlacementMode: 'alwaysTop' | 'adaptive';
   onBandPlacementModeChange: (mode: 'alwaysTop' | 'adaptive') => void;
   captionMode: 'hidden' | 'top' | 'bottom';

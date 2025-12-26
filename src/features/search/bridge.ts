@@ -7,7 +7,7 @@ import type {
 
 const ZUSTAND_STORAGE_KEY = 'aoife-store';
 
-type LayoutDimension = 'width' | 'height';
+type LayoutDimension = 'height' | 'chimney';
 
 type TestApplicationApi = {
   setMediaType: (mediaType: MediaType) => void;
