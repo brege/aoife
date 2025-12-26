@@ -1,20 +1,13 @@
 import axios from 'axios';
 import logger from '../lib/logger';
+import {
+  TmdbDetailsSchema,
+  TmdbImagesResponseSchema,
+  TmdbSearchResponseSchema,
+  type TmdbResult,
+} from './schemas';
 import { type MediaSearchResult, MediaService } from './service';
 import { type MediaSearchValues, TMDB_IMAGE_BASE } from './types';
-
-type TmdbResult = {
-  id: number;
-  title?: string;
-  name?: string;
-  release_date?: string;
-  first_air_date?: string;
-  poster_path?: string | null;
-};
-
-type TmdbDetails = TmdbResult & {
-  imdb_id?: string | null;
-};
 
 const buildPosterUrl = (
   path?: string | null,
@@ -77,8 +70,10 @@ export class TMDBService extends MediaService {
         },
       );
 
+      const parsed = TmdbSearchResponseSchema.parse(response.data);
+
       const results = await Promise.all(
-        response.data.results.map(async (item: TmdbResult) => {
+        parsed.results.map(async (item: TmdbResult) => {
           const details = await this.getDetails(item.id);
           const dateField = this.getDateField(item);
           return {
@@ -122,7 +117,7 @@ export class TMDBService extends MediaService {
         `${this.baseUrl}/3/${this.getDetailsEndpoint(id)}`,
       );
 
-      const data: TmdbDetails = response.data;
+      const data = TmdbDetailsSchema.parse(response.data);
       const dateField = this.getDateField(data);
       return {
         id: data.id,
@@ -161,23 +156,15 @@ export class TMDBService extends MediaService {
       const endpoint = `${this.baseUrl}/3/${this.getImagesEndpoint(id)}`;
       const response = await axios.get(endpoint);
 
-      if (!response.data.posters || !Array.isArray(response.data.posters)) {
-        logger.warn(
-          {
-            mediaType: this.mediaType,
-            id,
-            response: response.data,
-          },
-          'TMDB posters missing',
-        );
+      const parsed = TmdbImagesResponseSchema.parse(response.data);
+
+      if (!parsed.posters) {
         return [];
       }
 
-      return response.data.posters
-        .map((poster: { file_path: string }) =>
-          buildPosterUrl(poster.file_path, 'w500'),
-        )
-        .filter((url: string | null): url is string => Boolean(url));
+      return parsed.posters
+        .map((poster) => buildPosterUrl(poster.file_path, 'w500'))
+        .filter((url): url is string => Boolean(url));
     } catch (error) {
       const errorToLog =
         error instanceof Error ? error : new Error(String(error));

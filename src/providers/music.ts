@@ -1,6 +1,14 @@
 import axios from 'axios';
 import packageJson from '../../package.json';
 import logger from '../lib/logger';
+import {
+  CoverArtArchiveMetadataResponseSchema,
+  MusicBrainzReleaseSchema,
+  MusicBrainzSearchResponseSchema,
+  iTunesSearchResponseSchema,
+  type CoverArtArchiveMetadataResponse,
+  type MusicBrainzRelease,
+} from './schemas';
 import { type MediaSearchResult, MediaService } from './service';
 import type { MediaSearchValues } from './types';
 
@@ -9,48 +17,6 @@ interface CoverArtSource {
   priority: number;
   getCoverUrl(release: MusicBrainzRelease): Promise<string | null>;
   getThumbnailUrl(release: MusicBrainzRelease): Promise<string | null>;
-}
-
-interface MusicBrainzRelease {
-  id: string;
-  title: string;
-  date?: string;
-  country?: string;
-  'artist-credit'?: Array<{
-    name: string;
-    artist: { id: string; name: string };
-  }>;
-  'cover-art-archive'?: {
-    front?: boolean;
-    artwork?: boolean;
-    count?: number;
-  };
-  'release-group'?: {
-    id: string;
-    'primary-type'?: string;
-  };
-  'label-info'?: Array<{
-    'catalog-number'?: string;
-    label?: { name: string };
-  }>;
-}
-
-interface MusicBrainzSearchResponse {
-  created: string;
-  count: number;
-  offset: number;
-  releases: MusicBrainzRelease[];
-}
-
-interface CoverArtArchiveMetadataResponse {
-  images?: Array<{
-    front?: boolean;
-    image?: string;
-    thumbnails?: {
-      small?: string;
-      large?: string;
-    };
-  }>;
 }
 
 const appVersion = packageJson.version ?? 'unknown';
@@ -122,18 +88,15 @@ class CoverArtArchiveSource implements CoverArtSource {
       id: releaseId,
     });
     const request = axios
-      .get<CoverArtArchiveMetadataResponse>(
-        `/api/coverart/metadata?${params.toString()}`,
-        {
-          timeout: 5000,
-          validateStatus: (status) => status >= 200 && status < 600,
-        },
-      )
+      .get(`/api/coverart/metadata?${params.toString()}`, {
+        timeout: 5000,
+        validateStatus: (status) => status >= 200 && status < 600,
+      })
       .then((response) => {
         if (response.status !== 200) {
           return null;
         }
-        return response.data;
+        return CoverArtArchiveMetadataResponseSchema.parse(response.data);
       })
       .catch(() => null)
       .finally(() => {
@@ -232,14 +195,7 @@ class iTunesSource implements CoverArtSource {
     if (!artist || !album) return null;
 
     try {
-      const response = await axios.get<{
-        resultCount: number;
-        results: Array<{
-          artistName?: string;
-          artworkUrl100?: string;
-          collectionName?: string;
-        }>;
-      }>('https://itunes.apple.com/search', {
+      const response = await axios.get('https://itunes.apple.com/search', {
         params: {
           term: `${artist} ${album}`,
           media: 'music',
@@ -249,7 +205,8 @@ class iTunesSource implements CoverArtSource {
         timeout: 3000,
       });
 
-      return this.pickArtworkUrl(release, response.data.results);
+      const parsed = iTunesSearchResponseSchema.parse(response.data);
+      return this.pickArtworkUrl(release, parsed.results);
     } catch {
       return null;
     }
@@ -377,7 +334,7 @@ export class MusicService extends MediaService {
     const mbid = id.replace('mb:', '');
 
     try {
-      const response = await axios.get<MusicBrainzRelease>(
+      const response = await axios.get(
         `https://musicbrainz.org/ws/2/release/${mbid}`,
         {
           params: { fmt: 'json', inc: 'artist-credits+labels+release-groups' },
@@ -386,7 +343,8 @@ export class MusicService extends MediaService {
         },
       );
 
-      const results = await this.mapReleasesToResults([response.data]);
+      const parsed = MusicBrainzReleaseSchema.parse(response.data);
+      const results = await this.mapReleasesToResults([parsed]);
       return results[0] || null;
     } catch (error) {
       const errorToLog =
@@ -440,41 +398,37 @@ export class MusicService extends MediaService {
       searchQuery = parts.join(' AND ');
     }
 
-    const response = await axios.get<MusicBrainzSearchResponse>(
-      'https://musicbrainz.org/ws/2/release',
-      {
-        params: {
-          query: searchQuery,
-          fmt: 'json',
-          limit: 50,
-          inc: 'artist-credits+release-groups+cover-art-archive',
-        },
-        headers: { 'User-Agent': USER_AGENT },
-        timeout: 5000,
+    const response = await axios.get('https://musicbrainz.org/ws/2/release', {
+      params: {
+        query: searchQuery,
+        fmt: 'json',
+        limit: 50,
+        inc: 'artist-credits+release-groups+cover-art-archive',
       },
-    );
+      headers: { 'User-Agent': USER_AGENT },
+      timeout: 5000,
+    });
 
-    return response.data.releases || [];
+    const parsed = MusicBrainzSearchResponseSchema.parse(response.data);
+    return parsed.releases;
   }
 
   private async searchMusicBrainzReleaseGroup(
     releaseGroupId: string,
   ): Promise<MusicBrainzRelease[]> {
-    const response = await axios.get<MusicBrainzSearchResponse>(
-      'https://musicbrainz.org/ws/2/release',
-      {
-        params: {
-          query: `rgid:${releaseGroupId}`,
-          fmt: 'json',
-          limit: 50,
-          inc: 'artist-credits+release-groups+cover-art-archive',
-        },
-        headers: { 'User-Agent': USER_AGENT },
-        timeout: 5000,
+    const response = await axios.get('https://musicbrainz.org/ws/2/release', {
+      params: {
+        query: `rgid:${releaseGroupId}`,
+        fmt: 'json',
+        limit: 50,
+        inc: 'artist-credits+release-groups+cover-art-archive',
       },
-    );
+      headers: { 'User-Agent': USER_AGENT },
+      timeout: 5000,
+    });
 
-    return response.data.releases || [];
+    const parsed = MusicBrainzSearchResponseSchema.parse(response.data);
+    return parsed.releases;
   }
 
   private async mapReleasesToResults(

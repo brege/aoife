@@ -1,39 +1,12 @@
 import axios from 'axios';
 import logger from '../lib/logger';
+import {
+  GamesImagesResponseSchema,
+  GamesSearchResponseSchema,
+  type ImageBaseUrl,
+} from './schemas';
 import { type MediaSearchResult, MediaService } from './service';
 import type { MediaSearchValues } from './types';
-
-type Game = {
-  id: number;
-  game_title: string;
-  release_date?: string;
-  overview?: string;
-  rating?: number;
-};
-
-type GameImage = {
-  id: number;
-  type: string;
-  side?: string;
-  filename: string;
-  resolution?: string;
-};
-
-type ImageBaseUrl = {
-  original?: string;
-  small?: string;
-  thumb?: string;
-  cropped_center_thumb?: string;
-  medium?: string;
-  large?: string;
-};
-
-type GameImagesResponse = {
-  data: {
-    base_url?: ImageBaseUrl;
-    images?: Record<string, GameImage[]>;
-  };
-};
 
 interface SearchCache {
   params: string;
@@ -76,11 +49,13 @@ export class GamesService extends MediaService {
         params,
       });
 
-      if (!response.data.data?.games) {
+      const parsed = GamesSearchResponseSchema.parse(response.data);
+
+      if (!parsed.data.games) {
         return [];
       }
 
-      const gameList = response.data.data.games as Game[];
+      const gameList = parsed.data.games;
 
       const buildImageUrl = (
         baseUrl: ImageBaseUrl | undefined,
@@ -116,10 +91,11 @@ export class GamesService extends MediaService {
             },
           );
 
-          const imageData = imageResponse.data
-            .data as GameImagesResponse['data'];
-          const baseUrl = imageData?.base_url;
-          const imagesByGame = imageData?.images ?? {};
+          const parsedImages = GamesImagesResponseSchema.parse(
+            imageResponse.data,
+          );
+          const baseUrl = parsedImages.data.base_url;
+          const imagesByGame = parsedImages.data.images ?? {};
           const mapped: Record<number, { full?: string; thumb?: string }> = {};
 
           gameIds.forEach((gameId) => {

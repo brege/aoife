@@ -1,57 +1,16 @@
 import axios from 'axios';
 import logger from '../lib/logger';
+import {
+  GoogleBooksSearchResponseSchema,
+  GoogleBooksVolumeSchema,
+  OpenLibrarySearchResponseSchema,
+  OpenLibraryWorkSchema,
+  type GoogleBooksVolume,
+  type GoogleBooksVolumeInfo,
+  type OpenLibraryResult,
+} from './schemas';
 import { type MediaSearchResult, MediaService } from './service';
 import type { MediaSearchValues } from './types';
-
-interface OpenLibraryResult {
-  title: string;
-  author_name?: string[];
-  first_publish_year?: number;
-  cover_i?: number;
-  edition_count?: number;
-  isbn?: string[];
-  language?: string[];
-  has_fulltext?: boolean;
-  key?: string;
-  ia?: string[];
-}
-
-interface OpenLibrarySearchResponse {
-  numFound: number;
-  docs: OpenLibraryResult[];
-}
-
-interface GoogleBooksVolumeInfo {
-  title?: string;
-  authors?: string[];
-  publishedDate?: string;
-  imageLinks?: {
-    thumbnail?: string;
-    smallThumbnail?: string;
-    medium?: string;
-    large?: string;
-  };
-  description?: string;
-  pageCount?: number;
-  categories?: string[];
-  language?: string;
-  infoLink?: string;
-  previewLink?: string;
-  industryIdentifiers?: Array<{ type: string; identifier: string }>;
-  averageRating?: number;
-  ratingsCount?: number;
-  publisher?: string;
-}
-
-interface GoogleBooksVolume {
-  id: string;
-  volumeInfo: GoogleBooksVolumeInfo;
-}
-
-interface GoogleBooksSearchResponse {
-  totalItems: number;
-  items?: GoogleBooksVolume[];
-}
 
 interface SearchCache {
   params: string;
@@ -258,11 +217,12 @@ export class BooksService extends MediaService {
       params.set('author', author);
     }
     const searchUrl = `${this.openLibraryBaseUrl}/search.json?${params.toString()}`;
-    const response = await axios.get<OpenLibrarySearchResponse>(searchUrl, {
+    const response = await axios.get(searchUrl, {
       timeout: 2000,
     });
 
-    return this.mapOpenLibraryResults(response.data.docs || []);
+    const parsed = OpenLibrarySearchResponseSchema.parse(response.data);
+    return this.mapOpenLibraryResults(parsed.docs);
   }
 
   private async searchOpenLibraryBroad(
@@ -274,11 +234,12 @@ export class BooksService extends MediaService {
       return [];
     }
     const searchUrl = `${this.openLibraryBaseUrl}/search.json?q=${encodeURIComponent(query)}&limit=${limit}&offset=${offset}`;
-    const response = await axios.get<OpenLibrarySearchResponse>(searchUrl, {
+    const response = await axios.get(searchUrl, {
       timeout: 2000,
     });
 
-    return this.mapOpenLibraryResults(response.data.docs || []);
+    const parsed = OpenLibrarySearchResponseSchema.parse(response.data);
+    return this.mapOpenLibraryResults(parsed.docs);
   }
 
   private async searchGoogleBooksStrict(
@@ -299,11 +260,12 @@ export class BooksService extends MediaService {
     }
     const query = queryParts.join(' ');
     const searchUrl = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=${limit}&startIndex=${offset}`;
-    const response = await axios.get<GoogleBooksSearchResponse>(searchUrl, {
+    const response = await axios.get(searchUrl, {
       timeout: 2000,
     });
 
-    return this.mapGoogleBooksResults(response.data.items || []);
+    const parsed = GoogleBooksSearchResponseSchema.parse(response.data);
+    return this.mapGoogleBooksResults(parsed.items || []);
   }
 
   private async searchGoogleBooksBroad(
@@ -315,11 +277,12 @@ export class BooksService extends MediaService {
       return [];
     }
     const searchUrl = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=${limit}&startIndex=${offset}`;
-    const response = await axios.get<GoogleBooksSearchResponse>(searchUrl, {
+    const response = await axios.get(searchUrl, {
       timeout: 2000,
     });
 
-    return this.mapGoogleBooksResults(response.data.items || []);
+    const parsed = GoogleBooksSearchResponseSchema.parse(response.data);
+    return this.mapGoogleBooksResults(parsed.items || []);
   }
 
   private async searchBooks({
@@ -731,17 +694,11 @@ export class BooksService extends MediaService {
         ? workId
         : `/works/${workId}`;
       const workUrl = `${this.openLibraryBaseUrl}${cleanWorkId}.json`;
-      const response = await axios.get<{
-        title?: string;
-        first_publish_date?: string;
-        covers?: number[];
-        description?: string | { value: string };
-        subjects?: string[];
-      }>(workUrl, {
+      const response = await axios.get(workUrl, {
         timeout: 2000,
       });
 
-      const work = response.data;
+      const work = OpenLibraryWorkSchema.parse(response.data);
       const coverId = work.covers?.[0];
 
       if (!coverId) {
@@ -785,11 +742,12 @@ export class BooksService extends MediaService {
   ): Promise<MediaSearchResult | null> {
     try {
       const apiUrl = `https://www.googleapis.com/books/v1/volumes/${encodeURIComponent(volumeId)}`;
-      const response = await axios.get<GoogleBooksVolume>(apiUrl, {
+      const response = await axios.get(apiUrl, {
         timeout: 2000,
       });
 
-      const volumeInfo = response.data.volumeInfo;
+      const parsed = GoogleBooksVolumeSchema.parse(response.data);
+      const volumeInfo = parsed.volumeInfo;
       const publishedYear = volumeInfo.publishedDate
         ? parseInt(volumeInfo.publishedDate.substring(0, 4), 10)
         : undefined;
