@@ -429,7 +429,6 @@ export const useAppStore = create<AppStore>()(
     }),
     {
       name: 'aoife-store',
-      version: 1,
       partialize: (state) => ({
         columns: state.columns,
         minRows: state.minRows,
@@ -442,90 +441,6 @@ export const useAppStore = create<AppStore>()(
         gridItems: state.gridItems,
         title: state.title,
       }),
-      migrate: (persisted, version) => {
-        if (version === 0 || persisted === null) {
-          const migrated: Record<string, unknown> = {};
-
-          const gridItems = localStorage.getItem('gridItems');
-          if (gridItems) {
-            try {
-              migrated.gridItems = JSON.parse(gridItems);
-            } catch {
-              migrated.gridItems = [];
-            }
-          }
-
-          const columns = localStorage.getItem('gridColumns');
-          if (columns) {
-            const parsed = parseInt(columns, 10);
-            if (!Number.isNaN(parsed) && parsed >= 1 && parsed <= 8) {
-              migrated.columns = parsed;
-            }
-          }
-
-          const minRows = localStorage.getItem('gridMinRows');
-          if (minRows) {
-            const parsed = parseInt(minRows, 10);
-            if (!Number.isNaN(parsed) && parsed >= 1 && parsed <= 6) {
-              migrated.minRows = parsed;
-            }
-          }
-
-          const layoutDimension = localStorage.getItem('layoutDimension');
-          if (layoutDimension === 'width' || layoutDimension === 'height') {
-            migrated.layoutDimension = layoutDimension;
-          }
-
-          const coverViewMode = localStorage.getItem('coverViewMode');
-          if (coverViewMode === 'grid' || coverViewMode === 'carousel') {
-            migrated.coverViewMode = coverViewMode;
-          }
-
-          const bandPlacementMode = localStorage.getItem('searchBandPlacement');
-          if (
-            bandPlacementMode === 'alwaysTop' ||
-            bandPlacementMode === 'adaptive'
-          ) {
-            migrated.bandPlacementMode = bandPlacementMode;
-          }
-
-          const captionMode = localStorage.getItem('gridCaptionMode');
-          if (
-            captionMode === 'hidden' ||
-            captionMode === 'top' ||
-            captionMode === 'bottom'
-          ) {
-            migrated.captionMode = captionMode;
-          }
-
-          const captionEditsOnly = localStorage.getItem('gridCaptionEditsOnly');
-          if (captionEditsOnly === 'true') {
-            migrated.captionEditsOnly = true;
-          } else if (captionEditsOnly === 'false') {
-            migrated.captionEditsOnly = false;
-          }
-
-          const selectedMediaType = localStorage.getItem('selectedMediaType');
-          if (
-            selectedMediaType === 'movies' ||
-            selectedMediaType === 'tv' ||
-            selectedMediaType === 'books' ||
-            selectedMediaType === 'music' ||
-            selectedMediaType === 'games' ||
-            selectedMediaType === 'custom'
-          ) {
-            migrated.selectedMediaType = selectedMediaType;
-          }
-
-          const title = localStorage.getItem('gridTitle');
-          if (title) {
-            migrated.title = title.trim() === '' ? DEFAULT_TITLE : title;
-          }
-
-          return migrated;
-        }
-        return persisted;
-      },
       onRehydrateStorage: () => (state) => {
         if (state) {
           const params = new URLSearchParams(window.location.search);
