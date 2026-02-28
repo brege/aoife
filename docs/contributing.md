@@ -12,12 +12,7 @@
 
 ### APIs
 
-- TMDB API for movie/TV data
-- MusicBrainz, iTunes, and CoverArtArchive for music
-- OpenLibrary and Google Books APIs for books
-- TheGamesDB for video games
-
-| Media Types  | APIs                                        |
+| Media Types  | APIs                                  |
 |:-------------|:--------------------------------------|
 | movies       | TMDb                                  |
 | TV shows     | TMDb                                  |
