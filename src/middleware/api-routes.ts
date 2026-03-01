@@ -20,14 +20,9 @@ export const createApiMiddleware = (env: Record<string, string>) => {
   const gridState: Record<string, unknown>[] = [];
   const shareStore = loadShareStore();
   const slugWords = loadSlugWords();
-  const isContinuousIntegration = process.env.CI === 'true';
-  const privateGamesDatabaseKey =
-    env.GAMESDB_PRIVATE_KEY || process.env.GAMESDB_PRIVATE_KEY || '';
   const publicGamesDatabaseKey =
     env.GAMESDB_PUBLIC_KEY || process.env.GAMESDB_PUBLIC_KEY || '';
-  const gamesDatabaseKey = isContinuousIntegration
-    ? publicGamesDatabaseKey
-    : privateGamesDatabaseKey || publicGamesDatabaseKey;
+  const gamesDatabaseKey = publicGamesDatabaseKey;
 
   return (req: IncomingMessage, res: ServerResponse, next: NextFunction) => {
     const url = new URL(req.url || '', 'http://localhost');
