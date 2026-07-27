@@ -1,17 +1,20 @@
-from flask import Flask, request, jsonify, send_from_directory, redirect
-from flask_cors import CORS
-from flask_limiter import Limiter
 import fcntl
-from typing import IO
 import ipaddress
 import json
 import os
 import random
 import tempfile
 import time
-from urllib.parse import urlparse, urljoin
-from dotenv import load_dotenv
+from collections.abc import Iterator
+from contextlib import contextmanager
+from typing import IO
+from urllib.parse import urljoin, urlparse
+
 import requests
+from dotenv import load_dotenv
+from flask import Flask, jsonify, redirect, request, send_from_directory
+from flask_cors import CORS
+from flask_limiter import Limiter
 
 load_dotenv()
 
@@ -46,7 +49,7 @@ def load_share_store() -> dict:
     with open(SHARE_STORE_PATH, "r", encoding="utf-8") as handle:
         data = json.load(handle)
         if not isinstance(data, dict):
-            raise ValueError("Share store file is invalid")
+            raise TypeError("Share store file is invalid")
         return data
 
 
@@ -98,13 +101,14 @@ def generate_slug(existing: set[str]) -> str:
     raise RuntimeError("Unable to generate unique share slug")
 
 
-def acquire_share_store_lock(exclusive: bool) -> IO[str]:
+@contextmanager
+def acquire_share_store_lock(exclusive: bool) -> Iterator[IO[str]]:
     if not os.path.isdir(DATA_DIRECTORY_PATH):
         raise FileNotFoundError(f"Missing data directory at {DATA_DIRECTORY_PATH}")
-    lock_handle = open(SHARE_STORE_LOCK_PATH, "a", encoding="utf-8")
-    lock_type = fcntl.LOCK_EX if exclusive else fcntl.LOCK_SH
-    fcntl.flock(lock_handle.fileno(), lock_type)
-    return lock_handle
+    with open(SHARE_STORE_LOCK_PATH, "a", encoding="utf-8") as lock_handle:
+        lock_type = fcntl.LOCK_EX if exclusive else fcntl.LOCK_SH
+        fcntl.flock(lock_handle.fileno(), lock_type)
+        yield lock_handle
 
 
 def get_rate_limit_exempt_addresses() -> set[str]:
@@ -189,7 +193,7 @@ RATE_LIMIT_LOG_EVENT = "60 per minute"
 
 
 def is_allowed_cover_url(value: str) -> bool:
-    if value.startswith("data:") or value.startswith("blob:"):
+    if value.startswith(("data:", "blob:")):
         return False
 
     if value.startswith("/api/"):
@@ -210,11 +214,11 @@ def validate_and_canonicalize_share_payload(payload: str) -> str:
 
     data = json.loads(payload)
     if not isinstance(data, dict):
-        raise ValueError("Share payload must be a JSON object")
+        raise TypeError("Share payload must be a JSON object")
 
     grid_items = data.get("gridItems")
     if not isinstance(grid_items, list):
-        raise ValueError("Share payload gridItems must be a list")
+        raise TypeError("Share payload gridItems must be a list")
     if len(grid_items) > MAX_SHARE_ITEMS:
         raise ValueError("Share payload has too many items")
 
@@ -233,13 +237,13 @@ def validate_and_canonicalize_share_payload(payload: str) -> str:
     if caption_mode not in ("hidden", "top", "bottom"):
         raise ValueError("Share payload captionMode is invalid")
     if not isinstance(caption_edits_only, bool):
-        raise ValueError("Share payload captionEditsOnly is invalid")
+        raise TypeError("Share payload captionEditsOnly is invalid")
 
     canonical_items: list[dict] = []
 
     for item in grid_items:
         if not isinstance(item, dict):
-            raise ValueError("Share payload gridItems entries must be objects")
+            raise TypeError("Share payload gridItems entries must be objects")
 
         media_type = item.get("type")
         if not isinstance(media_type, str) or not media_type:
@@ -247,7 +251,7 @@ def validate_and_canonicalize_share_payload(payload: str) -> str:
 
         media_id = item.get("id")
         if not isinstance(media_id, (str, int)):
-            raise ValueError("Share payload item id is invalid")
+            raise TypeError("Share payload item id is invalid")
 
         title = item.get("title")
         if not isinstance(title, str) or not title.strip():
@@ -336,7 +340,7 @@ def validate_and_canonicalize_share_payload(payload: str) -> str:
 @app.route("/api/tmdb/<path:subpath>", methods=["GET"])
 @limiter.limit(RATE_LIMIT_UPSTREAM)
 def proxy_tmdb(subpath):
-    params = dict(request.args)
+    params: dict[str, str | None] = dict(request.args)
     params["api_key"] = TMDB_KEY
     try:
         resp = requests.get(
@@ -347,8 +351,8 @@ def proxy_tmdb(subpath):
         return jsonify(resp.json()), resp.status_code
     except requests.exceptions.Timeout:
         return jsonify({"error": "Upstream request timed out"}), 504
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    except requests.exceptions.RequestException as exc:
+        return jsonify({"error": str(exc)}), 500
 
 
 # Proxy OpenLibrary requests
@@ -364,8 +368,8 @@ def proxy_openlibrary(subpath):
         return jsonify(resp.json()), resp.status_code
     except requests.exceptions.Timeout:
         return jsonify({"error": "Upstream request timed out"}), 504
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    except requests.exceptions.RequestException as exc:
+        return jsonify({"error": str(exc)}), 500
 
 
 # Proxy GamesDB requests
@@ -373,8 +377,8 @@ def proxy_openlibrary(subpath):
 @limiter.limit(RATE_LIMIT_UPSTREAM)
 def proxy_gamesdb(subpath):
     try:
+        params: dict[str, str | None] = dict(request.args)
         if request.method == "POST":
-            params = dict(request.args)
             params["apikey"] = GAMESDB_KEY
             resp = requests.post(
                 f"https://api.thegamesdb.net/{subpath}",
@@ -383,7 +387,6 @@ def proxy_gamesdb(subpath):
                 timeout=UPSTREAM_TIMEOUT_SECONDS,
             )
         else:
-            params = dict(request.args)
             params["apikey"] = GAMESDB_KEY
             resp = requests.get(
                 f"https://api.thegamesdb.net/{subpath}",
@@ -393,8 +396,8 @@ def proxy_gamesdb(subpath):
         return jsonify(resp.json()), resp.status_code
     except requests.exceptions.Timeout:
         return jsonify({"error": "Upstream request timed out"}), 504
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    except requests.exceptions.RequestException as exc:
+        return jsonify({"error": str(exc)}), 500
 
 
 # Proxy GamesDB CDN images
@@ -415,8 +418,8 @@ def proxy_gamesdb_images(subpath):
         )
     except requests.exceptions.Timeout:
         return jsonify({"error": "Upstream request timed out"}), 504
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    except requests.exceptions.RequestException as exc:
+        return jsonify({"error": str(exc)}), 500
 
 
 @app.route("/api/coverart/image", methods=["GET"])
@@ -438,8 +441,9 @@ def proxy_coverart_image():
             timeout=UPSTREAM_TIMEOUT_SECONDS,
             allow_redirects=False,
         )
-        if 300 <= resp.status_code < 400 and resp.headers.get("Location"):
-            return redirect(resp.headers.get("Location"), code=resp.status_code)
+        location = resp.headers.get("Location")
+        if 300 <= resp.status_code < 400 and location:
+            return redirect(location, code=resp.status_code)
         return (
             resp.content,
             resp.status_code,
@@ -447,7 +451,7 @@ def proxy_coverart_image():
         )
     except requests.exceptions.Timeout:
         return ("Not found", 404)
-    except Exception:
+    except requests.exceptions.RequestException:
         return ("Not found", 404)
 
 
@@ -485,8 +489,8 @@ def proxy_coverart_metadata():
         return request_metadata(target_url)
     except requests.exceptions.Timeout:
         return jsonify({"error": "Upstream request timed out"}), 504
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    except requests.exceptions.RequestException as exc:
+        return jsonify({"error": str(exc)}), 500
 
 
 @app.route("/api/googlebooks/image", methods=["GET"])
@@ -518,7 +522,7 @@ def proxy_googlebooks_image():
         )
     except requests.exceptions.Timeout:
         return ("Not found", 404)
-    except Exception:
+    except requests.exceptions.RequestException:
         return ("Not found", 404)
 
 
@@ -540,11 +544,10 @@ def create_share():
         canonical_payload = validate_and_canonicalize_share_payload(payload)
     except json.JSONDecodeError:
         return jsonify({"error": "payload must be valid JSON"}), 400
-    except ValueError as exc:
+    except (TypeError, ValueError) as exc:
         return jsonify({"error": str(exc)}), 400
 
-    lock_handle = acquire_share_store_lock(exclusive=True)
-    try:
+    with acquire_share_store_lock(exclusive=True):
         store = load_share_store()
         slug = generate_slug(set(store.keys()))
         store[slug] = {
@@ -555,8 +558,6 @@ def create_share():
             "userAgent": get_user_agent(),
         }
         persist_share_store(store)
-    finally:
-        lock_handle.close()
 
     return jsonify({"slug": slug, "id": slug})
 
@@ -564,11 +565,8 @@ def create_share():
 @app.route("/api/share/<slug>", methods=["GET"])
 @limiter.limit(RATE_LIMIT_SHARE_READ)
 def get_share(slug: str):
-    lock_handle = acquire_share_store_lock(exclusive=False)
-    try:
+    with acquire_share_store_lock(exclusive=False):
         store = load_share_store()
-    finally:
-        lock_handle.close()
     record = store.get(slug)
     if not record:
         return jsonify({"error": "Share not found"}), 404
@@ -587,14 +585,14 @@ def get_share(slug: str):
 # Serve static files and SPA
 @app.route("/")
 def serve_root():
-    return send_from_directory(app.static_folder, "index.html")
+    return send_from_directory(DIST_PATH, "index.html")
 
 
 @app.route("/<path:path>")
 def serve_static(path):
-    if os.path.exists(os.path.join(app.static_folder, path)):
-        return send_from_directory(app.static_folder, path)
-    return send_from_directory(app.static_folder, "index.html")
+    if os.path.exists(os.path.join(DIST_PATH, path)):
+        return send_from_directory(DIST_PATH, path)
+    return send_from_directory(DIST_PATH, "index.html")
 
 
 if __name__ == "__main__":

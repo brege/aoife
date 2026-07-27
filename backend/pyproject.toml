@@ -1,0 +1,31 @@
+[project]
+name = "aoife-backend"
+version = "0.7.2"
+requires-python = "==3.14.*"
+dependencies = [
+  "flask>=3.1.3",
+  "flask-cors>=6.0.5",
+  "flask-limiter>=4.1.1",
+  "gunicorn>=26.0.0",
+  "python-dotenv>=1.2.2",
+  "requests>=2.34.2",
+]
+
+[dependency-groups]
+dev = [
+  "ruff>=0.16.0",
+  "ty>=0.0.63",
+]
+
+[tool.uv]
+package = false
+
+[tool.ruff]
+required-version = ">=0.16.0"
+target-version = "py314"
+
+[tool.ty.environment]
+python-version = "3.14"
+
+[tool.ty.src]
+include = ["backend.py"]

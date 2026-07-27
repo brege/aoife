@@ -6,13 +6,14 @@ repos:
         entry: npx biome lint --write
         language: system
         files: '\.(ts|tsx|js|jsx|css)$'
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.16.0
+    hooks:
       - id: ruff-check
-        name: ruff check
-        entry: ruff check
-        language: system
-        types: [python]
+        args: [--fix]
       - id: ruff-format
-        name: ruff format
-        entry: ruff format
-        language: system
-        types: [python]
+  - repo: https://github.com/astral-sh/ty-pre-commit
+    rev: v0.0.63
+    hooks:
+      - id: ty
+        args: [--project, backend, --locked]

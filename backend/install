@@ -3,10 +3,7 @@ set -e
 
 # create/update python venv
 echo "[install] Setting up Python environment..."
-if [ ! -d ".venv" ]; then
-  python3 -m venv .venv
-fi
-.venv/bin/python -m pip install -r requirements.txt -q
+uv sync --locked --no-dev
 
 echo "[install] Ensuring data directory exists..."
 mkdir -p data
