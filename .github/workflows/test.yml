@@ -34,7 +34,9 @@ jobs:
         run: npm audit --audit-level=moderate
 
       - name: Verify npm registry signatures
-        run: npm audit signatures
+        # npm 11.16 (bundled with Node 24) applies min-release-age while
+        # verifying lockfile signatures; 11.17 limits the gate to resolution
+        run: npx --yes npm@11.17.0 audit signatures
 
       - name: Install Cypress binary
         run: ./node_modules/.bin/cypress install
