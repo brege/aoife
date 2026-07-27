@@ -1,9 +1,15 @@
 #!/bin/bash
 set -e
 
+uv_path="${UV_PATH:-${HOME}/.local/bin/uv}"
+if [ ! -x "${uv_path}" ]; then
+    echo "[ERROR] uv is not executable at ${uv_path}" >&2
+    exit 1
+fi
+
 # create/update python venv
 echo "[install] Setting up Python environment..."
-uv sync --locked --no-dev
+"${uv_path}" sync --locked --no-dev
 
 echo "[install] Ensuring data directory exists..."
 mkdir -p data
