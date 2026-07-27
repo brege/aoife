@@ -113,10 +113,9 @@ describe('YAML workflows via Cypress', function () {
       const run = await cypress.run({
         configFile: 'test/e2e/cypress.config.js',
         spec: 'test/e2e/specs/workflow.cy.js',
-        env: {
+        expose: {
           workflow: JSON.stringify(workflow),
           measurementsPath,
-          TMDB_API_KEY: process.env.TMDB_API_KEY,
         },
       });
 

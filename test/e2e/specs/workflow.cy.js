@@ -13,11 +13,11 @@ import {
   setShowSearchState,
 } from '../support/actions';
 
-const workflowEnv = Cypress.env('workflow');
+const workflowValue = Cypress.expose('workflow');
 const workflow =
-  typeof workflowEnv === 'string' ? JSON.parse(workflowEnv) : workflowEnv;
+  typeof workflowValue === 'string' ? JSON.parse(workflowValue) : workflowValue;
 const measurementsPath =
-  Cypress.env('measurementsPath') || 'test/measurements.json';
+  Cypress.expose('measurementsPath') || 'test/measurements.json';
 
 const scenarioResults = [];
 const state = {
